@@ -1,18 +1,22 @@
 {
-  "name": "quod-schedule-fundatur",
-  "version": "0.1.0",
-  "description": "Evidence-based Scheduler & Predictor",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "evidence",
-    "schedule",
-    "evidence-based",
-    "prediction",
-    "predictor"
-  ],
-  "author": "William Marrujo",
-  "license": "ISC"
+    "name": "quod-schedule-fundatur",
+    "version": "0.1.0",
+    "description": "Evidence-based Scheduler & Predictor",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "evidence",
+        "schedule",
+        "evidence-based",
+        "prediction",
+        "predictor"
+    ],
+    "author": "William Marrujo",
+    "license": "ISC",
+    "devDependencies": {
+        "typescript": "^3.8.3"
+    }
 }
