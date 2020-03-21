@@ -55,5 +55,15 @@ module.exports = {
 		"one-var": ["error", "never"],
 		"arrow-spacing": "error",
 		"no-var": "error"
-	}
+	},
+	overrides: [
+		{
+			files: [
+				"**/tests/**/*.spec.{j,t}s"
+			],
+			env: {
+				jest: true
+			}
+		}
+	]
 }
