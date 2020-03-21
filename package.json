@@ -2,11 +2,13 @@
     "name": "evidence-based-scheduler",
     "version": "0.1.0",
     "description": "Evidence-based Scheduler & Predictor",
-    "main": "index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "./node_modules/.bin/jest",
         "lint": "./node_modules/.bin/eslint . --ext ts,js --fix",
-        "build": "rm -r ./dist && ./node_modules/.bin/tsc"
+        "build": "rm -r ./dist && ./node_modules/.bin/tsc",
+        "prepare": "npm run build && git config core.hooksPath .githooks"
     },
     "keywords": [
         "evidence",
