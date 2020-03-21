@@ -9,6 +9,8 @@
 		"moduleResolution": "node",
 		"experimentalDecorators": true,
 		"esModuleInterop": true,
+		"allowJs": true,
+		"isolatedModules": true,
 		"allowSyntheticDefaultImports": true,
 		"sourceMap": true,
 		"baseUrl": ".",
@@ -25,7 +27,7 @@
 	    ]
 	},
 	"include": [
-		"src/**/*.ts"
+		"src"
 	],
 	"exclude": [
 		"node_modules",

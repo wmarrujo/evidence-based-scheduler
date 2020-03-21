@@ -1,19 +1,20 @@
 module.exports = {
-	root: true,
-	env: {
-		node: true
+	"root": true,
+	"env": {
+		"node": true
 	},
-	extends: [
+	"extends": [
 		"eslint:recommended",
 		"plugin:@typescript-eslint/eslint-recommended"
 	],
-	parserOptions: {
+	"parser": "babel-eslint",
+	"parserOptions": {
 		"ecmaVersion": 2020,
 		"parser": "@typescript-eslint/parser",
 		"sourceType": "module"
 	},
-	plugins: ["@typescript-eslint"],
-	rules: {
+	"plugins": ["@typescript-eslint"],
+	"rules": {
 		"indent": ["error", "tab", {
 			"MemberExpression": 1,
 			"ArrayExpression": 1,
@@ -56,13 +57,13 @@ module.exports = {
 		"arrow-spacing": "error",
 		"no-var": "error"
 	},
-	overrides: [
+	"overrides": [
 		{
-			files: [
+			"files": [
 				"**/tests/**/*.spec.{j,t}s"
 			],
-			env: {
-				jest: true
+			"env": {
+				"jest": true
 			}
 		}
 	]
