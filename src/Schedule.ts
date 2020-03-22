@@ -47,6 +47,7 @@ interface ScheduleRuleParts {
 
 // PARSER
 
+const matchNumber = "\\d+(?:\\.\\d+)?"
 const matchISODate = "\\d{4}-\\d{2}-\\d{2}"
 const matchOrdinal = "weekday|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday|day"
 const matchDuration = "years?|months?|weeks?|days?"
@@ -54,8 +55,8 @@ const matchDuration = "years?|months?|weeks?|days?"
 const matchDate = `(?<date>${matchISODate})`
 const matchFrom = `from (?<from>${matchISODate})`
 const matchTo = `to (?<to>${matchISODate})`
-const matchFor = `for (?<for>\\d+) (?<forUnit>${matchDuration})`
-const matchRepeat = `every (?<repeat>\\d+) (?<repeatUnit>${matchDuration})`
+const matchFor = `for (?<for>${matchNumber}) (?<forUnit>${matchDuration})`
+const matchRepeat = `every (?<repeat>${matchNumber}) (?<repeatUnit>${matchDuration})`
 const matchEvery = `every (?<every>${matchOrdinal})`
 
 function matchRule(rule: ScheduleRuleString): ScheduleRuleParts {
@@ -65,10 +66,10 @@ function matchRule(rule: ScheduleRuleString): ScheduleRuleParts {
 	const typeMatch = rule.match(/(include|exclude) (.*)/i) // parse the rule type out
 	if (typeMatch == null) {
 		throw new ParseError("Expected rule to start with \"include\" or \"exclude\"")
-	} else if (typeMatch[1] == "include") {
-		matchWay = new RegExp(`(?:${matchDate}|${matchFrom} (?:${matchTo}|${matchFor} ${matchRepeat})|${matchEvery}) (?<hours>\\d+) hours`, "i")
-	} else if (typeMatch[1] == "exclude") {
-		matchWay = new RegExp(`${matchDate}|${matchFrom} (?:${matchTo}|${matchFor} ${matchRepeat})|${matchEvery}`, "i")
+	} else if (typeMatch[1].toLowerCase() == "include") {
+		matchWay = new RegExp(`(?<hours>${matchNumber}) hours (?:on ${matchDate}|${matchFrom} (?:${matchTo}|${matchFor} ${matchRepeat})|${matchEvery})`, "i")
+	} else if (typeMatch[1].toLowerCase() == "exclude") {
+		matchWay = new RegExp(`on ${matchDate}|${matchFrom} (?:${matchTo}|${matchFor} ${matchRepeat})|${matchEvery}`, "i")
 	} else {
 		throw new ParseError("Expected rule to start with \"include\" or \"exclude\"")
 	}
@@ -76,7 +77,7 @@ function matchRule(rule: ScheduleRuleString): ScheduleRuleParts {
 	// match the way of the rule
 	const wayMatch = typeMatch[2].match(matchWay) // parse the rule way out
 	if (wayMatch == null) { // it couldn't parse
-		throw new ParseError(`Expected rule to be of the form "${typeMatch[1]} ( DATE | from DATE to DATE | from DATE for NUMBER DURATION every NUMBER DURATION | every ORDINAL)${typeMatch[1] == "include" ? " NUMBER hours" : ""}"`)
+		throw new ParseError(`Expected rule to be of the form "${typeMatch[1].toLowerCase()} ${typeMatch[1].toLowerCase() == "include" ? "NUMBER hours ( on" : "( "} DATE | from DATE to DATE | from DATE for NUMBER DURATION every NUMBER DURATION | every ORDINAL)"`)
 	} else {
 		return JSON.parse(JSON.stringify(wayMatch.groups))
 	}
@@ -84,7 +85,7 @@ function matchRule(rule: ScheduleRuleString): ScheduleRuleParts {
 
 // RULE MAKER
 
-function makeRule(rule: ScheduleRuleString): (date: DateTime) => Hours | undefined {
+export function makeRule(rule: ScheduleRuleString): (date: DateTime) => Hours | undefined {
 	// generate peices
 	const ruleParts = matchRule(rule)
 	// put peices to gether by composing functions
@@ -179,10 +180,10 @@ function makeRule(rule: ScheduleRuleString): (date: DateTime) => Hours | undefin
 					return date.weekday == 7 ? hours : undefined
 				}
 			} else {
-				throw new ParseError("Expected rule to have one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", \"sunday\" after \"include every\"")
+				throw new ParseError("Expected rule to have one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", \"sunday\" after \"include NUMBER hours every\"")
 			}
 		} else {
-			throw new ParseError("Expected rule to have \"DATE\", \"from DATE to DATE\", \"from DATE for NUMBER DURATION every NUMBER DURATION\", or \"every ORDINAL\" after \"include\"")
+			throw new ParseError("Expected rule to have \"DATE\", \"from DATE to DATE\", \"from DATE for NUMBER DURATION every NUMBER DURATION\", or \"every ORDINAL\" after \"include NUMBER hours\"")
 		}
 	} else { // it's an exclude rule
 		if (ruleParts.date) { // it's a date-specific rule
