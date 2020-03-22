@@ -29,6 +29,7 @@
         "@babel/preset-env": "^7.9.0",
         "@babel/preset-typescript": "^7.9.0",
         "@types/jest": "^25.1.4",
+        "@types/luxon": "^1.21.0",
         "@types/node": "^13.9.2",
         "@typescript-eslint/eslint-plugin": "^2.24.0",
         "@typescript-eslint/parser": "^2.24.0",
@@ -37,5 +38,8 @@
         "jest": "^25.1.0",
         "ts-jest": "^25.2.1",
         "typescript": "^3.8.3"
+    },
+    "dependencies": {
+        "luxon": "^1.22.0"
     }
 }

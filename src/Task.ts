@@ -1,17 +1,21 @@
+import {ValidationError} from "@/Error"
+import {TaskIdentifier, ResourceIdentifier} from "@/types"
+
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
 ////////////////////////////////////////////////////////////////////////////////
 
 export class Task {
-	identifier: string
+	identifier: TaskIdentifier
 	name: string
 	description: string
-	resource: string
-	dependencies: Set<string>
+	resource: ResourceIdentifier
+	dependencies: Set<TaskIdentifier>
 	prediction: number
-	actual: number | undefined = undefined
+	actual: number
+	done: boolean
 	
-	constructor(identifier: string, name: string, resource: string, prediction: number, dependencies: Iterable<string> = [], description: string = "", actual: number | undefined = undefined) {
+	constructor(identifier: TaskIdentifier, name: string, resource: ResourceIdentifier, prediction: number, dependencies: Iterable<TaskIdentifier> = [], actual: number = 0, done = false, description: string = "" ) {
 		this.identifier = identifier
 		this.name = name
 		this.description = description
@@ -19,6 +23,7 @@ export class Task {
 		this.dependencies = new Set([...dependencies])
 		this.prediction = prediction
 		this.actual = actual
+		this.done = done
 	}
 	
 	get velocity(): number | undefined {
@@ -26,30 +31,65 @@ export class Task {
 	}
 }
 
+export class Group {
+	identifier: TaskIdentifier
+	name: string
+	description: string
+	tasks: Array<Task>
+	
+	constructor() {
+		
+	}
+	
+	get resources(): Array<ResourceIdentifier> {
+		
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RE-ASSOCIATION
+////////////////////////////////////////////////////////////////////////////////
+
+export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Array<Task> { // remove the group references in tasks
+	// TODO: remove task references to groups
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 
-export function validateTaskList(tasks: Array<Task>): boolean { // make sure a list of tasks is self-consistent
-	return noDuplicateIdentifiers(tasks)
-		|| noGhostReferences(tasks)
-		|| noCircularDependencies(tasks)
+export function checkTaskList(tasks: Array<Task>) { // make sure a list of tasks is self-consistent
+	// assumes tasks are internalized
+	checkNoDuplicateIdentifiers(tasks)
+	checkNoGhostReferences(tasks)
+	checkNoCircularDependencies(tasks)
 }
 
-export function noDuplicateIdentifiers(tasks: Array<Task>): boolean { // check that there are no duplicate keys
-	return tasks.length == new Set(tasks.map(task => task.identifier)).size // size of set and array should be the same, if not, then there are duplicates
+export function checkNoDuplicateIdentifiers(tasks: Array<Task>) { // check that there are no duplicate keys
+	if (tasks.length != new Set(tasks.map(task => task.identifier)).size) { // if set and array are not the same
+		const checked: Array<TaskIdentifier> = []
+		tasks
+			.map(task => task.identifier)
+			.forEach(task => {
+				if (checked.includes(task)) {
+					throw new ValidationError(`Validation Error: Duplicate task found in task list ${task}`)
+				} else {
+					checked.push(task)
+				}
+			})
+	}
 }
 
-export function noGhostReferences(tasks: Array<Task>): boolean { // check that all the references are defined within the task list
+export function checkNoGhostReferences(tasks: Array<Task>) { // check that all the references are defined within the task list
 	const taskSet = new Set(tasks.map(task => task.identifier)) // the set of tasks
 	return tasks.every(task => [...task.dependencies.values()].every(dependency => taskSet.has(dependency))) // every dependency of every task is in the set of tasks
 }
 
-export function noCircularDependencies(tasks: Array<Task>): boolean { // check whether there are any circular dependencies
+export function checkNoCircularDependencies(tasks: Array<Task>) { // check whether there are any circular dependencies
 	// assumes no duplicate identifiers in tasks
 	// assumes all tasks have references that exist
 	const dependencies = tasks
-		.reduce((ds: Record<string, Set<string>>, task) => {
+		.reduce((ds: Record<TaskIdentifier, Set<TaskIdentifier>>, task) => {
 			ds[task.identifier] = task.dependencies
 			return ds
 		}, {})
