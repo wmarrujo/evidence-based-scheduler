@@ -19,4 +19,3 @@ export class ParseError extends Error {
 		this.name = "ParseError"
 	}
 }
-// TODO: give more parsing information
