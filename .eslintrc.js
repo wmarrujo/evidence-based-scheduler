@@ -30,7 +30,8 @@ module.exports = {
 		"@typescript-eslint/no-unused-vars": ["warn", {
 			"vars": "all",
 			"args": "after-used",
-			"ignoreRestSiblings": false
+			"ignoreRestSiblings": false,
+			"argsIgnorePattern": "^_"
 		}],
 		"space-before-function-paren": ["error", {
 			"named": "never",

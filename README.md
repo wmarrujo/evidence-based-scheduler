@@ -48,6 +48,10 @@ ORDINAL is a value of "weekday", "weekend", "day", "monday", "tuesday", "wednesd
 
 The historical velocities per resource. Effectively the resource's accuracy at predicting.
 
+If there are not enough historical velocities (more than 10) to give an effective distribution, it will add these example probabilities (in this order) up to 10:
+
+`1.0, 1.1, 0.9, 1.0, 1.2, 0.8, 1.0, 1.1, 0.9, 1.0`
+
 ### Snapshots
 
 The history of the project's projections.
