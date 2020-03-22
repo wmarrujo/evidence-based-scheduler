@@ -8,7 +8,7 @@
         "prepare": "npm run build && git config core.hooksPath .githooks",
         "test": "./node_modules/.bin/jest",
         "lint": "./node_modules/.bin/eslint . --ext ts,js --fix",
-        "build": "rm -rf ./dist && ./node_modules/.bin/tsc --emitDeclarationOnly && ./node_modules/.bin/babel src --out-dir dist --extensions \".ts\" --source-maps inline"
+        "build": "rm -rf ./dist && ./node_modules/.bin/tsc"
     },
     "keywords": [
         "evidence",
@@ -23,17 +23,11 @@
         "dist/**/*"
     ],
     "devDependencies": {
-        "@babel/cli": "^7.8.4",
-        "@babel/plugin-proposal-class-properties": "^7.8.3",
-        "@babel/plugin-proposal-object-rest-spread": "^7.9.0",
-        "@babel/preset-env": "^7.9.0",
-        "@babel/preset-typescript": "^7.9.0",
         "@types/jest": "^25.1.4",
         "@types/luxon": "^1.21.0",
         "@types/node": "^13.9.2",
         "@typescript-eslint/eslint-plugin": "^2.24.0",
         "@typescript-eslint/parser": "^2.24.0",
-        "babel-eslint": "^10.1.0",
         "eslint": "^6.8.0",
         "jest": "^25.1.0",
         "ts-jest": "^25.2.1",
