@@ -14,16 +14,18 @@ export class Performance {
 	
 	// GETTERS
 	
-	get randomVelocity(): Velocity { // get a random velocity
+	get statistics(): DiscreteStatistics | undefined {
+		return discreteStatistics(this.velocities)
+	}
+	
+	// METHODS
+	
+	randomVelocity(): Velocity { // get a random velocity
 		let velocities = [...this.velocities]
 		if (velocities.length < Performance.defaultProbabilities.length) { // if there are too few historical velocities to pull from
 			velocities = velocities.concat(Performance.defaultProbabilities.slice(0, Performance.defaultProbabilities.length - velocities.length))
 		}
 		return randomEntry(velocities)
-	}
-	
-	get statistics(): DiscreteStatistics | undefined {
-		return discreteStatistics(this.velocities)
 	}
 	
 	// STATIC

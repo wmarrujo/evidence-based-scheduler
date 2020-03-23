@@ -1,3 +1,5 @@
+import {Percentage} from "@/types"
+
 ////////////////////////////////////////////////////////////////////////////////
 // RANDOMIZATION
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,4 +55,9 @@ export function discreteStatistics(values: Array<number>): DiscreteStatistics | 
 	}
 }
 
-// TODO: percentile
+export function cumulativeProbability<T>(values: Array<T>, value: T): Probability { // given a list of values, it finds at what percentile in that list the value is and returns that (highest occurrence)
+	// assumes values are unique, if not, it takes the last one
+	// assumes array is sorted
+	
+	// TODO: implement percentile
+}

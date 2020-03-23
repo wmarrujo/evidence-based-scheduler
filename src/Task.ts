@@ -85,8 +85,10 @@ export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Arra
 	const fullyReferenced = fullReferenceTasks(noGroups)
 	
 	// sort by order of dependency
+	// basically, ensure that there is nothing above a part that depends on that part
 	return fullyReferenced.sort((a, b) => b.dependencies.has(a.identifier) ? -1 : (a.dependencies.has(b.identifier) ? 1 : 0)) // move to front if it is the parent
 	// TODO: check if there is a condition that would make this not work, since there is no strict ordering with these
+	// TODO: change to a loop that goes through everything above that index, checking if there are references to it, if so, put it underneath (or something like that), (basically bubble sort?, but with no equals)
 }
 
 export function fullReferenceTasks(tasks: Array<Task>): Array<Task> { // make the tasks reference all other tasks that must be done before this one is started, so that each task doesn't have to look at any other tasks' dependency lists to know what to wait for
