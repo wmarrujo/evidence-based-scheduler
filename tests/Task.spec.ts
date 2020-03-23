@@ -1,4 +1,4 @@
-import {Task, checkTaskList, checkNoDuplicateIdentifiersInTasks, checkNoGhostReferencesInTasks, checkNoCircularDependenciesInTasks, Group, checkGroupList, checkNoDuplicateIdentifiersInGroups, checkNoCircularDependenciesInGroups, internalizeTasks} from "@/Task"
+import {Task, checkTaskList, checkNoDuplicateIdentifiersInTasks, checkNoGhostReferencesInTasks, checkNoCircularDependenciesInTasks, Group, checkGroupList, checkNoDuplicateIdentifiersInGroups, checkNoCircularDependenciesInGroups, internalizeTasks, fullReferenceTasks} from "@/Task"
 import {ValidationError} from "@/Error"
 
 describe("Task & Group Structure", () => {
@@ -102,22 +102,26 @@ describe("Task & Group Validation", () => {
 	})
 })
 
-describe("Task Transformation", () => {
+describe("Task Transformation", () => { // set up tasks & groups
+	const task1 = new Task("T1", "Task 1", "Person", 1, [])
+	const task2 = new Task("T2", "Task 2", "Person", 2, ["T1"])
+	const task3 = new Task("T3", "Task 3", "Person", 3, ["T1"])
+	const task4 = new Task("T4", "Task 4", "Person", 4, [])
+	const task5 = new Task("T5", "Task 5", "Person", 5, ["T4"])
+	const task6 = new Task("T6", "Task 6", "Person", 6, ["T5"])
+	const task7 = new Task("T7", "Task 7", "Person", 7, ["G1"])
+
+	const group1 = new Group("G1", "Group 1", ["T1", "T2", "G2"])
+	const group2 = new Group("G2", "Group 2", ["T1", "T4"])
+	
+	test("Task Full Referencing", () => {
+		expect(fullReferenceTasks([task1, task2, task3, task4, task5, task6])[5].dependencies).toContain("T4") // task 6 depends on task 4 but doesn't say so directly
+	})
+	
 	test("Task Internalization", () => {
-		// set up tasks & groups
-		const task1 = new Task("T1", "Task 1", "Person", 1, [])
-		const task2 = new Task("T2", "Task 2", "Person", 2, ["T1"])
-		const task3 = new Task("T3", "Task 3", "Person", 3, ["T1"])
-		const task4 = new Task("T4", "Task 4", "Person", 4, [])
-		const task5 = new Task("T5", "Task 5", "Person", 5, ["T4"])
-		const task6 = new Task("T6", "Task 6", "Person", 6, ["T5"])
-		const task7 = new Task("T7", "Task 7", "Person", 7, ["G1"])
-		
-		const group1 = new Group("G1", "Group 1", ["T1", "T2", "G2"])
-		const group2 = new Group("G2", "Group 2", ["T1", "T4"])
-		
-		// test task internalization
 		const internalizedTasks = internalizeTasks([task1, task2, task3, task4, task5, task6, task7], [group1, group2])
+		// TODO: check sorting too
+		// FIXME: not guaranteed to be index 6 here (below)
 		expect(internalizedTasks[6].dependencies).toContain("T1") // test that groups got replaced
 		expect(internalizedTasks[6].dependencies).toContain("T4") // test that groups got replaced recursively
 	})

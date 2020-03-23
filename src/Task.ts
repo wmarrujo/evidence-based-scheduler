@@ -52,6 +52,7 @@ export class Group {
 export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Array<Task> { // remove the group references in tasks
 	// check if groups are self-consistent (not recursive)
 	checkGroupList(groups)
+	
 	// replace all group identifiers in tasks with their group's tasks
 	const groupDependencies = groups
 		.reduce((ds: Record<TaskIdentifier, Set<TaskIdentifier>>, group) => {
@@ -59,7 +60,7 @@ export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Arra
 			return ds
 		}, {})
 	
-	return tasks.map(task => {
+	const noGroups = tasks.map(task => {
 		// replace all group dependencies with task ones
 		let newDependencies: Array<string | Array<string>> = [...task.dependencies] // seed it with the old dependencies
 		let replacement = false // set replacements
@@ -75,6 +76,41 @@ export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Arra
 		} while (replacement) // end when it checked everything, and there were no
 		// return a copy of the task with new, internally referencing dependencies
 		return new Task(task.identifier, task.name, task.resource, task.prediction, newDependencies as Array<string>, task.actual, task.done, task.description)
+	})
+	
+	// fail if tasks aren't self-consistent
+	checkTaskList(noGroups)
+	
+	// fully reference all tasks
+	const fullyReferenced = fullReferenceTasks(noGroups)
+	
+	// sort by order of dependency
+	return fullyReferenced.sort((a, b) => b.dependencies.has(a.identifier) ? -1 : (a.dependencies.has(b.identifier) ? 1 : 0)) // move to front if it is the parent
+	// TODO: check if there is a condition that would make this not work, since there is no strict ordering with these
+}
+
+export function fullReferenceTasks(tasks: Array<Task>): Array<Task> { // make the tasks reference all other tasks that must be done before this one is started, so that each task doesn't have to look at any other tasks' dependency lists to know what to wait for
+	// assumes no group references in tasks
+	// assumes no circular definitions
+	
+	// get dependents of tasks
+	const dependencies = tasks.reduce((ds, task) => { // for each task, the tasks that depend on it
+		ds[task.identifier] = task.dependencies
+		return ds
+	}, {} as Record<TaskIdentifier, Set<TaskIdentifier>>)
+	
+	// get references to all tasks each task depends on
+	return tasks.map(task => {
+		const allDependencies: Set<TaskIdentifier> = new Set() // filter for only the tasks that are dependent on this task
+		const unvisitedDependencies = new Set(task.dependencies) // all the dependencies whose dependencies have yet to be looked at
+		while (unvisitedDependencies.size != 0) { // be done when there are no more dependencies to add
+			const dependency = unvisitedDependencies.values().next().value // visit one of the dependencies
+			unvisitedDependencies.delete(dependency) // don't visit it again
+			allDependencies.add(dependency) // mark that this dependency has been visited
+			dependencies[dependency].forEach(higherLevelDependency => unvisitedDependencies.add(higherLevelDependency))
+		}
+		
+		return new Task(task.identifier, task.name, task.resource, task.prediction, allDependencies, task.actual, task.done, task.description) // return a copy of the task with the new dependencies replaced
 	})
 }
 

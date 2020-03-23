@@ -43,6 +43,11 @@ const project = new Project(
 		"Inspector": [0.7, 0.5, 0.9, 0.9]
 	})
 
+// DEBUG: show task actual dependencies
+// import {internalizeTasks} from "@/Task"
+// console.log(internalizeTasks(project.tasks, project.groups).map(task => task.identifier + " " + JSON.stringify([...task.dependencies])))
+// console.log(project.tasks.map(task => task.identifier + " " + JSON.stringify([...task.dependencies])))
+
 ////////////////////////////////////////////////////////////////////////////////
 // TEST STRUCTURE
 ////////////////////////////////////////////////////////////////////////////////

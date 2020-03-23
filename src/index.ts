@@ -1,6 +1,6 @@
 import {DateTime} from "luxon"
 import {ResourceIdentifier, ISODateString, ScheduleRuleString, Velocity, Probability} from "@/types"
-import {Task, Group, internalizeTasks, checkTaskList} from "@/Task"
+import {Task, Group, internalizeTasks} from "@/Task"
 import {Schedule} from "@/Schedule"
 import {Performance} from "@/Performance"
 
@@ -17,6 +17,7 @@ export class Project {
 	name: string
 	#start: DateTime
 	tasks: Array<Task> // story only internally referencing tasks
+	#tasks: Array<Task> // store the corresponding internalized tasks list
 	groups: Array<Group> // store for later viewing
 	#schedules: Record<ResourceIdentifier, Schedule>
 	#performances: Record<ResourceIdentifier, Performance>
@@ -25,8 +26,8 @@ export class Project {
 	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, velocities: Record<ResourceIdentifier, Array<Velocity>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
 		this.name = name
 		this.#start = DateTime.fromISO(start)
-		this.tasks = internalizeTasks(tasks, groups)
-		checkTaskList(this.tasks) // fail if tasks aren't self-consistent
+		this.tasks = tasks
+		this.#tasks = internalizeTasks(tasks, groups)
 		this.groups = groups
 		this.#schedules = Object.keys(schedules).reduce((newSchedules, resource) => {
 			newSchedules[resource] = new Schedule(schedules[resource])
@@ -63,12 +64,25 @@ export class Project {
 	// probabilityOfEndingOnDate(dateString: ISODateString): Probability { // returns a function that when asked about ending on a certain date it gives a certain probability
 	// 	const date = DateTime.fromISO(dateString)
 	// 
-	// 
+	// 	// schedule tasks
+	// 	// assign tasks in order of 
 	// }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// SIMULATION
+// SCHEDULER
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO: schedule things
+// interface ScheduledTask { // the raw data needed to know about a task schedule
+// 	identifier: TaskIdentifier
+// 	resource: ResourceIdentifier
+// 	dependencies: Set<TaskIdentifier>
+// 	begin: DateTime
+// 	end: DateTime
+// }
+// 
+// function scheduleTasks(tasks: Array<Task>): Set<ScheduledTask> { // turn a list of tasks into a list of tasks with an assigned start and end date
+// 	const roots = tasks.filter(task => task.dependencies.size == 0) // start with all tasks that have no dependencies (the root tasks)
+// 
+// 	function scheduleDependencies()
+// }
