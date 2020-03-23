@@ -22,7 +22,7 @@ export class Project {
 	#performances: Record<ResourceIdentifier, Performance>
 	snapshots: Record<ISODateString, Record<Probability, ISODateString>>
 	
-	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, velocities: Record<ResourceIdentifier, Array<Velocity>>, snapshots: Record<ISODateString, Record<Probability, ISODateString>>) {
+	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, velocities: Record<ResourceIdentifier, Array<Velocity>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
 		this.name = name
 		this.#start = DateTime.fromISO(start)
 		this.tasks = internalizeTasks(tasks, groups)
@@ -60,5 +60,15 @@ export class Project {
 	
 	// METHODS
 	
-	// TODO: simulation
+	// probabilityOfEndingOnDate(dateString: ISODateString): Probability { // returns a function that when asked about ending on a certain date it gives a certain probability
+	// 	const date = DateTime.fromISO(dateString)
+	// 
+	// 
+	// }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// SIMULATION
+////////////////////////////////////////////////////////////////////////////////
+
+// TODO: schedule things

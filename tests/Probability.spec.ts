@@ -1,15 +1,14 @@
-import {Performance} from "@/Performance"
+import {discreteStatistics} from "@/Probability"
 
 describe("Performance Data", () => {
 	test("Performance Statistics", () => {
 		// Test undefined performance
-		const undefinedPerformance = new Performance([])
+		const undefinedStatistics = discreteStatistics([])
 		
-		expect(undefinedPerformance.statistics).toBeUndefined()
+		expect(undefinedStatistics).toBeUndefined()
 		
 		// Test trivial performance
-		const trivialPerformance = new Performance([10])
-		const trivialStatistics = trivialPerformance.statistics!
+		const trivialStatistics = discreteStatistics([10])!
 		
 		expect(trivialStatistics.minimum).toBe(10)
 		expect(trivialStatistics.firstQuartile).toBe(10)
@@ -20,8 +19,7 @@ describe("Performance Data", () => {
 		expect(trivialStatistics.mean).toBe(10)
 		
 		// Test performance with odd number of entries
-		const oddPerformance = new Performance([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-		const oddStatistics = oddPerformance.statistics!
+		const oddStatistics = discreteStatistics([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])!
 		
 		expect(oddStatistics.minimum).toBe(0)
 		expect(oddStatistics.firstQuartile).toBe(2.5)
@@ -32,8 +30,7 @@ describe("Performance Data", () => {
 		expect(oddStatistics.mean).toBe(5)
 		
 		// Test performance with even number of entries
-		const evenPerformance = new Performance([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-		const evenStatistics = evenPerformance.statistics!
+		const evenStatistics = discreteStatistics([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])!
 		
 		expect(evenStatistics.minimum).toBe(1)
 		expect(evenStatistics.firstQuartile).toBe(3)
