@@ -38,7 +38,7 @@ export function discreteStatistics(values: Array<number>): DiscreteStatistics | 
 		const secondHalf = sortedValues.slice(Math.floor(sortedValues.length / 2)) // second half of the values, inclusive of the middle element if there is one
 		const lowerQuartile = (firstHalf[Math.floor((firstHalf.length - 1) / 2)] + firstHalf[Math.ceil((firstHalf.length - 1) / 2)]) / 2 // average between the 2 middle ones of the first half of the array, or the middle one if it exists
 		const upperQuartile = (secondHalf[Math.floor((secondHalf.length - 1) / 2)] + secondHalf[Math.ceil((secondHalf.length - 1) / 2)]) / 2 // average between the 2 middle ones of the second half of the array, or the middle one if it exists
-		const mean = sortedValues.reduce((sum, velocity) => sum + velocity, 0) / sortedValues.length
+		const mean = sortedValues.reduce((sum, accuracy) => sum + accuracy, 0) / sortedValues.length
 		
 		return {
 			minimum: minimum,

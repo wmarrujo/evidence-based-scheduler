@@ -26,7 +26,7 @@ export class Task {
 		this.done = done
 	}
 	
-	get velocity(): number | undefined {
+	get accuracy(): number | undefined {
 		return this.actual ? this.actual / this.prediction : undefined
 	}
 }

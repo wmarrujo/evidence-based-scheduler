@@ -1,4 +1,4 @@
-import {Velocity} from "@/types"
+import {Accuracy} from "@/types"
 import {randomEntry, discreteStatistics, DiscreteStatistics} from "@/Probability"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,26 +6,26 @@ import {randomEntry, discreteStatistics, DiscreteStatistics} from "@/Probability
 ////////////////////////////////////////////////////////////////////////////////
 
 export class Performance {
-	velocities: Array<Velocity>
+	accuracies: Array<Accuracy>
 	
-	constructor(velocities: Array<Velocity>) {
-		this.velocities = velocities
+	constructor(accuracies: Array<Accuracy>) {
+		this.accuracies = accuracies
 	}
 	
 	// GETTERS
 	
 	get statistics(): DiscreteStatistics | undefined {
-		return discreteStatistics(this.velocities)
+		return discreteStatistics(this.accuracies)
 	}
 	
 	// METHODS
 	
-	randomVelocity(): Velocity { // get a random velocity
-		let velocities = [...this.velocities]
-		if (velocities.length < Performance.defaultProbabilities.length) { // if there are too few historical velocities to pull from
-			velocities = velocities.concat(Performance.defaultProbabilities.slice(0, Performance.defaultProbabilities.length - velocities.length))
+	randomAccuracy(): Accuracy { // get a random accuracy
+		let accuracies = [...this.accuracies]
+		if (accuracies.length < Performance.defaultProbabilities.length) { // if there are too few historical accuracies to pull from
+			accuracies = accuracies.concat(Performance.defaultProbabilities.slice(0, Performance.defaultProbabilities.length - accuracies.length))
 		}
-		return randomEntry(velocities)
+		return randomEntry(accuracies)
 	}
 	
 	// STATIC

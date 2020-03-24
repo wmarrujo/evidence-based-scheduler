@@ -1,5 +1,5 @@
 import {DateTime} from "luxon"
-import {ResourceIdentifier, ISODateString, ScheduleRuleString, Velocity, Probability, TaskIdentifier, Hours} from "@/types"
+import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, Hours} from "@/types"
 import {Task, Group, internalizeTasks} from "@/Task"
 import {Schedule} from "@/Schedule"
 import {Performance} from "@/Performance"
@@ -25,7 +25,7 @@ export class Project {
 	snapshots: Record<ISODateString, Record<Probability, ISODateString>>
 	#simulations: Array<DateTime> | undefined // cached last simulation
 	
-	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, velocities: Record<ResourceIdentifier, Array<Velocity>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
+	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, accuracies: Record<ResourceIdentifier, Array<Accuracy>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
 		this.name = name
 		this.#start = DateTime.fromISO(start)
 		this.tasks = tasks
@@ -37,8 +37,8 @@ export class Project {
 			return newSchedules
 		}, {} as Record<ResourceIdentifier, Schedule>)
 		// TODO: ensure there are performances for each resource
-		this.#performances = Object.keys(velocities).reduce((newPerformances, resource) => {
-			newPerformances[resource] = new Performance(velocities[resource])
+		this.#performances = Object.keys(accuracies).reduce((newPerformances, resource) => {
+			newPerformances[resource] = new Performance(accuracies[resource])
 			return newPerformances
 		}, {} as Record<ResourceIdentifier, Performance>)
 		this.snapshots = snapshots
@@ -74,13 +74,10 @@ export class Project {
 		
 		if (!this.#simulations) { // if simulations have been done
 			// run simulations
-			const simulationHours = monteCarloSimulations(this.#tasks, this.#performances, 1000)
-			
-			// read with the schedule and transform the hours into dates
-			const simulationDays = simulationHours.map(hour => scheduleSimulationResult(hour, this.#schedules))
+			const simulationDates = monteCarloSimulations(this.#tasks, this.#performances, this.#schedules, 1000)
 			
 			// cache simulation
-			this.#simulations = simulationDays
+			this.#simulations = simulationDates
 		}
 		
 		return cumulativeProbability(this.#simulations, date)
@@ -91,38 +88,22 @@ export class Project {
 // SIMULATION
 ////////////////////////////////////////////////////////////////////////////////
 
-function monteCarloSimulations(tasks: Array<Task>, performances: Record<ResourceIdentifier, Performance>, iterations: number): Array<Hours> { // get many simulated possible end dates for the task list
-	const hours = []
+function monteCarloSimulations(tasks: Array<Task>, performances: Record<ResourceIdentifier, Performance>, schedules: Record<ResourceIdentifier, Schedule>, iterations: number): Array<DateTime> { // get many simulated possible end dates for the task list
+	const dates = []
 	for (let i = 0; i <= iterations; i++) { // do 1000 simulations
-		hours.push(simulateTaskList(tasks, performances)) // simulate one potential schedule
+		dates.push(simulateTaskList(tasks, performances, schedules)) // simulate one potential schedule
 	}
-	return hours
+	return dates
 }
 
-function simulateTaskList(tasks: Array<Task>, performances: Record<ResourceIdentifier, Performance>): Hours {
+function simulateTaskList(tasks: Array<Task>, performances: Record<ResourceIdentifier, Performance>, schedules: Record<ResourceIdentifier, Schedule>): DateTime {
 	// assumes there is a performance for each resource
 	// assumes tasks are internalized
-	const taskVelocities = tasks.reduce((velocities, task) => {
-		velocities[task.identifier] = performances[task.resource].randomVelocity()
-		return velocities
-	}, {} as Record<TaskIdentifier, Velocity>)
+	const taskAccuracies = tasks.reduce((accuracies, task) => {
+		accuracies[task.identifier] = performances[task.resource].randomAccuracy()
+		return accuracies
+	}, {} as Record<TaskIdentifier, Accuracy>)
 	
-	return tasks
-		.map(task => {
-			return [...task.dependencies].reduce((sum, dependencyIdentifier) => { // for each thing the task has to wait for
-				const dependency = tasks.find(t => t.identifier == dependencyIdentifier)! // get a reference to the task
-				return sum + (dependency.done ? dependency.actual : dependency.prediction * taskVelocities[dependencyIdentifier]) // sum the randomly timed predictions (or the actual time if it's done)
-			}, 0)
-		})
-		.reduce((maxTime, taskTime) => Math.max(maxTime, taskTime), 0) // get the time until the last task is completed
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// SCHEDULING OF SIMULATION RESULTS
-////////////////////////////////////////////////////////////////////////////////
-
-function scheduleSimulationResult(hours: Hours, schedules: Record<ResourceIdentifier, Schedule>): DateTime {
-	// assumes schedules are defined for each resource
-	
-	// TODO: implement
+	// TODO: give each task a begin and end date based on the schedule for each resource
+	// TODO: see how far out the last one is, return that date
 }
