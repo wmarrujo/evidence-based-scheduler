@@ -1,4 +1,4 @@
-import {discreteStatistics} from "@/Probability"
+import {discreteStatistics, cumulativeProbability, percentile} from "@/Probability"
 
 describe("Performance Data", () => {
 	test("Performance Statistics", () => {
@@ -39,5 +39,35 @@ describe("Performance Data", () => {
 		expect(evenStatistics.maximum).toBe(10)
 		expect(evenStatistics.median).toBe(5.5)
 		expect(evenStatistics.mean).toBe(5.5)
+	})
+})
+
+describe("Algorithms", () => {
+	test("Cumulative Probability", () => {
+		const values = [1, 2, 1, 3, 3, 5, 5, 5, 7, 8]
+		
+		expect(cumulativeProbability(values, -1)).toBe(0.0)
+		expect(cumulativeProbability(values, 0)).toBe(0.0)
+		expect(cumulativeProbability(values, 1)).toBe(0.2)
+		expect(cumulativeProbability(values, 2)).toBe(0.3)
+		expect(cumulativeProbability(values, 3)).toBe(0.5)
+		expect(cumulativeProbability(values, 4)).toBe(0.5)
+		expect(cumulativeProbability(values, 5)).toBe(0.8)
+		expect(cumulativeProbability(values, 6)).toBe(0.8)
+		expect(cumulativeProbability(values, 7)).toBe(0.9)
+		expect(cumulativeProbability(values, 7.5)).toBe(0.9)
+		expect(cumulativeProbability(values, 8)).toBe(1.0)
+		expect(cumulativeProbability(values, 9)).toBe(1.0)
+	})
+	
+	test("Percentile", () => {
+		const values = ["a", "b", "b", "b", "c", "c", "d", "e", "e", "f"]
+		
+		expect(percentile(values, 0.00)).toBe("a")
+		expect(percentile(values, 0.05)).toBe("a")
+		expect(percentile(values, 0.10)).toBe("b")
+		expect(percentile(values, 0.90)).toBe("e")
+		expect(percentile(values, 0.95)).toBe("f")
+		expect(percentile(values, 1.00)).toBe("f")
 	})
 })

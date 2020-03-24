@@ -1,4 +1,4 @@
-import {Percentage} from "@/types"
+import {Percentage, Probability} from "@/types"
 
 ////////////////////////////////////////////////////////////////////////////////
 // RANDOMIZATION
@@ -55,9 +55,25 @@ export function discreteStatistics(values: Array<number>): DiscreteStatistics | 
 	}
 }
 
-export function cumulativeProbability<T>(values: Array<T>, value: T): Probability { // given a list of values, it finds at what percentile in that list the value is and returns that (highest occurrence)
+export function cumulativeProbability<T>(values: Array<T>, value: T, compareFunction: (a: T, b: T) => number = (a, b) => a < b ? -1 : a > b ? 1 : 0): Probability { // given a list of values, it finds at what percentile in that list the value is and returns that (highest occurrence)
 	// assumes values are unique, if not, it takes the last one
+	// compare function: if a < b then -1, if a > b then 1, if a = b then 0
+	
+	if (values.length == 0) { // if there are no elements in the list
+		return 0 // there is no value to be before or after, so 0% probability
+	} else {
+		const vs = [...values]
+			.sort(compareFunction)
+			.reverse()
+		
+		const reverseIndex = vs.findIndex(v => compareFunction(v, value) <= 0) // find the first occurrence of the value being less than or equal to the value in the list
+		const index = vs.length - (reverseIndex == -1 ? vs.length : reverseIndex)
+		return index / vs.length
+	}
+}
+
+export function percentile<T>(values: Array<T>, percentile: Percentage): T {
 	// assumes array is sorted
 	
-	// TODO: implement percentile
+	return values[Math.round((values.length-1) * percentile)]
 }
