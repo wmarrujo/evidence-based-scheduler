@@ -8,14 +8,3 @@ export class ValidationError extends Error {
 		this.name = "ValidationError"
 	}
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// PARSE ERROR
-////////////////////////////////////////////////////////////////////////////////
-
-export class ParseError extends Error {
-	constructor(message: string | undefined) {
-		super(message)
-		this.name = "ParseError"
-	}
-}
