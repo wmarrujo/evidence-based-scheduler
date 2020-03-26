@@ -10,15 +10,27 @@ const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sep
 export class Schedule { // schedule for a resource
 	#generator: (date: DateTime) => Array<Period>
 	
-	constructor(ruleStrings: Array<ScheduleRuleString>) {
+	constructor(ruleStrings: Array<ScheduleRuleString>, today: DateTime = DateTime.local()) {
 		const rules = ruleStrings.map(makeRule).reverse()
-		// TODO: ensure that the task has at least some time when it is available (at least one include that isn't overridden)
+		
 		this.#generator = (date: DateTime): Array<Period> => {
 			for (const rule of rules) { // for each rule in backwards order
 				const periods = rule(date) // evaluate to either an periods amount or undefined
 				if (periods) return periods // if it matched and gave back periods, return those & stop evaluating the rules
 			}
 			return [] // if none of the rules matched
+		}
+		
+		// make sure that at least one day is defined within the next year, if not, it's probably wrong
+		let oneDayIsDefined = false
+		for (let d = today; d < today.plus({year: 1}); d = d.plus({days: 1})) {
+			if (this.#generator(d).length != 0) { // if there is a day with periods
+				oneDayIsDefined = true // mark it as true
+				break // get out of the loop
+			}
+		}
+		if (!oneDayIsDefined) {
+			throw new ValidationError(`In defining the schedule, no work days were found within a year after ${today}, check that you have defined your rules correctly`)
 		}
 	}
 	
@@ -69,7 +81,7 @@ export function getNextWorkDayFrom(date: DateTime, generator: (date: DateTime) =
 	let periods = generator(d)
 	
 	while (periods.length == 0) { // check dates until it finds one with some work time scheduled
-		d.plus({days: 1}) // increment to the next day
+		d = d.plus({days: 1}) // increment to the next day
 		periods = generator(d) // find the periods for that day
 	}
 	

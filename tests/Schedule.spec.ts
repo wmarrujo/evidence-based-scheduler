@@ -1,7 +1,7 @@
-import {makeRule, makePeriodsOnDate} from "@/Schedule"
+import {makeRule, makePeriodsOnDate, Schedule, getNextWorkDayFrom} from "@/Schedule"
 import {DateTime} from "luxon"
 
-describe("Schedule Rule Making", () => {
+describe("Schedule Rule Evaluation", () => {
 	describe("Rule Evaluation", () => {
 		const times = [{from: {hour: 9, minute: 0}, to: {hour: 17, minute: 0}}]
 		
@@ -244,5 +244,55 @@ describe("Schedule Rule Making", () => {
 			expect(sundayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(sundayRule(DateTime.fromISO("2020-02-16"))).toEqual([]) // sunday
 		})
+	})
+})
+
+describe("Schedule Evaluation", () => {
+	const schedule = new Schedule(["include from 09:00 to 17:00 every monday"])
+	
+	test("Schedule Output", () => {
+		const from = DateTime.fromISO("2020-03-25") // a wednesday
+		const to = DateTime.fromISO("2020-04-08") // two wednesdays later
+		
+		const monday1 = DateTime.fromISO("2020-03-30") // the next monday after the from date
+		const monday2 = DateTime.fromISO("2020-04-06") // the monday after that
+		
+		expect(schedule.periodsInRange(from, to)).toEqual([{begin: monday1.set({hour: 9}), end: monday1.set({hour: 17})}, {begin: monday2.set({hour: 9}), end: monday2.set({hour: 17})}])
+	})
+	
+	test("Next begin date", () => {
+		const monday = DateTime.fromISO("2020-03-30")
+		const wednesday = DateTime.fromISO("2020-04-01")
+		const nextMonday = DateTime.fromISO("2020-04-06")
+		
+		// if it is already in a period
+		expect(schedule.getNextBeginFrom(monday.set({hour: 12})).hasSame(monday.set({hour: 12}), "minute")).toBeTruthy() // should just return the same thing
+		
+		// if it is on a day, but before a period
+		expect(schedule.getNextBeginFrom(monday.set({hour: 5})).hasSame(monday.set({hour: 9}), "minute")).toBeTruthy() // should match that date on the beginning of the period
+		
+		// if it is on a day, but after a period
+		expect(schedule.getNextBeginFrom(monday.set({hour: 19})).hasSame(nextMonday.set({hour: 9}), "minute")).toBeTruthy() // should match the next work day's first period
+		
+		// if it has to find the next day
+		expect(schedule.getNextBeginFrom(wednesday).hasSame(nextMonday.set({hour: 9}), "minute")).toBeTruthy() // should match the next work day's first period
+	})
+	
+	test("Next end date", () => {
+		const monday = DateTime.fromISO("2020-03-30")
+		const wednesday = DateTime.fromISO("2020-04-01")
+		const nextMonday = DateTime.fromISO("2020-04-06")
+		
+		// if it is already in a period
+		expect(schedule.getNextEndFrom(monday.set({hour: 12})).hasSame(monday.set({hour: 17}), "minute")).toBeTruthy() // should just return the end of that period
+		
+		// if it is on a day, but before a period
+		expect(schedule.getNextEndFrom(monday.set({hour: 5})).hasSame(monday.set({hour: 17}), "minute")).toBeTruthy() // should match the end of the next period that day
+		
+		// if it is on a day, but after a period
+		expect(schedule.getNextEndFrom(monday.set({hour: 19})).hasSame(nextMonday.set({hour: 17}), "minute")).toBeTruthy() // should match the next work day's first period end
+		
+		// if it has to find the next day
+		expect(schedule.getNextEndFrom(wednesday).hasSame(nextMonday.set({hour: 17}), "minute")).toBeTruthy() // should match the next work day's first period end
 	})
 })

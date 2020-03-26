@@ -7,9 +7,8 @@ const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, se
 // CLASS
 ////////////////////////////////////////////////////////////////////////////////
 class Schedule {
-    constructor(ruleStrings) {
+    constructor(ruleStrings, today = luxon_1.DateTime.local()) {
         const rules = ruleStrings.map(makeRule).reverse();
-        // TODO: ensure that the task has at least some time when it is available (at least one include that isn't overridden)
         this.#generator = (date) => {
             for (const rule of rules) { // for each rule in backwards order
                 const periods = rule(date); // evaluate to either an periods amount or undefined
@@ -18,6 +17,17 @@ class Schedule {
             }
             return []; // if none of the rules matched
         };
+        // make sure that at least one day is defined within the next year, if not, it's probably wrong
+        let oneDayIsDefined = false;
+        for (let d = today; d < today.plus({ year: 1 }); d = d.plus({ days: 1 })) {
+            if (this.#generator(d).length != 0) { // if there is a day with periods
+                oneDayIsDefined = true; // mark it as true
+                break; // get out of the loop
+            }
+        }
+        if (!oneDayIsDefined) {
+            throw new Error_1.ValidationError(`In defining the schedule, no work days were found within a year after ${today}, check that you have defined your rules correctly`);
+        }
     }
     #generator;
     periodsInRange(from, to) {
@@ -63,7 +73,7 @@ function getNextWorkDayFrom(date, generator) {
     let d = date.startOf("day");
     let periods = generator(d);
     while (periods.length == 0) { // check dates until it finds one with some work time scheduled
-        d.plus({ days: 1 }); // increment to the next day
+        d = d.plus({ days: 1 }); // increment to the next day
         periods = generator(d); // find the periods for that day
     }
     return d;

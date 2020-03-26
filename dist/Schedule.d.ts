@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { ScheduleRuleString, ISODateString } from "@/types";
 export declare class Schedule {
     #private;
-    constructor(ruleStrings: Array<ScheduleRuleString>);
+    constructor(ruleStrings: Array<ScheduleRuleString>, today?: DateTime);
     periodsInRange(from: DateTime, to: DateTime): Array<Period>;
     getNextBeginFrom(date: DateTime): DateTime;
     getNextEndFrom(date: DateTime): DateTime;
