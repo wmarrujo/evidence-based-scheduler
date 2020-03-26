@@ -1,4 +1,5 @@
-export type ISODateString = string
+export type ISODateString = string // YYYY-MM-DD
+export type ISODateTimeString = string // YYYY-MM-DDThh:mm:ss±hh:mm
 export type TaskIdentifier = string
 export type ResourceIdentifier = string
 export type ScheduleRuleString = string

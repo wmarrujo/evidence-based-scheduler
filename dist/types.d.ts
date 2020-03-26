@@ -1,4 +1,5 @@
 export declare type ISODateString = string;
+export declare type ISODateTimeString = string;
 export declare type TaskIdentifier = string;
 export declare type ResourceIdentifier = string;
 export declare type ScheduleRuleString = string;

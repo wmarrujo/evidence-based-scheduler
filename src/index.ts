@@ -1,7 +1,7 @@
 import "module-alias/register"
 
 import {DateTime} from "luxon"
-import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier} from "@/types"
+import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, ISODateTimeString} from "@/types"
 import {Task, Group, internalizeTasks} from "@/Task"
 import {Schedule, Period} from "@/Schedule"
 import {Performance} from "@/Performance"
@@ -26,6 +26,7 @@ export class Project {
 	#performances: Record<ResourceIdentifier, Performance>
 	snapshots: Record<ISODateString, Record<Probability, ISODateString>>
 	#simulations: Array<DateTime> | undefined // cached last simulation
+	#taskSchedule: Array<ScheduledTask> | undefined // chached last schedule build
 	
 	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, accuracies: Record<ResourceIdentifier, Array<Accuracy>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
 		this.name = name
@@ -50,6 +51,20 @@ export class Project {
 	
 	get start(): string { // get the start date as an ISO string
 		return this.#start.toISODate()
+	}
+	
+	get taskSchedule(): Array<{task: Task, begin: ISODateTimeString, end: ISODateTimeString}> {
+		if (!this.#taskSchedule) { // if task schedule hasn't been generated yet
+			this.#taskSchedule = scheduleTasks(this.#tasks, this.#start, this.#schedules) // generate schedule assuming prediction accuracy = 1
+		}
+		return this.#taskSchedule
+			.map(scheduledTask => {
+				return {
+					task: this.tasks.find(task => task.identifier == scheduledTask.task)!, // get the actual task
+					begin: scheduledTask.begin.toISO(),
+					end: scheduledTask.end.toISO()
+				}
+			})
 	}
 	
 	// TODO: don't allow access directly to tasks & groups, instead have getters & setters that reset the simulations & re-check the resources & stuff

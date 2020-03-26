@@ -39,9 +39,23 @@ class Project {
     #schedules;
     #performances;
     #simulations; // cached last simulation
+    #taskSchedule; // chached last schedule build
     // GETTERS
     get start() {
         return this.#start.toISODate();
+    }
+    get taskSchedule() {
+        if (!this.#taskSchedule) { // if task schedule hasn't been generated yet
+            this.#taskSchedule = scheduleTasks(this.#tasks, this.#start, this.#schedules); // generate schedule assuming prediction accuracy = 1
+        }
+        return this.#taskSchedule
+            .map(scheduledTask => {
+            return {
+                task: this.tasks.find(task => task.identifier == scheduledTask.task),
+                begin: scheduledTask.begin.toISO(),
+                end: scheduledTask.end.toISO()
+            };
+        });
     }
     // TODO: don't allow access directly to tasks & groups, instead have getters & setters that reset the simulations & re-check the resources & stuff
     // SETTERS
