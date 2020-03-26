@@ -1,7 +1,7 @@
 import {DateTime} from "luxon"
-import {ScheduleRuleString, Hours, ISODateString} from "@/types"
+import {ScheduleRuleString, ISODateString} from "@/types"
 import {ValidationError} from "@/Error"
-const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1} = require("arcsecond") // TODO: wait for this library to add typescript support
+const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly} = require("arcsecond") // TODO: wait for this library to add typescript support
 
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
@@ -10,16 +10,26 @@ const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sep
 export class Schedule { // schedule for a resource
 	#generator: (date: DateTime) => Array<Period>
 	
-	constructor(rules: Array<ScheduleRuleString>) {
-		const ruleEvaluators = rules.map(makeRule).reverse()
+	constructor(ruleStrings: Array<ScheduleRuleString>) {
+		const rules = ruleStrings.map(makeRule).reverse()
 		// TODO: ensure that the task has at least some time when it is available (at least one include that isn't overridden)
 		this.#generator = (date: DateTime): Array<Period> => {
-			for (const ruleEvaluator of ruleEvaluators) { // for each rule in backwards order
-				const periods = ruleEvaluator(date) // evaluate to either an periods amount or undefined
+			for (const rule of rules) { // for each rule in backwards order
+				const periods = rule(date) // evaluate to either an periods amount or undefined
 				if (periods) return periods // if it matched and gave back periods, return those & stop evaluating the rules
 			}
 			return [] // if none of the rules matched
 		}
+	}
+	
+	periodsInRange(from: DateTime, to: DateTime): Array<Period> { // return a big list of periods for all periods between 2 dates
+		const periods = []
+		
+		for (let d = from; d < to; d = d.plus({days: 1})) {
+			periods.push(this.#generator(d))
+		}
+		
+		return periods.flat()
 	}
 	
 	getNextBeginFrom(date: DateTime): DateTime { // get the next available begin date from a certain time, return the same date if possible, inclusive
@@ -54,13 +64,15 @@ export class Schedule { // schedule for a resource
 	}
 }
 
-function getNextWorkDayFrom(date: DateTime, generator: (date: DateTime) => Array<Period>): DateTime {
+export function getNextWorkDayFrom(date: DateTime, generator: (date: DateTime) => Array<Period>): DateTime {
 	let d = date.startOf("day")
 	let periods = generator(d)
+	
 	while (periods.length == 0) { // check dates until it finds one with some work time scheduled
 		d.plus({days: 1}) // increment to the next day
 		periods = generator(d) // find the periods for that day
 	}
+	
 	return d
 }
 
@@ -90,32 +102,30 @@ _ = ( " " | "\n" | "\t" | "\r" )+
 
 // PARSER
 
-const spacing = sequenceOf([whitespace, optionalWhitespace]) // at least one space
-const ordinal = choice(["weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(str))
-const duration = choice(["year", "month", "week", "day"].map(str)) // TODO: add s appending
+export const spacing = sequenceOf([whitespace, optionalWhitespace]) // at least one space
+export const ordinal = choice(["weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(str))
+export const duration = sequenceOf([choice(["year", "month", "week", "day"].map(str)), possibly(char("s"))])
+	.map((result: string) => result[0].concat(result[1] ? "s" : "")) // make it plural if it's not
 
-const float = choice([
-	sequenceOf([many1(digit), char("."), many1(digit)]),
-	many1(digit)
-])
-	.map((result: any) => Number(result.flat(Infinity).join("")))
+export const num = sequenceOf([many1(digit), possibly(sequenceOf([char("."), many1(digit)]))])
+	.map((result: any) => Number(result.flat(Infinity).filter((s: any) => s != null).join("")))
 
-const time = sequenceOf([digit, digit, char(";"), digit, digit])
+export const time = sequenceOf([digit, digit, char(":"), digit, digit])
 	.map((result: any) => ({hour: Number(result.slice(0, 2).join("")), minute: Number(result.slice(3).join(""))}))
 
-const date = sequenceOf([digit, digit, digit, digit, char("-"), digit, digit, char("-"), digit, digit])
+export const date = sequenceOf([digit, digit, digit, digit, char("-"), digit, digit, char("-"), digit, digit])
 	.map((result: any) => result.join("")) // turn it into a single date string
 
-const times = sequenceOf([str("from"), spacing, time, spacing, str("to"), spacing, time])
+export const times = sequenceOf([str("from"), spacing, time, spacing, str("to"), spacing, time])
 	.map((result: any) => ({from: result[2], to: result[6]}))
 
-const occurrence = choice([
+export const occurrence = choice([
 	sequenceOf([str("on"), spacing, date])
 		.map((result: any) => ({on: result[2]})),
 	sequenceOf([str("from"), spacing, date, spacing, choice([
 		sequenceOf([str("to"), spacing, date])
 			.map((result: any) => ({to: result[2]})),
-		sequenceOf([str("for"), spacing, float, spacing, duration, spacing, str("every"), spacing, float, spacing, duration])
+		sequenceOf([str("for"), spacing, num, spacing, duration, spacing, str("every"), spacing, num, spacing, duration])
 			.map((result: any) => ({forValue: result[2], forUnit: result[4], repeatValue: result[8], repeatUnit: result[10]}))
 	])
 	])
@@ -124,7 +134,7 @@ const occurrence = choice([
 		.map((result: any) => ({every: result[2]}))
 ])
 
-const rule = sequenceOf([
+export const rule = sequenceOf([
 	choice([
 		str("exclude")
 			.map((_: any) => ({})),
@@ -140,29 +150,34 @@ const rule = sequenceOf([
 // PARSING
 
 export function parseRule(ruleString: ScheduleRuleString): ScheduleRuleParts {
-	const result = rule.run(ruleString)
+	const result = rule.run(ruleString.toLowerCase())
 	// TODO: put in error handling
+	if (result.isError) { // an error occurred
+		// TODO: print out better error
+		throw new Error(`${result.error} in string "${ruleString}"`)
+	}
 	return result.result
 }
 
 // INTERMEDIATE TYPES
 
-type Time = {hour: number, minute: number}
-type Times = Array<{from: Time, to: Time}>
+export type OrdinalUnit = "years" | "months" | "weeks" | "days"
+export type Time = {hour: number, minute: number}
+export type Times = Array<{from: Time, to: Time}>
 
-interface ScheduleRuleParts {
+export interface ScheduleRuleParts {
 	times: undefined | Times, // tells you include vs exclude
 	on: undefined | ISODateString,
 	from: undefined | ISODateString,
 	to: undefined | ISODateString
 	forValue: undefined | number
-	forUnit: undefined | string,
+	forUnit: undefined | OrdinalUnit,
 	repeatValue: undefined | number,
-	repeatUnit: undefined | string,
+	repeatUnit: undefined | OrdinalUnit,
 	every: undefined | string
 }
 
-function validateTimes(times: Times): void {
+export function validateTimes(times: Times): void {
 	times.forEach(time => {
 		validateTime(time.from)
 		validateTime(time.to)
@@ -172,7 +187,7 @@ function validateTimes(times: Times): void {
 	})
 }
 
-function validateTime(time: Time): void {
+export function validateTime(time: Time): void {
 	if (24 < time.hour || (time.hour == 24 && 0 < time.minute) || 60 <= time.minute) { // if hour is > 24 (allowing 24:00), or minute is >= 60
 		throw new ValidationError(`Time entered is not a valid time: "${("0" + time.hour).slice(-2)}:${("0" + time.minute).slice(-2)}"`)
 	}
@@ -181,7 +196,7 @@ function validateTime(time: Time): void {
 // RULE MAKING
 
 export function makeRule(ruleString: ScheduleRuleString): ScheduleRule {
-	const ruleParts = parseRule(ruleString.toLowerCase())
+	const ruleParts = parseRule(ruleString)
 	
 	const times = ruleParts.times || []
 	validateTimes(times)
@@ -211,14 +226,14 @@ export function makeRule(ruleString: ScheduleRuleString): ScheduleRule {
 
 // POSSIBLE RULE FUNCTIONS (GENERATORS FOR THOSE RULES)
 
-interface Period {
+export interface Period {
 	begin: DateTime,
 	end: DateTime
 }
 
-type ScheduleRule = (date: DateTime) => Array<Period> | undefined // a function which will either give you the periods of time on this day which are included (or if none are: []), or tell you that this rule doesn't apply (undefined)
+export type ScheduleRule = (date: DateTime) => Array<Period> | undefined // a function which will either give you the periods of time on this day which are included (or if none are: []), or tell you that this rule doesn't apply (undefined)
 
-function makePeriodsOnDate(date: DateTime, times: Times): Array<Period> {
+export function makePeriodsOnDate(date: DateTime, times: Times): Array<Period> {
 	return times.map(time => {
 		return {
 			begin: date.set({hour: time.from.hour, minute: time.from.minute}),
@@ -227,28 +242,25 @@ function makePeriodsOnDate(date: DateTime, times: Times): Array<Period> {
 	})
 }
 
-function dateRule(on: DateTime, times: Times = []): ScheduleRule {
-	return (date: DateTime) => date == on ? makePeriodsOnDate(date, times) : undefined
+export function dateRule(on: DateTime, times: Times = []): ScheduleRule {
+	return (date: DateTime) => date.hasSame(on, "day") ? makePeriodsOnDate(date, times) : undefined
 }
 
-function fromToRule(from: DateTime, to: DateTime, times: Times = []): ScheduleRule {
-	return (date: DateTime) => from <= date || date <= to ? makePeriodsOnDate(date, times) : undefined
+export function fromToRule(from: DateTime, to: DateTime, times: Times = []): ScheduleRule {
+	return (date: DateTime) => from <= date.startOf("day") && date.startOf("day") <= to ? makePeriodsOnDate(date, times) : undefined
 }
 
-function fromForRepeatRule(from: DateTime, forValue: number, forUnit: string, repeatValue: number, repeatUnit: string, times: Times = []): ScheduleRule {
-	const forPluralUnit = forUnit.concat(forUnit.endsWith("s") ? "" : "s")
-	const repeatPluralUnit = repeatUnit.concat(repeatUnit.endsWith("s") ? "" : "s") as "years" | "months" | "weeks" | "days"
-	
+export function fromForRepeatRule(from: DateTime, forValue: number, forUnit: OrdinalUnit, repeatValue: number, repeatUnit: OrdinalUnit, times: Times = []): ScheduleRule {
 	return (date: DateTime) => {
-		const periodsAway = Math.floor(date.diff(from, repeatPluralUnit)[repeatPluralUnit] / repeatValue) * repeatValue // how many periods is the date away from the fromDate?
-		const beginDate = from.plus({[repeatPluralUnit]: periodsAway}) // go to that many periods away, just before the date
-		const endDate = beginDate.plus({[forPluralUnit]: forValue}) // that many periods away, just before the date to potentially just after
+		const periodsAway = Math.floor(date.diff(from, repeatUnit)[repeatUnit] / repeatValue) * repeatValue // how many periods is the date away from the fromDate?
+		const beginDate = from.plus({[repeatUnit]: periodsAway}).startOf("day") // go to that many periods away, just before the date
+		const endDate = beginDate.plus({[forUnit]: forValue}).startOf("day") // that many periods away, just before the date to potentially just after
 		
-		return beginDate <= date && date <= endDate ? makePeriodsOnDate(date, times) : undefined
+		return beginDate <= date.startOf("day") && date.startOf("day") <= endDate ? makePeriodsOnDate(date, times) : undefined
 	}
 }
 
-function everyRule(every: string, times: Times = []): ScheduleRule {
+export function everyRule(every: string, times: Times = []): ScheduleRule {
 	if (every == "day") {
 		return (date: DateTime) => makePeriodsOnDate(date, times)
 	} else if (every == "weekday") {

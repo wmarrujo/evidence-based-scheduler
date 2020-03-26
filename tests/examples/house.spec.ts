@@ -29,11 +29,11 @@ const project = new Project(
 		new Group("G4", "Furnishing", ["T10", "T11", "T12"])
 	],
 	{ // schedules
-		"Architect": ["include 8 hours every weekday"],
-		"Carpenter": ["include 5 hours every weekday", "exclude every friday"],
-		"Painter": ["include 10 hours every weekday", "exclude every monday"],
-		"Decorator": ["include 8 hours every weekday"],
-		"Inspector": ["include 2 hours every thursday"]
+		"Architect": ["include from 09:00 to 17:00 every weekday"],
+		"Carpenter": ["include from 12:00 to 17:00 every weekday", "exclude every friday"],
+		"Painter": ["include from 08:00 to 18:00 every weekday", "exclude every monday"],
+		"Decorator": ["include from 09:00 to 17:00 every weekday"],
+		"Inspector": ["include from 15:00 to 17:00 every thursday"]
 	},
 	{ // velocities
 		"Architect": [0.9, 0.85, 1.1, 0.95, 0.9],

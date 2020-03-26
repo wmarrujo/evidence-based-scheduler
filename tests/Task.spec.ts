@@ -14,7 +14,7 @@ describe("Task & Group Structure", () => {
 		expect(defaultTask.prediction).toBe(3)
 		expect(defaultTask.actual).toBe(0)
 		expect(defaultTask.done).toBe(false)
-		expect(defaultTask.velocity).toBeUndefined()
+		expect(defaultTask.accuracy).toBeUndefined()
 		
 		// Test task specifics
 		const specificTask = new Task("T2", "Task 2", "Person 2", 4, [defaultTask.identifier], 3, true, "description")
@@ -27,7 +27,7 @@ describe("Task & Group Structure", () => {
 		expect(specificTask.prediction).toBe(4)
 		expect(specificTask.actual).toBe(3)
 		expect(specificTask.done).toBe(true)
-		expect(specificTask.velocity).toBe(3/4)
+		expect(specificTask.accuracy).toBe(3/4)
 	})
 	
 	test("Group Definition", () => {

@@ -1,14 +1,16 @@
+import "module-alias/register"
+
 import {DateTime} from "luxon"
-import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, Hours} from "@/types"
+import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier} from "@/types"
 import {Task, Group, internalizeTasks} from "@/Task"
-import {Schedule} from "@/Schedule"
+import {Schedule, Period} from "@/Schedule"
 import {Performance} from "@/Performance"
 import {cumulativeProbability} from "@/Probability"
 
 // RE-EXPORTS
 
 export {Task, Group} from "@/Task" // so the user can make tasks & groups to add to the project
-export {ValidationError, ParseError} from "@/Error" // so the user can check for the proper error type
+export {ValidationError} from "@/Error" // so the user can check for the proper error type
 
 ////////////////////////////////////////////////////////////////////////////////
 // PROJECT OBJECT
@@ -82,6 +84,16 @@ export class Project {
 		
 		return cumulativeProbability(this.#simulations, date)
 	}
+	
+	scheduleInRangeForResource(resource: ResourceIdentifier, fromString: ISODateString, toString: ISODateString): Array<Period> { // returns the list of events
+		const schedule = this.#schedules[resource]
+		
+		const from = DateTime.fromISO(fromString)
+		const to = DateTime.fromISO(toString)
+		// TODO: date validation
+		
+		return schedule.periodsInRange(from, to)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,9 +102,12 @@ export class Project {
 
 function monteCarloSimulations(tasks: Array<Task>, performances: Record<ResourceIdentifier, Performance>, schedules: Record<ResourceIdentifier, Schedule>, iterations: number): Array<DateTime> { // get many simulated possible end dates for the task list
 	const dates = []
+	process.stdout.write("\rsimulations: 0")
 	for (let i = 0; i <= iterations; i++) { // do 1000 simulations
 		dates.push(simulateTaskList(tasks, performances, schedules)) // simulate one potential schedule
+		process.stdout.write(`\rsimulations: ${i}`)
 	}
+	process.stdout.write("\n")
 	return dates
 }
 
@@ -142,13 +157,13 @@ function scheduleTasks(tasks: Array<Task>, from: DateTime, schedules: Record<Res
 		let t = unscheduledTasks.shift()! // pop off the stack the task we're scheduling (modify this object)
 		
 		// find task begin date
-		t.begin = schedules[task.identifier].getNextBeginFrom(t.begin) // set the begin date to the next available from the current date
+		t.begin = schedules[task.resource].getNextBeginFrom(t.begin) // set the begin date to the next available from the current date
 		for (let s = 0; s < scheduledTasks.length; s++) { // go through list of already scheduled tasks
 			const st = scheduledTasks[s]
 			const scheduledTask = taskReference[st.task]
 			if (scheduledTask.resource == task.resource && st.begin <= t.begin && t.begin < st.end) { // if the task will overlap on the resource with a previously scheduled task
 				t.begin = st.end // set the task to start after the end of the conflicting task
-				t.begin = schedules[task.identifier].getNextBeginFrom(t.begin) // check if this is valid, if not move to the next valid time & check again with other scheduled tasks
+				t.begin = schedules[task.resource].getNextBeginFrom(t.begin) // check if this is valid, if not move to the next valid time & check again with other scheduled tasks
 				s = 0 // check them all again, since scheduling might be weird
 			}
 		}
@@ -157,7 +172,7 @@ function scheduleTasks(tasks: Array<Task>, from: DateTime, schedules: Record<Res
 		t.end = t.begin // set the end to at least be >= the begin date
 		let hoursLeft = task.done ? task.actual : (task.prediction * (accuracies[task.identifier] || 1)) // how many hours do we have to do work on
 		while (hoursLeft != 0) { // until we've worked all hours
-			const nextEnd = schedules[task.identifier].getNextEndFrom(t.end) // find the next time we'll have to stop working on this task
+			const nextEnd = schedules[task.resource].getNextEndFrom(t.end) // find the next time we'll have to stop working on this task
 			const hoursUntilNextEnd = nextEnd.diff(t.end, "hours").hours // get the hours until the next time work ends
 			const hoursPotentiallyWorked = Math.min(hoursLeft, hoursUntilNextEnd) // get the maximum hours it can add by that time
 			if (hoursPotentiallyWorked == hoursUntilNextEnd) { // if we worked until the next end
