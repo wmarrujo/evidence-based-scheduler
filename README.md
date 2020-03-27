@@ -1,4 +1,4 @@
-# quod-schedule-fundatur
+# evidence-based-scheduler
 
 Evidence-based Scheduler & Predictor
 
@@ -35,7 +35,7 @@ Task groups are simply groupings for multiple tasks. The scheduler uses groups t
 The availability of the resources. Each resource's schedule is determined by a set of rules of the form:
 
 ```
-(include NUMBER hours | exclude) ( on DATE | from DATE to DATE | from DATE for NUMBER DURATION every NUMBER DURATION | every ORDINAL)
+( include NUMBER hours | exclude ) ( on DATE | from DATE to DATE | from DATE for NUMBER DURATION every NUMBER DURATION | every ORDINAL)
 
 where
 NUMBER is a plain number

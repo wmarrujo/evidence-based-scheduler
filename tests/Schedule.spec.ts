@@ -276,6 +276,9 @@ describe("Schedule Evaluation", () => {
 		
 		// if it has to find the next day
 		expect(schedule.getNextBeginFrom(wednesday).hasSame(nextMonday.set({hour: 9}), "minute")).toBeTruthy() // should match the next work day's first period
+		
+		// if it is at the end of a period
+		expect(schedule.getNextBeginFrom(monday.set({hour: 17})).hasSame(nextMonday.set({hour: 9}), "minute")).toBeTruthy() // should find the next period, not this same time
 	})
 	
 	test("Next end date", () => {
