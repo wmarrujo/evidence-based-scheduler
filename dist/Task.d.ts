@@ -1,4 +1,4 @@
-import { TaskIdentifier, ResourceIdentifier } from "@/types";
+import { TaskIdentifier, ResourceIdentifier } from "./types";
 export declare class Task {
     identifier: TaskIdentifier;
     name: string;

@@ -17,13 +17,13 @@ const project = new Project(
 		new Task("T7", "Paint Kitchen", "Painter", 5, ["T2"]),
 		new Task("T8", "Paint Bathroom", "Painter", 3, ["T2"]),
 		new Task("T9", "Paint Bedroom", "Painter", 5, ["T2"]),
-		new Task("T10", "Furnish Kitchen", "Painter", 4, ["T7", "G2"]),
-		new Task("T11", "Furnish Bathroom", "Painter", 3, ["T8", "G2"]),
-		new Task("T12", "Furnish Bedroom", "Painter", 4, ["T9", "G2"]),
+		new Task("T10", "Furnish Kitchen", "Designer", 4, ["T7", "G2"]),
+		new Task("T11", "Furnish Bathroom", "Designer", 3, ["T8", "G2"]),
+		new Task("T12", "Furnish Bedroom", "Designer", 4, ["T9", "G2"]),
 		new Task("T13", "Final Inspection", "Inspector", 5, ["G4"])
 	],
 	[ // groups list
-		new Group("G1", "Design", ["T1"]),
+		new Group("G1", "Design", ["T1", "T6"]),
 		new Group("G2", "Build Structure", ["T2", "T3", "T4"]),
 		new Group("G3", "Painting", ["T7", "T8", "T9"]),
 		new Group("G4", "Furnishing", ["T10", "T11", "T12"])

@@ -35,8 +35,7 @@
     },
     "dependencies": {
         "arcsecond": "^2.0.4",
-        "luxon": "^1.22.0",
-        "module-alias": "^2.2.2"
+        "luxon": "^1.22.0"
     },
     "_moduleAliases": {
         "@": "dist"

@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
-import { ScheduleRuleString, ISODateString } from "@/types";
+import { ScheduleRuleString, ISODateString } from "./types";
 export declare class Schedule {
-    #private;
+    private _generator;
     constructor(ruleStrings: Array<ScheduleRuleString>, today?: DateTime);
     periodsInRange(from: DateTime, to: DateTime): Array<Period>;
     getNextBeginFrom(date: DateTime): DateTime;

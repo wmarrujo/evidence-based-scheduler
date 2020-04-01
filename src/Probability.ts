@@ -1,4 +1,4 @@
-import {Percentage, Probability} from "@/types"
+import {Percentage, Probability} from "./types"
 
 ////////////////////////////////////////////////////////////////////////////////
 // RANDOMIZATION

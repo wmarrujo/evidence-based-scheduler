@@ -1,5 +1,5 @@
-import {TaskIdentifier, ResourceIdentifier} from "@/types"
-import {ValidationError} from "@/Error"
+import {TaskIdentifier, ResourceIdentifier} from "./types"
+import {ValidationError} from "./Error"
 
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS

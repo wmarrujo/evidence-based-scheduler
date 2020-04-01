@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const luxon_1 = require("luxon");
-const Error_1 = require("@/Error");
+const Error_1 = require("./Error");
 const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly } = require("arcsecond"); // TODO: wait for this library to add typescript support
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
@@ -9,7 +9,7 @@ const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, se
 class Schedule {
     constructor(ruleStrings, today = luxon_1.DateTime.local()) {
         const rules = ruleStrings.map(makeRule).reverse();
-        this.#generator = (date) => {
+        this._generator = (date) => {
             for (const rule of rules) { // for each rule in backwards order
                 const periods = rule(date); // evaluate to either an periods amount or undefined
                 if (periods)
@@ -20,7 +20,7 @@ class Schedule {
         // make sure that at least one day is defined within the next year, if not, it's probably wrong
         let oneDayIsDefined = false;
         for (let d = today; d < today.plus({ year: 1 }); d = d.plus({ days: 1 })) {
-            if (this.#generator(d).length != 0) { // if there is a day with periods
+            if (this._generator(d).length != 0) { // if there is a day with periods
                 oneDayIsDefined = true; // mark it as true
                 break; // get out of the loop
             }
@@ -29,16 +29,15 @@ class Schedule {
             throw new Error_1.ValidationError(`In defining the schedule, no work days were found within a year after ${today}, check that you have defined your rules correctly`);
         }
     }
-    #generator;
     periodsInRange(from, to) {
         const periods = [];
         for (let d = from; d < to; d = d.plus({ days: 1 })) {
-            periods.push(this.#generator(d));
+            periods.push(this._generator(d));
         }
         return periods.flat();
     }
     getNextBeginFrom(date) {
-        const todayPeriods = this.#generator(date);
+        const todayPeriods = this._generator(date);
         if (todayPeriods.length != 0) { // today has some periods
             const alreadyInPeriod = todayPeriods.find(period => period.begin < date && date < period.end); // try to find a period that it's already in
             if (alreadyInPeriod) { // it found that the date is currently in a work period
@@ -51,20 +50,20 @@ class Schedule {
                 } // else, no more working periods were found this day, continue on to check the next day
             }
         } // no periods on this day, or if `date` didn't work out
-        const nextWorkDay = getNextWorkDayFrom(date.plus({ days: 1 }), this.#generator); // get the next day with periods
-        const periods = this.#generator(nextWorkDay); // get the periods from that day
+        const nextWorkDay = getNextWorkDayFrom(date.plus({ days: 1 }), this._generator); // get the next day with periods
+        const periods = this._generator(nextWorkDay); // get the periods from that day
         return periods[0].begin; // get the beginning of the first period in that day
     }
     getNextEndFrom(date) {
-        const todayPeriods = this.#generator(date);
+        const todayPeriods = this._generator(date);
         if (todayPeriods.length != 0) { // today has some periods
             const periodsEndingLater = todayPeriods.filter(period => date < period.end); // all periods that are ending later than now
             if (periodsEndingLater.length != 0) { // it found a period ending later
                 return periodsEndingLater[0].end; // return that first ending date
             } // it didn't find a period ending later, keep looking
         } // no periods on this day, or if `date didn't work out`
-        const nextWorkDay = getNextWorkDayFrom(date.plus({ days: 1 }), this.#generator); // get the next day with periods
-        const periods = this.#generator(nextWorkDay); // get the periods from that day
+        const nextWorkDay = getNextWorkDayFrom(date.plus({ days: 1 }), this._generator); // get the next day with periods
+        const periods = this._generator(nextWorkDay); // get the periods from that day
         return periods[0].end; // get the ending of the first period in that day
     }
 }

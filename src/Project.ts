@@ -1,11 +1,9 @@
-import "module-alias/register"
-
 import {DateTime} from "luxon"
-import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, ISODateTimeString} from "@/types"
-import {Task, Group, internalizeTasks} from "@/Task"
-import {Schedule, Period} from "@/Schedule"
-import {Performance} from "@/Performance"
-import {cumulativeProbability} from "@/Probability"
+import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, ISODateTimeString} from "./types"
+import {Task, Group, internalizeTasks} from "./Task"
+import {Schedule, Period} from "./Schedule"
+import {Performance} from "./Performance"
+import {cumulativeProbability} from "./Probability"
 
 ////////////////////////////////////////////////////////////////////////////////
 // PROJECT OBJECT
@@ -13,29 +11,29 @@ import {cumulativeProbability} from "@/Probability"
 
 export class Project {
 	name: string
-	#start: DateTime
+	private _start: DateTime
 	tasks: Array<Task> // store tasks with group references for later viewing
-	#tasks: Array<Task> // store the corresponding internalized tasks list
+	private _tasks: Array<Task> // store the corresponding internalized tasks list
 	groups: Array<Group> // store for later viewing
-	#schedules: Record<ResourceIdentifier, Schedule>
-	#performances: Record<ResourceIdentifier, Performance>
+	private _schedules: Record<ResourceIdentifier, Schedule>
+	private _performances: Record<ResourceIdentifier, Performance>
 	snapshots: Record<ISODateString, Record<Probability, ISODateString>>
-	#simulations: Array<DateTime> | undefined // cached last simulation
-	#taskSchedule: Array<ScheduledTask> | undefined // chached last schedule build
+	private _simulations: Array<DateTime> | undefined // cached last simulation
+	private _taskSchedule: Array<ScheduledTask> | undefined // chached last schedule build
 	
 	constructor(name: string, start: string, tasks: Array<Task>, groups: Array<Group>, schedules: Record<ResourceIdentifier, Array<ScheduleRuleString>>, accuracies: Record<ResourceIdentifier, Array<Accuracy>> = {}, snapshots: Record<ISODateString, Record<Probability, ISODateString>> = {}) {
 		this.name = name
-		this.#start = DateTime.fromISO(start)
+		this._start = DateTime.fromISO(start)
 		this.tasks = tasks
-		this.#tasks = internalizeTasks(tasks, groups)
+		this._tasks = internalizeTasks(tasks, groups)
 		this.groups = groups
 		// TODO: ensure there are schedules for each resource
-		this.#schedules = Object.keys(schedules).reduce((newSchedules, resource) => {
+		this._schedules = Object.keys(schedules).reduce((newSchedules, resource) => {
 			newSchedules[resource] = new Schedule(schedules[resource])
 			return newSchedules
 		}, {} as Record<ResourceIdentifier, Schedule>)
 		// TODO: ensure there are performances for each resource
-		this.#performances = Object.keys(accuracies).reduce((newPerformances, resource) => {
+		this._performances = Object.keys(accuracies).reduce((newPerformances, resource) => {
 			newPerformances[resource] = new Performance(accuracies[resource])
 			return newPerformances
 		}, {} as Record<ResourceIdentifier, Performance>)
@@ -45,14 +43,14 @@ export class Project {
 	// GETTERS
 	
 	get start(): string { // get the start date as an ISO string
-		return this.#start.toISODate()
+		return this._start.toISODate()
 	}
 	
 	get taskSchedule(): Array<{task: Task, begin: ISODateTimeString, end: ISODateTimeString}> {
-		if (!this.#taskSchedule) { // if task schedule hasn't been generated yet
-			this.#taskSchedule = scheduleTasks(this.#tasks, this.#start, this.#schedules) // generate schedule assuming prediction accuracy = 1
+		if (!this._taskSchedule) { // if task schedule hasn't been generated yet
+			this._taskSchedule = scheduleTasks(this._tasks, this._start, this._schedules) // generate schedule assuming prediction accuracy = 1
 		}
-		return this.#taskSchedule
+		return this._taskSchedule
 			.map(scheduledTask => {
 				return {
 					task: this.tasks.find(task => task.identifier == scheduledTask.task)!, // get the actual task
@@ -67,7 +65,7 @@ export class Project {
 	// SETTERS
 	
 	set start(date: string) {
-		this.#start = DateTime.fromISO(date)
+		this._start = DateTime.fromISO(date)
 	}
 	
 	// MODIFIERS
@@ -84,19 +82,19 @@ export class Project {
 	probabilityOfEndingOnDate(dateString: ISODateString): Probability { // returns a function that when asked about ending on a certain date it gives a certain probability
 		const date = DateTime.fromISO(dateString)
 		
-		if (!this.#simulations) { // if simulations have been done
+		if (!this._simulations) { // if simulations have been done
 			// run simulations
-			const simulationDates = monteCarloSimulations(this.#tasks, this.#performances, this.#schedules, 1000)
+			const simulationDates = monteCarloSimulations(this._tasks, this._performances, this._schedules, 1000)
 			
 			// cache simulation
-			this.#simulations = simulationDates
+			this._simulations = simulationDates
 		}
 		
-		return cumulativeProbability(this.#simulations, date)
+		return cumulativeProbability(this._simulations, date)
 	}
 	
 	scheduleInRangeForResource(resource: ResourceIdentifier, fromString: ISODateString, toString: ISODateString): Array<Period> { // returns the list of events
-		const schedule = this.#schedules[resource]
+		const schedule = this._schedules[resource]
 		
 		const from = DateTime.fromISO(fromString)
 		const to = DateTime.fromISO(toString)

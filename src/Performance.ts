@@ -1,5 +1,5 @@
-import {Accuracy} from "@/types"
-import {randomEntry, discreteStatistics, DiscreteStatistics} from "@/Probability"
+import {Accuracy} from "./types"
+import {randomEntry, discreteStatistics, DiscreteStatistics} from "./Probability"
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPE
