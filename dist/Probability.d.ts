@@ -1,4 +1,4 @@
-import { Percentage, Probability } from "./types";
+import { Percentage, Probability } from "./types/aliases";
 export declare function randomEntry<T>(array: Array<T>): T;
 export interface DiscreteStatistics {
     minimum: number;

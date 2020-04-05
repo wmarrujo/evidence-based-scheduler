@@ -6,3 +6,4 @@ export declare type ScheduleRuleString = string;
 export declare type Probability = number;
 export declare type Percentage = number;
 export declare type Accuracy = number;
+export declare type Hours = number;

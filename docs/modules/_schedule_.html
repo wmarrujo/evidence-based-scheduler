@@ -100,6 +100,7 @@
 								<li class="tsd-kind-variable tsd-parent-kind-module"><a href="_schedule_.html#date" class="tsd-kind-icon">date</a></li>
 								<li class="tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported"><a href="_schedule_.html#digit" class="tsd-kind-icon">digit</a></li>
 								<li class="tsd-kind-variable tsd-parent-kind-module"><a href="_schedule_.html#duration" class="tsd-kind-icon">duration</a></li>
+								<li class="tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported"><a href="_schedule_.html#fail" class="tsd-kind-icon">fail</a></li>
 								<li class="tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported"><a href="_schedule_.html#many1" class="tsd-kind-icon">many1</a></li>
 								<li class="tsd-kind-variable tsd-parent-kind-module"><a href="_schedule_.html#num" class="tsd-kind-icon">num</a></li>
 								<li class="tsd-kind-variable tsd-parent-kind-module"><a href="_schedule_.html#occurrence" class="tsd-kind-icon">occurrence</a></li>
@@ -119,6 +120,7 @@
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#checkrules" class="tsd-kind-icon">check<wbr>Rules</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#daterule" class="tsd-kind-icon">date<wbr>Rule</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#everyrule" class="tsd-kind-icon">every<wbr>Rule</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#fromforrepeatrule" class="tsd-kind-icon">from<wbr>For<wbr>Repeat<wbr>Rule</a></li>
@@ -127,6 +129,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#makeperiodsondate" class="tsd-kind-icon">make<wbr>Periods<wbr>OnDate</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#makerule" class="tsd-kind-icon">make<wbr>Rule</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#parserule" class="tsd-kind-icon">parse<wbr>Rule</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-module tsd-is-not-exported"><a href="_schedule_.html#showtime" class="tsd-kind-icon">show<wbr>Time</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#validatetime" class="tsd-kind-icon">validate<wbr>Time</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_schedule_.html#validatetimes" class="tsd-kind-icon">validate<wbr>Times</a></li>
 							</ul>
@@ -142,7 +145,7 @@
 					<div class="tsd-signature tsd-kind-icon">Ordinal<wbr>Unit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"years"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"months"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"weeks"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"days"</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L176">src/Schedule.ts:176</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L226">src/Schedule.ts:226</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -152,7 +155,7 @@
 					<div class="tsd-signature tsd-kind-icon">Schedule<wbr>Rule<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>date<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DateTime</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_schedule_.period.html" class="tsd-signature-type">Period</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L246">src/Schedule.ts:246</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L304">src/Schedule.ts:304</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -183,7 +186,7 @@
 					<div class="tsd-signature tsd-kind-icon">Time<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>hour<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>minute<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L177">src/Schedule.ts:177</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L228">src/Schedule.ts:228</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -204,7 +207,7 @@
 					<div class="tsd-signature tsd-kind-icon">Times<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>from<span class="tsd-signature-symbol">: </span><a href="_schedule_.html#time" class="tsd-signature-type">Time</a><span class="tsd-signature-symbol">; </span>to<span class="tsd-signature-symbol">: </span><a href="_schedule_.html#time" class="tsd-signature-type">Time</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L178">src/Schedule.ts:178</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L234">src/Schedule.ts:234</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -217,7 +220,7 @@
 					<div class="tsd-signature tsd-kind-icon">char<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -227,17 +230,17 @@
 					<div class="tsd-signature tsd-kind-icon">choice<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="date" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> date</h3>
-					<div class="tsd-signature tsd-kind-icon">date<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([digit, digit, digit, digit, char(&quot;-&quot;), digit, digit, char(&quot;-&quot;), digit, digit]).map((result: any) &#x3D;&gt; result.join(&quot;&quot;))</span></div>
+					<div class="tsd-signature tsd-kind-icon">date<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([digit, digit, digit, digit, char(&quot;-&quot;), digit, digit, char(&quot;-&quot;), digit, digit]).map((result: any) &#x3D;&gt; result.join(&quot;&quot;)) // turn it into a single date string.errorChain(() &#x3D;&gt; fail(&quot;expected a date in the form \&quot;YYYY-MM-DD\&quot;&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L128">src/Schedule.ts:128</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L177">src/Schedule.ts:177</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -247,17 +250,27 @@
 					<div class="tsd-signature tsd-kind-icon">digit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="duration" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> duration</h3>
-					<div class="tsd-signature tsd-kind-icon">duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([choice([&quot;year&quot;, &quot;month&quot;, &quot;week&quot;, &quot;day&quot;].map(str)), possibly(char(&quot;s&quot;))]).map((result: string) &#x3D;&gt; result[0].concat(result[1] ? &quot;s&quot; : &quot;&quot;))</span></div>
+					<div class="tsd-signature tsd-kind-icon">duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([choice([&quot;year&quot;, &quot;month&quot;, &quot;week&quot;, &quot;day&quot;].map(str)), possibly(char(&quot;s&quot;))]).map((result: string) &#x3D;&gt; result[0].concat(result[1] ? &quot;s&quot; : &quot;&quot;)) // make it plural if it&#x27;s not.errorChain(() &#x3D;&gt; fail(&quot;expected one of \&quot;year(s)\&quot;, \&quot;month(s)\&quot;, \&quot;week(s)\&quot;, or \&quot;day(s)\&quot;&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L119">src/Schedule.ts:119</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L165">src/Schedule.ts:165</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+					<a name="fail" class="tsd-anchor"></a>
+					<h3>fail</h3>
+					<div class="tsd-signature tsd-kind-icon">fail<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -267,17 +280,17 @@
 					<div class="tsd-signature tsd-kind-icon">many1<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="num" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> num</h3>
-					<div class="tsd-signature tsd-kind-icon">num<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([many1(digit), possibly(sequenceOf([char(&quot;.&quot;), many1(digit)]))]).map((result: any) &#x3D;&gt; Number(result.flat(Infinity).filter((s: any) &#x3D;&gt; s !&#x3D; null).join(&quot;&quot;)))</span></div>
+					<div class="tsd-signature tsd-kind-icon">num<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([many1(digit), possibly(sequenceOf([char(&quot;.&quot;), many1(digit)]))]).map((result: any) &#x3D;&gt; Number(result.flat(Infinity).filter((s: any) &#x3D;&gt; s !&#x3D; null).join(&quot;&quot;))).errorChain(() &#x3D;&gt; fail(&quot;expected a number&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L122">src/Schedule.ts:122</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L169">src/Schedule.ts:169</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -287,7 +300,7 @@
 					<div class="tsd-signature tsd-kind-icon">occurrence<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = choice([sequenceOf([str(&quot;on&quot;), spacing, date]).map((result: any) &#x3D;&gt; ({on: result[2]})),sequenceOf([str(&quot;from&quot;), spacing, date, spacing, choice([sequenceOf([str(&quot;to&quot;), spacing, date]).map((result: any) &#x3D;&gt; ({to: result[2]})),sequenceOf([str(&quot;for&quot;), spacing, num, spacing, duration, spacing, str(&quot;every&quot;), spacing, num, spacing, duration]).map((result: any) &#x3D;&gt; ({forValue: result[2], forUnit: result[4], repeatValue: result[8], repeatUnit: result[10]}))])]).map((result: any) &#x3D;&gt; ({from: result[2], ...result[4]})),sequenceOf([str(&quot;every&quot;), spacing, ordinal]).map((result: any) &#x3D;&gt; ({every: result[2]}))])</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L134">src/Schedule.ts:134</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L184">src/Schedule.ts:184</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -297,17 +310,17 @@
 					<div class="tsd-signature tsd-kind-icon">optional<wbr>Whitespace<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="ordinal" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> ordinal</h3>
-					<div class="tsd-signature tsd-kind-icon">ordinal<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = choice([&quot;weekday&quot;, &quot;weekend&quot;, &quot;day&quot;, &quot;monday&quot;, &quot;tuesday&quot;, &quot;wednesday&quot;, &quot;thursday&quot;, &quot;friday&quot;, &quot;saturday&quot;, &quot;sunday&quot;].map(str))</span></div>
+					<div class="tsd-signature tsd-kind-icon">ordinal<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = choice([&quot;weekday&quot;, &quot;weekend&quot;, &quot;day&quot;, &quot;monday&quot;, &quot;tuesday&quot;, &quot;wednesday&quot;, &quot;thursday&quot;, &quot;friday&quot;, &quot;saturday&quot;, &quot;sunday&quot;].map(str)).errorChain(() &#x3D;&gt; fail(&quot;expected one of \&quot;weekday\&quot;, \&quot;weekend\&quot;, \&quot;day\&quot;, \&quot;monday\&quot;, \&quot;tuesday\&quot;, \&quot;wednesday\&quot;, \&quot;thursday\&quot;, \&quot;friday\&quot;, \&quot;saturday\&quot;, or \&quot;sunday\&quot;&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L118">src/Schedule.ts:118</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L162">src/Schedule.ts:162</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -317,7 +330,7 @@
 					<div class="tsd-signature tsd-kind-icon">possibly<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -327,7 +340,7 @@
 					<div class="tsd-signature tsd-kind-icon">rule<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([choice([str(&quot;exclude&quot;).map((_: any) &#x3D;&gt; ({})),sequenceOf([str(&quot;include&quot;), spacing, sepBy1(sequenceOf([spacing, str(&quot;and&quot;), spacing]))(times)]).map((result: any) &#x3D;&gt; ({times: result[2]}))]),spacing,occurrence]).map((result: any) &#x3D;&gt; ({...result[0], ...result[2]}))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L149">src/Schedule.ts:149</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L199">src/Schedule.ts:199</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -337,7 +350,7 @@
 					<div class="tsd-signature tsd-kind-icon">sep<wbr>By1<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -347,17 +360,17 @@
 					<div class="tsd-signature tsd-kind-icon">sequence<wbr>Of<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="spacing" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> spacing</h3>
-					<div class="tsd-signature tsd-kind-icon">spacing<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([whitespace, optionalWhitespace])</span></div>
+					<div class="tsd-signature tsd-kind-icon">spacing<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([whitespace, optionalWhitespace]) // at least one space.errorChain(() &#x3D;&gt; fail(&quot;expected whitespace&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L117">src/Schedule.ts:117</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L159">src/Schedule.ts:159</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -367,17 +380,17 @@
 					<div class="tsd-signature tsd-kind-icon">str<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module">
 					<a name="time-1" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> time</h3>
-					<div class="tsd-signature tsd-kind-icon">time<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([digit, digit, char(&quot;:&quot;), digit, digit]).map((result: any) &#x3D;&gt; ({hour: Number(result.slice(0, 2).join(&quot;&quot;)), minute: Number(result.slice(3).join(&quot;&quot;))}))</span></div>
+					<div class="tsd-signature tsd-kind-icon">time<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([digit, digit, char(&quot;:&quot;), digit, digit]).map((result: any) &#x3D;&gt; ({hour: Number(result.slice(0, 2).join(&quot;&quot;)), minute: Number(result.slice(3).join(&quot;&quot;))})).errorChain(() &#x3D;&gt; fail(&quot;expected a time in the form \&quot;hh:mm\&quot;&quot;))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L125">src/Schedule.ts:125</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L173">src/Schedule.ts:173</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -387,7 +400,7 @@
 					<div class="tsd-signature tsd-kind-icon">times<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> = sequenceOf([str(&quot;from&quot;), spacing, time, spacing, str(&quot;to&quot;), spacing, time]).map((result: any) &#x3D;&gt; ({from: result[2], to: result[6]}))</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L131">src/Schedule.ts:131</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L181">src/Schedule.ts:181</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -397,13 +410,36 @@
 					<div class="tsd-signature tsd-kind-icon">whitespace<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L4">src/Schedule.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module">
+					<a name="checkrules" class="tsd-anchor"></a>
+					<h3>check<wbr>Rules</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
+						<li class="tsd-signature tsd-kind-icon">check<wbr>Rules<span class="tsd-signature-symbol">(</span>rulesParts<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L106">src/Schedule.ts:106</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>rulesParts: <span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a><span class="tsd-signature-symbol">&gt;</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module">
 					<a name="daterule" class="tsd-anchor"></a>
 					<h3>date<wbr>Rule</h3>
@@ -414,7 +450,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L257">src/Schedule.ts:257</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L315">src/Schedule.ts:315</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -440,7 +476,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L275">src/Schedule.ts:275</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L333">src/Schedule.ts:333</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -466,7 +502,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L265">src/Schedule.ts:265</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L323">src/Schedule.ts:323</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -504,7 +540,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L261">src/Schedule.ts:261</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L319">src/Schedule.ts:319</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -533,7 +569,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L79">src/Schedule.ts:79</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L90">src/Schedule.ts:90</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -577,7 +613,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L248">src/Schedule.ts:248</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L306">src/Schedule.ts:306</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -597,19 +633,19 @@
 					<a name="makerule" class="tsd-anchor"></a>
 					<h3>make<wbr>Rule</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
-						<li class="tsd-signature tsd-kind-icon">make<wbr>Rule<span class="tsd-signature-symbol">(</span>ruleString<span class="tsd-signature-symbol">: </span><a href="_types_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_schedule_.html#schedulerule" class="tsd-signature-type">ScheduleRule</a></li>
+						<li class="tsd-signature tsd-kind-icon">make<wbr>Rule<span class="tsd-signature-symbol">(</span>ruleParts<span class="tsd-signature-symbol">: </span><a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_schedule_.html#schedulerule" class="tsd-signature-type">ScheduleRule</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L210">src/Schedule.ts:210</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L270">src/Schedule.ts:270</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>ruleString: <a href="_types_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a></h5>
+									<h5>ruleParts: <a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_schedule_.html#schedulerule" class="tsd-signature-type">ScheduleRule</a></h4>
@@ -620,22 +656,45 @@
 					<a name="parserule" class="tsd-anchor"></a>
 					<h3>parse<wbr>Rule</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
-						<li class="tsd-signature tsd-kind-icon">parse<wbr>Rule<span class="tsd-signature-symbol">(</span>ruleString<span class="tsd-signature-symbol">: </span><a href="_types_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a></li>
+						<li class="tsd-signature tsd-kind-icon">parse<wbr>Rule<span class="tsd-signature-symbol">(</span>ruleString<span class="tsd-signature-symbol">: </span><a href="_types_aliases_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L164">src/Schedule.ts:164</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L214">src/Schedule.ts:214</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>ruleString: <a href="_types_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a></h5>
+									<h5>ruleString: <a href="_types_aliases_.html#schedulerulestring" class="tsd-signature-type">ScheduleRuleString</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_schedule_.scheduleruleparts.html" class="tsd-signature-type">ScheduleRuleParts</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
+					<a name="showtime" class="tsd-anchor"></a>
+					<h3>show<wbr>Time</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">show<wbr>Time<span class="tsd-signature-symbol">(</span>time<span class="tsd-signature-symbol">: </span><a href="_schedule_.html#time" class="tsd-signature-type">Time</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L230">src/Schedule.ts:230</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>time: <a href="_schedule_.html#time" class="tsd-signature-type">Time</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -649,7 +708,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L202">src/Schedule.ts:202</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L262">src/Schedule.ts:262</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -672,7 +731,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Schedule.ts#L192">src/Schedule.ts:192</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Schedule.ts#L252">src/Schedule.ts:252</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -702,11 +761,11 @@
 					<li class=" tsd-kind-module">
 						<a href="_probability_.html">&quot;<wbr>Probability&quot;</a>
 					</li>
-					<li class=" tsd-kind-module">
-						<a href="_project_.html">&quot;<wbr>Project&quot;</a>
-					</li>
 					<li class="current tsd-kind-module">
 						<a href="_schedule_.html">&quot;<wbr>Schedule&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_simulation_.html">&quot;<wbr>Simulation&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="_task_.html">&quot;<wbr>Task&quot;</a>
@@ -715,7 +774,10 @@
 						<a href="_index_.html">&quot;index&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="_types_.html">&quot;types&quot;</a>
+						<a href="_types_aliases_.html">&quot;types/aliases&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_types_convenience_.html">&quot;types/convenience&quot;</a>
 					</li>
 				</ul>
 			</nav>
@@ -756,6 +818,9 @@
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-module">
 						<a href="_schedule_.html#duration" class="tsd-kind-icon">duration</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="_schedule_.html#fail" class="tsd-kind-icon">fail</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
 						<a href="_schedule_.html#many1" class="tsd-kind-icon">many1</a>
@@ -800,6 +865,9 @@
 						<a href="_schedule_.html#whitespace" class="tsd-kind-icon">whitespace</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="_schedule_.html#checkrules" class="tsd-kind-icon">check<wbr>Rules</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
 						<a href="_schedule_.html#daterule" class="tsd-kind-icon">date<wbr>Rule</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module">
@@ -822,6 +890,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module">
 						<a href="_schedule_.html#parserule" class="tsd-kind-icon">parse<wbr>Rule</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
+						<a href="_schedule_.html#showtime" class="tsd-kind-icon">show<wbr>Time</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module">
 						<a href="_schedule_.html#validatetime" class="tsd-kind-icon">validate<wbr>Time</a>

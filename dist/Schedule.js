@@ -2,14 +2,46 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const luxon_1 = require("luxon");
 const Error_1 = require("./Error");
-const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly } = require("arcsecond"); // TODO: wait for this library to add typescript support
+const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly, fail } = require("arcsecond"); // TODO: wait for this library to add typescript support
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
 ////////////////////////////////////////////////////////////////////////////////
 class Schedule {
-    constructor(ruleStrings, today = luxon_1.DateTime.local()) {
-        console.log(typeof ruleStrings);
-        const rules = ruleStrings.map(makeRule).reverse();
+    constructor(ruleStrings) {
+        // make rules
+        const rulesParts = []; // placeholder for the rule components
+        const rules = ruleStrings
+            .map(ruleString => {
+            let ruleParts = undefined;
+            try {
+                ruleParts = parseRule(ruleString); // parse the rule
+                rulesParts.push(ruleParts); // keep track of this for validation later
+            }
+            catch (error) {
+                if (error instanceof Error_1.ValidationError) {
+                    Error_1.rethrowValidationError(error, "parsing rule", ruleString);
+                }
+                else {
+                    throw error;
+                }
+            }
+            try {
+                return makeRule(ruleParts);
+            }
+            catch (error) {
+                if (error instanceof Error_1.ValidationError) {
+                    Error_1.rethrowValidationError(error, "resolving groups", "groups");
+                }
+                else {
+                    throw error;
+                }
+            }
+        })
+            .reverse();
+        rulesParts.reverse(); // reverse this too
+        // check that rules will have at least some time that can be found
+        checkRules(rulesParts);
+        // turn rules into a generator function for this schedule
         this._generator = (date) => {
             for (const rule of rules) { // for each rule in backwards order
                 const periods = rule(date); // evaluate to either an periods amount or undefined
@@ -18,17 +50,6 @@ class Schedule {
             }
             return []; // if none of the rules matched
         };
-        // make sure that at least one day is defined within the next year, if not, it's probably wrong
-        let oneDayIsDefined = false;
-        for (let d = today; d < today.plus({ year: 1 }); d = d.plus({ days: 1 })) {
-            if (this._generator(d).length != 0) { // if there is a day with periods
-                oneDayIsDefined = true; // mark it as true
-                break; // get out of the loop
-            }
-        }
-        if (!oneDayIsDefined) {
-            throw new Error_1.ValidationError(`In defining the schedule, no work days were found within a year after ${today}, check that you have defined your rules correctly`);
-        }
     }
     periodsInRange(from, to) {
         const periods = [];
@@ -80,6 +101,33 @@ function getNextWorkDayFrom(date, generator) {
 }
 exports.getNextWorkDayFrom = getNextWorkDayFrom;
 ////////////////////////////////////////////////////////////////////////////////
+// VALIDATION
+////////////////////////////////////////////////////////////////////////////////
+function checkRules(rulesParts) {
+    const repeatingRules = rulesParts
+        .map((ruleParts, index) => ({ parts: ruleParts, index: index })); // keep track of the index
+    // make sure that there is at least one repeating include statement
+    const repeatingIncludes = repeatingRules
+        .filter(rule => rule.parts.times && (rule.parts.forValue || rule.parts.every)); // find all repeating include rules
+    if (repeatingIncludes.length == 0) { // if it did not find such a rule
+        throw new Error_1.ValidationError("no repeating \"include\" rule found", "parsed schedule rules", "");
+    }
+    // make sure that isn't overruled with a repeating exclude statement that covers the same time
+    const repeatingExcludes = repeatingRules
+        .filter(rule => rule.parts.times == undefined && (rule.parts.forValue || rule.parts.every)); // find all repeating exclude rules
+    repeatingIncludes
+        .map(includeRule => {
+        return repeatingExcludes //  for all exclude rules
+            .filter(excludeRule => excludeRule.index < includeRule.index) // which have a higher precedence
+            .map(_excludeRule => {
+            // TODO: check if the exclude rule will always encompass the include rule
+            return true;
+        });
+    })
+        .every(x => x); // make sure there is at least one
+}
+exports.checkRules = checkRules;
+////////////////////////////////////////////////////////////////////////////////
 // RULE PARSING
 ////////////////////////////////////////////////////////////////////////////////
 // EBNF
@@ -101,16 +149,22 @@ _ = ( " " | "\n" | "\t" | "\r" )+
 
 */
 // PARSER
-exports.spacing = sequenceOf([whitespace, optionalWhitespace]); // at least one space
-exports.ordinal = choice(["weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(str));
+exports.spacing = sequenceOf([whitespace, optionalWhitespace]) // at least one space
+    .errorChain(() => fail("expected whitespace"));
+exports.ordinal = choice(["weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(str))
+    .errorChain(() => fail("expected one of \"weekday\", \"weekend\", \"day\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\""));
 exports.duration = sequenceOf([choice(["year", "month", "week", "day"].map(str)), possibly(char("s"))])
-    .map((result) => result[0].concat(result[1] ? "s" : "")); // make it plural if it's not
+    .map((result) => result[0].concat(result[1] ? "s" : "")) // make it plural if it's not
+    .errorChain(() => fail("expected one of \"year(s)\", \"month(s)\", \"week(s)\", or \"day(s)\""));
 exports.num = sequenceOf([many1(digit), possibly(sequenceOf([char("."), many1(digit)]))])
-    .map((result) => Number(result.flat(Infinity).filter((s) => s != null).join("")));
+    .map((result) => Number(result.flat(Infinity).filter((s) => s != null).join("")))
+    .errorChain(() => fail("expected a number"));
 exports.time = sequenceOf([digit, digit, char(":"), digit, digit])
-    .map((result) => ({ hour: Number(result.slice(0, 2).join("")), minute: Number(result.slice(3).join("")) }));
+    .map((result) => ({ hour: Number(result.slice(0, 2).join("")), minute: Number(result.slice(3).join("")) }))
+    .errorChain(() => fail("expected a time in the form \"hh:mm\""));
 exports.date = sequenceOf([digit, digit, digit, digit, char("-"), digit, digit, char("-"), digit, digit])
-    .map((result) => result.join("")); // turn it into a single date string
+    .map((result) => result.join("")) // turn it into a single date string
+    .errorChain(() => fail("expected a date in the form \"YYYY-MM-DD\""));
 exports.times = sequenceOf([str("from"), exports.spacing, exports.time, exports.spacing, str("to"), exports.spacing, exports.time])
     .map((result) => ({ from: result[2], to: result[6] }));
 exports.occurrence = choice([
@@ -141,64 +195,64 @@ exports.rule = sequenceOf([
 // PARSING
 function parseRule(ruleString) {
     const result = exports.rule.run(ruleString.toLowerCase());
-    // TODO: put in error handling
     if (result.isError) { // an error occurred
-        // TODO: print out better error
-        throw new Error(`${result.error} in string "${ruleString}"`);
+        throw new Error_1.ValidationError(result.error, ruleString, result.index); // return error information
     }
     return result.result;
 }
 exports.parseRule = parseRule;
+function showTime(time) {
+    return ("0" + time.hour).slice(-2) + ":" + ("0" + time.minute).slice(-2);
+}
 function validateTimes(times) {
     times.forEach(time => {
         validateTime(time.from);
         validateTime(time.to);
         if (time.to.hour * 60 + time.to.minute < time.from.hour * 60 + time.from.minute) { // if the "to" is before the "from"
-            throw new Error_1.ValidationError(`From time is before end time: from "${("0" + time.from.hour).slice(-2)}:${("0" + time.from.minute).slice(-2)}" > to "${("0" + time.from.hour).slice(-2)}:${("0" + time.from.minute).slice(-2)}"`);
+            throw new Error_1.ValidationError(`From time is before end time: "from ${showTime(time.from)} > to ${showTime(time.to)}"`, "checking times", `"from ${showTime(time.from)} > to ${showTime(time.to)}"`);
         }
     });
 }
 exports.validateTimes = validateTimes;
 function validateTime(time) {
     if (24 < time.hour || (time.hour == 24 && 0 < time.minute) || 60 <= time.minute) { // if hour is > 24 (allowing 24:00), or minute is >= 60
-        throw new Error_1.ValidationError(`Time entered is not a valid time: "${("0" + time.hour).slice(-2)}:${("0" + time.minute).slice(-2)}"`);
+        throw new Error_1.ValidationError(`Time entered is not a valid time: "${showTime(time)}"`, "checking time", showTime(time));
     }
 }
 exports.validateTime = validateTime;
 // RULE MAKING
-function makeRule(ruleString) {
-    const ruleParts = parseRule(ruleString);
+function makeRule(ruleParts) {
     const times = ruleParts.times || [];
     validateTimes(times);
     times.sort((a, b) => a.from.hour * 60 + a.from.minute < b.from.hour * 60 + b.from.minute ? -1 : (a.from.hour * 60 + a.from.minute > b.from.hour * 60 + b.from.minute ? 1 : 0)); // sort the times in chronological order
     if (ruleParts.on) { // an "on" rule
         const on = luxon_1.DateTime.fromISO(ruleParts.on);
         if (!on.isValid)
-            throw new Error_1.ValidationError(`Date entered not a valid date: "${ruleParts.on}"`);
+            throw new Error_1.ValidationError("Invalid date", ruleParts.on);
         return dateRule(on, times);
     }
     else if (ruleParts.from) { // a "from" rule
         const from = luxon_1.DateTime.fromISO(ruleParts.from);
         if (!from.isValid)
-            throw new Error_1.ValidationError(`Date entered not a valid date: "${ruleParts.from}"`);
+            throw new Error_1.ValidationError("Invalid date", ruleParts.from);
         if (ruleParts.to) { // a "from to" rule
             const to = luxon_1.DateTime.fromISO(ruleParts.to);
             if (!to.isValid)
-                throw new Error_1.ValidationError(`Date entered not a valid date: "${ruleParts.to}"`);
+                throw new Error_1.ValidationError("Invalid date", ruleParts.to);
             return fromToRule(from, to, times);
         }
         else if (ruleParts.forValue && ruleParts.forUnit && ruleParts.repeatValue && ruleParts.repeatUnit) { // an "from for every" rule
             return fromForRepeatRule(from, ruleParts.forValue, ruleParts.forUnit, ruleParts.repeatValue, ruleParts.repeatUnit, times);
         }
-        else {
-            throw new Error_1.ValidationError("Expected \"to\" or \"for _ _ every _ _\" in rule declaration");
+        else { // should never happen
+            throw new Error_1.ValidationError("Expected \"to\" or \"for _ _ every _ _\" in rule declaration", "\"from\" clause");
         }
     }
     else if (ruleParts.every) { // an "every" rule
         return everyRule(ruleParts.every, times);
     }
-    else {
-        throw new Error_1.ValidationError("Expected \"on\", \"from\", or \"every\" in rule declaration");
+    else { // should never happen
+        throw new Error_1.ValidationError("Expected \"on\", \"from\", or \"every\" in rule declaration", "rule main clause");
     }
 }
 exports.makeRule = makeRule;
@@ -259,8 +313,8 @@ function everyRule(every, times = []) {
     else if (every == "sunday") {
         return (date) => date.weekday == 7 ? makePeriodsOnDate(date, times) : undefined;
     }
-    else {
-        throw new Error_1.ValidationError("Expected one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\" after \"every\"");
+    else { // should never happen
+        throw new Error_1.ValidationError("Expected one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\" after \"every\"", "\"every\" clause", every);
     }
 }
 exports.everyRule = everyRule;

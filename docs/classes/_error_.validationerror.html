@@ -95,6 +95,8 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_error_.validationerror.html#cause" class="tsd-kind-icon">cause</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_error_.validationerror.html#location" class="tsd-kind-icon">location</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_error_.validationerror.html#message" class="tsd-kind-icon">message</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_error_.validationerror.html#name" class="tsd-kind-icon">name</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_error_.validationerror.html#stack" class="tsd-kind-icon">stack</a></li>
@@ -110,19 +112,28 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Validation<wbr>Error<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_error_.validationerror.html" class="tsd-signature-type">ValidationError</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Validation<wbr>Error<span class="tsd-signature-symbol">(</span>cause<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, index<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span>, location<span class="tsd-signature-symbol">?: </span><a href="../modules/_error_.html#location" class="tsd-signature-type">Location</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_error_.validationerror.html" class="tsd-signature-type">ValidationError</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/062f07e/src/Error.ts#L5">src/Error.ts:5</a></li>
+									<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Error.ts#L7">src/Error.ts:7</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>message: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></h5>
+									<h5>cause: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>description: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> index: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> location: <a href="../modules/_error_.html#location" class="tsd-signature-type">Location</a><span class="tsd-signature-symbol"> = []</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_error_.validationerror.html" class="tsd-signature-type">ValidationError</a></h4>
@@ -132,6 +143,26 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="cause" class="tsd-anchor"></a>
+					<h3>cause</h3>
+					<div class="tsd-signature tsd-kind-icon">cause<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Error.ts#L7">src/Error.ts:7</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="location" class="tsd-anchor"></a>
+					<h3>location</h3>
+					<div class="tsd-signature tsd-kind-icon">location<span class="tsd-signature-symbol">:</span> <a href="../modules/_error_.html#location" class="tsd-signature-type">Location</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/wmarrujo/evidence-based-scheduler/blob/bed9e9a/src/Error.ts#L6">src/Error.ts:6</a></li>
+						</ul>
+					</aside>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
 					<a name="message" class="tsd-anchor"></a>
 					<h3>message</h3>
@@ -193,10 +224,10 @@
 						<a href="../modules/_probability_.html">&quot;<wbr>Probability&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/_project_.html">&quot;<wbr>Project&quot;</a>
+						<a href="../modules/_schedule_.html">&quot;<wbr>Schedule&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/_schedule_.html">&quot;<wbr>Schedule&quot;</a>
+						<a href="../modules/_simulation_.html">&quot;<wbr>Simulation&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/_task_.html">&quot;<wbr>Task&quot;</a>
@@ -205,7 +236,10 @@
 						<a href="../modules/_index_.html">&quot;index&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/_types_.html">&quot;types&quot;</a>
+						<a href="../modules/_types_aliases_.html">&quot;types/aliases&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_types_convenience_.html">&quot;types/convenience&quot;</a>
 					</li>
 				</ul>
 			</nav>
@@ -218,6 +252,12 @@
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
 								<a href="_error_.validationerror.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_error_.validationerror.html#cause" class="tsd-kind-icon">cause</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_error_.validationerror.html#location" class="tsd-kind-icon">location</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
 								<a href="_error_.validationerror.html#message" class="tsd-kind-icon">message</a>
@@ -235,6 +275,15 @@
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/_error_.html#location" class="tsd-kind-icon">Location</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/_error_.html#displaylocation" class="tsd-kind-icon">display<wbr>Location</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/_error_.html#rethrowvalidationerror" class="tsd-kind-icon">rethrow<wbr>Validation<wbr>Error</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -253,6 +302,7 @@
 			<ul class="tsd-legend">
 				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
 				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>

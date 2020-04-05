@@ -1,22 +1,18 @@
-import { TaskIdentifier, ResourceIdentifier } from "./types";
+import { TaskIdentifier, ResourceIdentifier } from "./types/aliases";
 export declare class Task {
     identifier: TaskIdentifier;
-    name: string;
-    description: string;
     resource: ResourceIdentifier;
     dependencies: Set<TaskIdentifier>;
     prediction: number;
     actual: number;
     done: boolean;
-    constructor(identifier: TaskIdentifier, name: string, resource: ResourceIdentifier, prediction: number, dependencies?: Iterable<TaskIdentifier>, actual?: number, done?: boolean, description?: string);
+    constructor(identifier: TaskIdentifier, resource: ResourceIdentifier, prediction: number, dependencies?: Iterable<TaskIdentifier>, actual?: number, done?: boolean);
     get accuracy(): number | undefined;
 }
 export declare class Group {
     identifier: TaskIdentifier;
-    name: string;
-    description: string;
     tasks: Set<TaskIdentifier>;
-    constructor(identifier: TaskIdentifier, name: string, tasks: Iterable<TaskIdentifier>, description?: string);
+    constructor(identifier: TaskIdentifier, tasks: Iterable<TaskIdentifier>);
 }
 export declare function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Array<Task>;
 export declare function fullReferenceTasks(tasks: Array<Task>): Array<Task>;

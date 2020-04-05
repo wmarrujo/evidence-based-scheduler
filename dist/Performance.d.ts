@@ -1,4 +1,4 @@
-import { Accuracy } from "./types";
+import { Accuracy } from "./types/aliases";
 import { DiscreteStatistics } from "./Probability";
 export declare class Performance {
     accuracies: Array<Accuracy>;

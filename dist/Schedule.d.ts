@@ -1,13 +1,14 @@
 import { DateTime } from "luxon";
-import { ScheduleRuleString, ISODateString } from "./types";
+import { ScheduleRuleString, ISODateString } from "./types/aliases";
 export declare class Schedule {
     private _generator;
-    constructor(ruleStrings: Array<ScheduleRuleString>, today?: DateTime);
+    constructor(ruleStrings: Array<ScheduleRuleString>);
     periodsInRange(from: DateTime, to: DateTime): Array<Period>;
     getNextBeginFrom(date: DateTime): DateTime;
     getNextEndFrom(date: DateTime): DateTime;
 }
 export declare function getNextWorkDayFrom(date: DateTime, generator: (date: DateTime) => Array<Period>): DateTime;
+export declare function checkRules(rulesParts: Array<ScheduleRuleParts>): void;
 export declare const spacing: any;
 export declare const ordinal: any;
 export declare const duration: any;
@@ -40,7 +41,7 @@ export interface ScheduleRuleParts {
 }
 export declare function validateTimes(times: Times): void;
 export declare function validateTime(time: Time): void;
-export declare function makeRule(ruleString: ScheduleRuleString): ScheduleRule;
+export declare function makeRule(ruleParts: ScheduleRuleParts): ScheduleRule;
 export interface Period {
     begin: DateTime;
     end: DateTime;

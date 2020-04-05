@@ -5,10 +5,8 @@ const Error_1 = require("./Error");
 // CLASS
 ////////////////////////////////////////////////////////////////////////////////
 class Task {
-    constructor(identifier, name, resource, prediction, dependencies = [], actual = 0, done = false, description = "") {
+    constructor(identifier, resource, prediction, dependencies = [], actual = 0, done = false) {
         this.identifier = identifier;
-        this.name = name;
-        this.description = description;
         this.resource = resource;
         this.dependencies = new Set([...dependencies]);
         this.prediction = prediction;
@@ -21,10 +19,8 @@ class Task {
 }
 exports.Task = Task;
 class Group {
-    constructor(identifier, name, tasks, description = "") {
+    constructor(identifier, tasks) {
         this.identifier = identifier;
-        this.name = name;
-        this.description = description;
         this.tasks = new Set([...tasks]);
     }
 }
@@ -41,8 +37,8 @@ function internalizeTasks(tasks, groups) {
         ds[group.identifier] = group.tasks;
         return ds;
     }, {});
+    // replace all group dependencies with task ones
     const noGroups = tasks.map(task => {
-        // replace all group dependencies with task ones
         let newDependencies = [...task.dependencies]; // seed it with the old dependencies
         let replacement = false; // set replacements
         do { // go through each dependency
@@ -56,7 +52,7 @@ function internalizeTasks(tasks, groups) {
             newDependencies = newDependencies.flat(); // flatten any arrays we just added
         } while (replacement); // end when it checked everything, and there were no
         // return a copy of the task with new, internally referencing dependencies
-        return new Task(task.identifier, task.name, task.resource, task.prediction, newDependencies, task.actual, task.done, task.description);
+        return new Task(task.identifier, task.resource, task.prediction, newDependencies, task.actual, task.done);
     });
     // fail if tasks aren't self-consistent
     checkTaskList(noGroups);
@@ -87,7 +83,7 @@ function fullReferenceTasks(tasks) {
             allDependencies.add(dependency); // mark that this dependency has been visited
             dependencies[dependency].forEach(higherLevelDependency => unvisitedDependencies.add(higherLevelDependency));
         }
-        return new Task(task.identifier, task.name, task.resource, task.prediction, allDependencies, task.actual, task.done, task.description); // return a copy of the task with the new dependencies replaced
+        return new Task(task.identifier, task.resource, task.prediction, allDependencies, task.actual, task.done); // return a copy of the task with the new dependencies replaced
     });
 }
 exports.fullReferenceTasks = fullReferenceTasks;
@@ -97,9 +93,19 @@ exports.fullReferenceTasks = fullReferenceTasks;
 // TASKS
 function checkTaskList(tasks) {
     // assumes tasks are internalized
-    checkNoDuplicateIdentifiersInTasks(tasks);
-    checkNoGhostReferencesInTasks(tasks);
-    checkNoCircularDependenciesInTasks(tasks);
+    try {
+        checkNoDuplicateIdentifiersInTasks(tasks);
+        checkNoGhostReferencesInTasks(tasks);
+        checkNoCircularDependenciesInTasks(tasks);
+    }
+    catch (error) {
+        if (error instanceof Error_1.ValidationError) {
+            Error_1.rethrowValidationError(error, "checking tasks list", "tasks");
+        }
+        else {
+            throw error;
+        }
+    }
 }
 exports.checkTaskList = checkTaskList;
 function checkNoDuplicateIdentifiersInTasks(tasks) {
@@ -109,7 +115,7 @@ function checkNoDuplicateIdentifiersInTasks(tasks) {
             .map(task => task.identifier)
             .forEach(task => {
             if (checked.includes(task)) {
-                throw new Error_1.ValidationError(`Duplicate task found in task list: ${task}`);
+                throw new Error_1.ValidationError("Duplicate task found", "duplicate task found", task);
             }
             else {
                 checked.push(task);
@@ -123,7 +129,7 @@ function checkNoGhostReferencesInTasks(tasks) {
     tasks.forEach(task => {
         task.dependencies.forEach(dependency => {
             if (!taskSet.has(dependency))
-                throw new Error_1.ValidationError(`Dependency ${dependency} of task ${task.identifier} does not exist`);
+                throw new Error_1.ValidationError(`Dependency ${dependency} of task ${task.identifier} does not exist`, "ghost identifier", dependency);
         });
     });
 }
@@ -146,7 +152,7 @@ function checkNoCircularDependenciesInTasks(tasks) {
                 const nextDependencies = [...dependencies[path[path.length - 1]].values()]; // get the next dependencies
                 return nextDependencies.map(dependency => {
                     if (path.includes(dependency)) { // if the path already includes that dependency
-                        throw new Error_1.ValidationError(`Circular Dependency in task: ${path.join(" -> ")} -> ${dependency}`); // then it's a circular dependency
+                        throw new Error_1.ValidationError(`Circular Dependency found ${path.join(" -> ")} -> ${dependency}`, "circular dependency found", dependency); // then it's a circular dependency
                     }
                     else { // the path does not include the dependency
                         return path.concat([dependency]); // add the dependency to the path
@@ -160,8 +166,18 @@ function checkNoCircularDependenciesInTasks(tasks) {
 exports.checkNoCircularDependenciesInTasks = checkNoCircularDependenciesInTasks;
 // GROUPS
 function checkGroupList(groups) {
-    checkNoDuplicateIdentifiersInGroups(groups);
-    checkNoCircularDependenciesInGroups(groups);
+    try {
+        checkNoDuplicateIdentifiersInGroups(groups);
+        checkNoCircularDependenciesInGroups(groups);
+    }
+    catch (error) {
+        if (error instanceof Error_1.ValidationError) {
+            Error_1.rethrowValidationError(error, "checking groups list", "groups");
+        }
+        else {
+            throw error;
+        }
+    }
 }
 exports.checkGroupList = checkGroupList;
 function checkNoDuplicateIdentifiersInGroups(groups) {
@@ -171,7 +187,7 @@ function checkNoDuplicateIdentifiersInGroups(groups) {
             .map(group => group.identifier)
             .forEach(group => {
             if (checked.includes(group)) {
-                throw new Error_1.ValidationError(`Duplicate group found in group list: ${group}`);
+                throw new Error_1.ValidationError(`Duplicate group "${group}" was found`, "duplicate group found", group);
             }
             else {
                 checked.push(group);
@@ -197,7 +213,7 @@ function checkNoCircularDependenciesInGroups(groups) {
                 const nextDependencies = [...(dependencies[path[path.length - 1]] || []).values()]; // get the next dependencies
                 return nextDependencies.map(dependency => {
                     if (path.includes(dependency)) { // if the path already includes that dependency
-                        throw new Error_1.ValidationError(`Circular Dependency in group: ${path.join(" -> ")} -> ${dependency}`); // then it's a circular dependency
+                        throw new Error_1.ValidationError(`Circular Dependency found ${path.join(" -> ")} -> ${dependency}`, "circular dependency found", dependency); // then it's a circular dependency
                     }
                     else { // the path does not include the dependency
                         return path.concat([dependency]); // add the dependency to the path
