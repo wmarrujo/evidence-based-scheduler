@@ -1,7 +1,7 @@
 import {DateTime} from "luxon"
-import {ScheduleRuleString, ISODateString} from "./types"
-import {ValidationError} from "./Error"
-const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly} = require("arcsecond") // TODO: wait for this library to add typescript support
+import {ScheduleRuleString, ISODateString} from "./types/aliases"
+import {ValidationError, rethrowValidationError} from "./Error"
+const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sepBy1, many1, possibly, fail} = require("arcsecond") // TODO: wait for this library to add typescript support
 
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
@@ -10,27 +10,38 @@ const {str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, sep
 export class Schedule { // schedule for a resource
 	private _generator: (date: DateTime) => Array<Period>
 	
-	constructor(ruleStrings: Array<ScheduleRuleString>, today: DateTime = DateTime.local()) {
-		const rules = ruleStrings.map(makeRule).reverse()
+	constructor(ruleStrings: Array<ScheduleRuleString>) {
+		// make rules
+		const rulesParts: Array<ScheduleRuleParts> = [] // placeholder for the rule components
+		const rules = ruleStrings
+			.map(ruleString => {
+				let ruleParts = undefined
+				try {
+					ruleParts = parseRule(ruleString) // parse the rule
+					rulesParts.push(ruleParts) // keep track of this for validation later
+				} catch (error) {
+					if (error instanceof ValidationError) { rethrowValidationError(error, "parsing rule", ruleString) } else { throw error }
+				}
+				
+				try {
+					return makeRule(ruleParts)
+				} catch (error) {
+					if (error instanceof ValidationError) { rethrowValidationError(error, "resolving groups", "groups") } else { throw error }
+				}
+			})
+			.reverse()
+		rulesParts.reverse() // reverse this too
 		
+		// check that rules will have at least some time that can be found
+		checkRules(rulesParts)
+		
+		// turn rules into a generator function for this schedule
 		this._generator = (date: DateTime): Array<Period> => {
 			for (const rule of rules) { // for each rule in backwards order
 				const periods = rule(date) // evaluate to either an periods amount or undefined
 				if (periods) return periods // if it matched and gave back periods, return those & stop evaluating the rules
 			}
 			return [] // if none of the rules matched
-		}
-		
-		// make sure that at least one day is defined within the next year, if not, it's probably wrong
-		let oneDayIsDefined = false
-		for (let d = today; d < today.plus({year: 1}); d = d.plus({days: 1})) {
-			if (this._generator(d).length != 0) { // if there is a day with periods
-				oneDayIsDefined = true // mark it as true
-				break // get out of the loop
-			}
-		}
-		if (!oneDayIsDefined) {
-			throw new ValidationError(`In defining the schedule, no work days were found within a year after ${today}, check that you have defined your rules correctly`)
 		}
 	}
 	
@@ -89,6 +100,37 @@ export function getNextWorkDayFrom(date: DateTime, generator: (date: DateTime) =
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// VALIDATION
+////////////////////////////////////////////////////////////////////////////////
+
+export function checkRules(rulesParts: Array<ScheduleRuleParts>): void {
+	const repeatingRules = rulesParts
+		.map((ruleParts, index) => ({parts: ruleParts, index: index})) // keep track of the index
+	
+	// make sure that there is at least one repeating include statement
+	const repeatingIncludes = repeatingRules
+		.filter(rule => rule.parts.times && (rule.parts.forValue || rule.parts.every)) // find all repeating include rules
+	if (repeatingIncludes.length == 0) { // if it did not find such a rule
+		throw new ValidationError("no repeating \"include\" rule found", "parsed schedule rules", "")
+	}
+	
+	// make sure that isn't overruled with a repeating exclude statement that covers the same time
+	const repeatingExcludes = repeatingRules
+		.filter(rule => rule.parts.times == undefined && (rule.parts.forValue || rule.parts.every)) // find all repeating exclude rules
+	
+	repeatingIncludes
+		.map(includeRule => { // for each include rule
+			return repeatingExcludes //  for all exclude rules
+				.filter(excludeRule => excludeRule.index < includeRule.index) // which have a higher precedence
+				.map(_excludeRule => {
+					// TODO: check if the exclude rule will always encompass the include rule
+					return true
+				})
+		})
+		.every(x => x) // make sure there is at least one
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // RULE PARSING
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -115,18 +157,26 @@ _ = ( " " | "\n" | "\t" | "\r" )+
 // PARSER
 
 export const spacing = sequenceOf([whitespace, optionalWhitespace]) // at least one space
+	.errorChain(() => fail("expected whitespace"))
+
 export const ordinal = choice(["weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(str))
+	.errorChain(() => fail("expected one of \"weekday\", \"weekend\", \"day\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\""))
+
 export const duration = sequenceOf([choice(["year", "month", "week", "day"].map(str)), possibly(char("s"))])
 	.map((result: string) => result[0].concat(result[1] ? "s" : "")) // make it plural if it's not
+	.errorChain(() => fail("expected one of \"year(s)\", \"month(s)\", \"week(s)\", or \"day(s)\""))
 
 export const num = sequenceOf([many1(digit), possibly(sequenceOf([char("."), many1(digit)]))])
 	.map((result: any) => Number(result.flat(Infinity).filter((s: any) => s != null).join("")))
+	.errorChain(() => fail("expected a number"))
 
 export const time = sequenceOf([digit, digit, char(":"), digit, digit])
 	.map((result: any) => ({hour: Number(result.slice(0, 2).join("")), minute: Number(result.slice(3).join(""))}))
+	.errorChain(() => fail("expected a time in the form \"hh:mm\""))
 
 export const date = sequenceOf([digit, digit, digit, digit, char("-"), digit, digit, char("-"), digit, digit])
 	.map((result: any) => result.join("")) // turn it into a single date string
+	.errorChain(() => fail("expected a date in the form \"YYYY-MM-DD\""))
 
 export const times = sequenceOf([str("from"), spacing, time, spacing, str("to"), spacing, time])
 	.map((result: any) => ({from: result[2], to: result[6]}))
@@ -157,25 +207,35 @@ export const rule = sequenceOf([
 	occurrence
 ])
 	.map((result: any) => ({...result[0], ...result[2]}))
-	
+
 
 // PARSING
 
 export function parseRule(ruleString: ScheduleRuleString): ScheduleRuleParts {
 	const result = rule.run(ruleString.toLowerCase())
-	// TODO: put in error handling
+	
 	if (result.isError) { // an error occurred
-		// TODO: print out better error
-		throw new Error(`${result.error} in string "${ruleString}"`)
+		throw new ValidationError(result.error, ruleString, result.index) // return error information
 	}
+	
 	return result.result
 }
 
 // INTERMEDIATE TYPES
 
 export type OrdinalUnit = "years" | "months" | "weeks" | "days"
+
 export type Time = {hour: number, minute: number}
+
+function showTime(time: Time): string {
+	return ("0" + time.hour).slice(-2) + ":" + ("0" + time.minute).slice(-2)
+}
+
 export type Times = Array<{from: Time, to: Time}>
+
+// function showTimes(times: Times): string{
+// 	return `from ${showTime(time.from)} to ${showTime(time.to)}`
+// }
 
 export interface ScheduleRuleParts {
 	times: undefined | Times, // tells you include vs exclude
@@ -194,45 +254,43 @@ export function validateTimes(times: Times): void {
 		validateTime(time.from)
 		validateTime(time.to)
 		if (time.to.hour*60 + time.to.minute < time.from.hour*60 + time.from.minute) { // if the "to" is before the "from"
-			throw new ValidationError(`From time is before end time: from "${("0" + time.from.hour).slice(-2)}:${("0" + time.from.minute).slice(-2)}" > to "${("0" + time.from.hour).slice(-2)}:${("0" + time.from.minute).slice(-2)}"`)
+			throw new ValidationError(`From time is before end time: "from ${showTime(time.from)} > to ${showTime(time.to)}"`, "checking times", `"from ${showTime(time.from)} > to ${showTime(time.to)}"`)
 		}
 	})
 }
 
 export function validateTime(time: Time): void {
 	if (24 < time.hour || (time.hour == 24 && 0 < time.minute) || 60 <= time.minute) { // if hour is > 24 (allowing 24:00), or minute is >= 60
-		throw new ValidationError(`Time entered is not a valid time: "${("0" + time.hour).slice(-2)}:${("0" + time.minute).slice(-2)}"`)
+		throw new ValidationError(`Time entered is not a valid time: "${showTime(time)}"`, "checking time", showTime(time))
 	}
 }
 
 // RULE MAKING
 
-export function makeRule(ruleString: ScheduleRuleString): ScheduleRule {
-	const ruleParts = parseRule(ruleString)
-	
+export function makeRule(ruleParts: ScheduleRuleParts): ScheduleRule {
 	const times = ruleParts.times || []
 	validateTimes(times)
 	times.sort((a, b) => a.from.hour*60 + a.from.minute < b.from.hour*60 + b.from.minute ? -1 : (a.from.hour*60 + a.from.minute > b.from.hour*60 + b.from.minute ? 1 : 0)) // sort the times in chronological order
 	if (ruleParts.on) { // an "on" rule
 		const on = DateTime.fromISO(ruleParts.on)
-		if (!on.isValid) throw new ValidationError(`Date entered not a valid date: "${ruleParts.on}"`)
+		if (!on.isValid) throw new ValidationError("Invalid date", ruleParts.on)
 		return dateRule(on, times)
 	} else if (ruleParts.from) { // a "from" rule
 		const from = DateTime.fromISO(ruleParts.from)
-		if (!from.isValid) throw new ValidationError(`Date entered not a valid date: "${ruleParts.from}"`)
+		if (!from.isValid) throw new ValidationError("Invalid date", ruleParts.from)
 		if (ruleParts.to) { // a "from to" rule
 			const to = DateTime.fromISO(ruleParts.to)
-			if (!to.isValid) throw new ValidationError(`Date entered not a valid date: "${ruleParts.to}"`)
+			if (!to.isValid) throw new ValidationError("Invalid date", ruleParts.to)
 			return fromToRule(from, to, times)
 		} else if (ruleParts.forValue && ruleParts.forUnit && ruleParts.repeatValue && ruleParts.repeatUnit) { // an "from for every" rule
 			return fromForRepeatRule(from, ruleParts.forValue, ruleParts.forUnit, ruleParts.repeatValue, ruleParts.repeatUnit, times)
-		} else {
-			throw new ValidationError("Expected \"to\" or \"for _ _ every _ _\" in rule declaration")
+		} else { // should never happen
+			throw new ValidationError("Expected \"to\" or \"for _ _ every _ _\" in rule declaration", "\"from\" clause")
 		}
 	} else if (ruleParts.every) { // an "every" rule
 		return everyRule(ruleParts.every, times)
-	} else {
-		throw new ValidationError("Expected \"on\", \"from\", or \"every\" in rule declaration")
+	} else { // should never happen
+		throw new ValidationError("Expected \"on\", \"from\", or \"every\" in rule declaration", "rule main clause")
 	}
 }
 
@@ -293,7 +351,7 @@ export function everyRule(every: string, times: Times = []): ScheduleRule {
 		return (date: DateTime) => date.weekday == 6 ? makePeriodsOnDate(date, times) : undefined
 	} else if (every == "sunday") {
 		return (date: DateTime) => date.weekday == 7 ? makePeriodsOnDate(date, times) : undefined
-	} else {
-		throw new ValidationError("Expected one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\" after \"every\"")
+	} else { // should never happen
+		throw new ValidationError("Expected one of \"day\", \"weekday\", \"weekend\", \"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\", or \"sunday\" after \"every\"", "\"every\" clause", every)
 	}
 }

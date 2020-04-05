@@ -1,5 +1,5 @@
-import {TaskIdentifier, ResourceIdentifier} from "./types"
-import {ValidationError} from "./Error"
+import {TaskIdentifier, ResourceIdentifier} from "./types/aliases"
+import {ValidationError, rethrowValidationError} from "./Error"
 
 ////////////////////////////////////////////////////////////////////////////////
 // CLASS
@@ -33,14 +33,10 @@ export class Task {
 
 export class Group {
 	identifier: TaskIdentifier
-	name: string
-	description: string
 	tasks: Set<TaskIdentifier>
 	
-	constructor(identifier: TaskIdentifier, name: string, tasks: Iterable<TaskIdentifier>, description: string = "") {
+	constructor(identifier: TaskIdentifier, tasks: Iterable<TaskIdentifier>) {
 		this.identifier = identifier
-		this.name = name
-		this.description = description
 		this.tasks = new Set([...tasks])
 	}
 }
@@ -60,8 +56,8 @@ export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Arra
 			return ds
 		}, {})
 	
+	// replace all group dependencies with task ones
 	const noGroups = tasks.map(task => {
-		// replace all group dependencies with task ones
 		let newDependencies: Array<string | Array<string>> = [...task.dependencies] // seed it with the old dependencies
 		let replacement = false // set replacements
 		do { // go through each dependency
@@ -124,9 +120,13 @@ export function fullReferenceTasks(tasks: Array<Task>): Array<Task> { // make th
 
 export function checkTaskList(tasks: Array<Task>): void { // make sure a list of tasks is self-consistent
 	// assumes tasks are internalized
-	checkNoDuplicateIdentifiersInTasks(tasks)
-	checkNoGhostReferencesInTasks(tasks)
-	checkNoCircularDependenciesInTasks(tasks)
+	try {
+		checkNoDuplicateIdentifiersInTasks(tasks)
+		checkNoGhostReferencesInTasks(tasks)
+		checkNoCircularDependenciesInTasks(tasks)
+	} catch (error) {
+		if (error instanceof ValidationError) { rethrowValidationError(error, "checking tasks list", "tasks") } else { throw error }
+	}
 }
 
 export function checkNoDuplicateIdentifiersInTasks(tasks: Array<Task>): void { // check that there are no duplicate keys
@@ -136,7 +136,7 @@ export function checkNoDuplicateIdentifiersInTasks(tasks: Array<Task>): void { /
 			.map(task => task.identifier)
 			.forEach(task => {
 				if (checked.includes(task)) {
-					throw new ValidationError(`Duplicate task found in task list: ${task}`)
+					throw new ValidationError("Duplicate task found", "duplicate task found", task)
 				} else {
 					checked.push(task)
 				}
@@ -148,7 +148,7 @@ export function checkNoGhostReferencesInTasks(tasks: Array<Task>): void { // che
 	const taskSet = new Set(tasks.map(task => task.identifier)) // the set of tasks
 	tasks.forEach(task => {
 		task.dependencies.forEach(dependency => {
-			if (!taskSet.has(dependency)) throw new ValidationError(`Dependency ${dependency} of task ${task.identifier} does not exist`)
+			if (!taskSet.has(dependency)) throw new ValidationError(`Dependency ${dependency} of task ${task.identifier} does not exist`, "ghost identifier", dependency)
 		})
 	})
 }
@@ -172,7 +172,7 @@ export function checkNoCircularDependenciesInTasks(tasks: Array<Task>): void { /
 					const nextDependencies = [...dependencies[path[path.length-1]].values()] // get the next dependencies
 					return nextDependencies.map(dependency => {
 						if (path.includes(dependency)) { // if the path already includes that dependency
-							throw new ValidationError(`Circular Dependency in task: ${path.join(" -> ")} -> ${dependency}`) // then it's a circular dependency
+							throw new ValidationError(`Circular Dependency found ${path.join(" -> ")} -> ${dependency}`, "circular dependency found", dependency) // then it's a circular dependency
 						} else { // the path does not include the dependency
 							return path.concat([dependency]) // add the dependency to the path
 						}
@@ -186,8 +186,12 @@ export function checkNoCircularDependenciesInTasks(tasks: Array<Task>): void { /
 // GROUPS
 
 export function checkGroupList(groups: Array<Group>): void {
-	checkNoDuplicateIdentifiersInGroups(groups)
-	checkNoCircularDependenciesInGroups(groups)
+	try {
+		checkNoDuplicateIdentifiersInGroups(groups)
+		checkNoCircularDependenciesInGroups(groups)
+	} catch (error) {
+		if (error instanceof ValidationError) { rethrowValidationError(error, "checking groups list", "groups") } else { throw error }
+	}
 }
 
 export function checkNoDuplicateIdentifiersInGroups(groups: Array<Group>): void {
@@ -197,7 +201,7 @@ export function checkNoDuplicateIdentifiersInGroups(groups: Array<Group>): void 
 			.map(group => group.identifier)
 			.forEach(group => {
 				if (checked.includes(group)) {
-					throw new ValidationError(`Duplicate group found in group list: ${group}`)
+					throw new ValidationError(`Duplicate group "${group}" was found`, "duplicate group found", group)
 				} else {
 					checked.push(group)
 				}
@@ -223,7 +227,7 @@ export function checkNoCircularDependenciesInGroups(groups: Array<Group>): void 
 					const nextDependencies = [...(dependencies[path[path.length-1]] || []).values()] // get the next dependencies
 					return nextDependencies.map(dependency => {
 						if (path.includes(dependency)) { // if the path already includes that dependency
-							throw new ValidationError(`Circular Dependency in group: ${path.join(" -> ")} -> ${dependency}`) // then it's a circular dependency
+							throw new ValidationError(`Circular Dependency found ${path.join(" -> ")} -> ${dependency}`, "circular dependency found", dependency) // then it's a circular dependency
 						} else { // the path does not include the dependency
 							return path.concat([dependency]) // add the dependency to the path
 						}

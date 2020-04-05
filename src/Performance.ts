@@ -1,4 +1,4 @@
-import {Accuracy} from "./types"
+import {Accuracy} from "./types/aliases"
 import {randomEntry, discreteStatistics, DiscreteStatistics} from "./Probability"
 
 ////////////////////////////////////////////////////////////////////////////////

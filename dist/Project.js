@@ -5,22 +5,41 @@ const Task_1 = require("./Task");
 const Schedule_1 = require("./Schedule");
 const Performance_1 = require("./Performance");
 const Probability_1 = require("./Probability");
+const Error_1 = require("./Error");
 ////////////////////////////////////////////////////////////////////////////////
 // PROJECT OBJECT
 ////////////////////////////////////////////////////////////////////////////////
 class Project {
     constructor(name, start, tasks, groups, schedules, accuracies = {}, snapshots = {}) {
+        // save easy stuff
         this.name = name;
         this._start = luxon_1.DateTime.fromISO(start);
         this.tasks = tasks;
         this._tasks = Task_1.internalizeTasks(tasks, groups);
         this.groups = groups;
-        // TODO: ensure there are schedules for each resource
+        // get list of resources
+        const resources = new Set(this.tasks.map(task => task.resource));
+        // ensure there are schedules for each resource
+        Object.keys(schedules).forEach(resource => {
+            if (!resources.has(resource))
+                throw new Error_1.ValidationError(`There is no schedule specified for the resource: "${resource}"`);
+        });
+        // save schedule objects
         this._schedules = Object.keys(schedules).reduce((newSchedules, resource) => {
             newSchedules[resource] = new Schedule_1.Schedule(schedules[resource]);
             return newSchedules;
         }, {});
-        // TODO: ensure there are performances for each resource
+        // ensure there are performances for each resource
+        Object.keys(accuracies).forEach(resource => {
+            if (!resources.has(resource))
+                accuracies[resource] = []; // if some resource doesn't have a history, set them to the default accuracy
+        });
+        // ensure the latest accuracies from the project are taken into account
+        this._tasks.forEach(task => {
+            if (task.done)
+                accuracies[task.resource].push(task.actual); // if task is actually done, add the accuracy from this task to the performance for this resource
+        });
+        // save performance objects
         this._performances = Object.keys(accuracies).reduce((newPerformances, resource) => {
             newPerformances[resource] = new Performance_1.Performance(accuracies[resource]);
             return newPerformances;

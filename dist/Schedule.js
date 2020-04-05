@@ -8,6 +8,7 @@ const { str, sequenceOf, choice, char, digit, whitespace, optionalWhitespace, se
 ////////////////////////////////////////////////////////////////////////////////
 class Schedule {
     constructor(ruleStrings, today = luxon_1.DateTime.local()) {
+        console.log(typeof ruleStrings);
         const rules = ruleStrings.map(makeRule).reverse();
         this._generator = (date) => {
             for (const rule of rules) { // for each rule in backwards order

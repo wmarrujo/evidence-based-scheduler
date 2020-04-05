@@ -19,7 +19,7 @@ The notion of a task involves having some metadata like a name and a description
 - **dependencies** = the reference to other tasks (a list of identifiers) that must be completed before this task is started. You can also reference groups here too, but the effect in the scheduling is the same as copy-pasting the group's tasks here.
 - **prediction** = the person's prediction of how long the task will take them (in hours)
 - **actual** = the time it actually took them to complete the task (in hours)
-- **velocity** = the relative accuracy of your predictions (actual / prediction). Think about it as "how much longer did it take me than I thought it would?".
+- **accuracy** = the relative accuracy of your predictions (actual / prediction). Think about it as "how much longer did it take me than I thought it would?".
 
 ### Groups
 
@@ -44,13 +44,15 @@ DURATION is a value of "years", "months", "weeks", or "days"
 ORDINAL is a value of "weekday", "weekend", "day", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday" or "sunday"
 ```
 
-### Velocities
+### Accuracies
 
-The historical velocities per resource. Effectively the resource's accuracy at predicting.
+The historical accuracies per resource.
 
-If there are not enough historical velocities (more than 10) to give an effective distribution, it will add these example probabilities (in this order) up to 10:
+If there are not enough historical accuracies (more than 10) to give an effective distribution, it will add these example probabilities (in this order) up to 10:
 
 `1.0, 1.1, 0.9, 1.0, 1.2, 0.8, 1.0, 1.1, 0.9, 1.0`
+
+`accuracy = actual / prediction`
 
 ### Snapshots
 

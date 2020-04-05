@@ -1,5 +1,5 @@
 import {DateTime} from "luxon"
-import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, ISODateTimeString} from "./types"
+import {ResourceIdentifier, ISODateString, ScheduleRuleString, Accuracy, Probability, TaskIdentifier, ISODateTimeString} from "./types/aliases"
 import {Task, Group, internalizeTasks} from "./Task"
 import {Schedule, Period} from "./Schedule"
 import {Performance} from "./Performance"

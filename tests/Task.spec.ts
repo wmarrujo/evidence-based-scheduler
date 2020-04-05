@@ -31,21 +31,10 @@ describe("Task & Group Structure", () => {
 	})
 	
 	test("Group Definition", () => {
-		// Test group defaults
-		const defaultGroup = new Group("G1", "Group 1", ["T1"])
+		const group = new Group("G1", ["T1"])
 		
-		expect(defaultGroup.identifier).toBe("G1")
-		expect(defaultGroup.name).toBe("Group 1")
-		expect(defaultGroup.description).toBe("")
-		expect(defaultGroup.tasks).toContain("T1")
-		
-		// Test group specifics
-		const specificGroup = new Group("G2", "Group 2", ["T1"], "description")
-		
-		expect(specificGroup.identifier).toBe("G2")
-		expect(specificGroup.name).toBe("Group 2")
-		expect(specificGroup.description).toBe("description")
-		expect(specificGroup.tasks).toContain("T1")
+		expect(group.identifier).toBe("G1")
+		expect(group.tasks).toContain("T1")
 	})
 })
 
@@ -80,12 +69,12 @@ describe("Task & Group Validation", () => {
 	
 	test("Group List Validation", () => {
 		// set up groups
-		const group1 = new Group("G1", "Group 1", ["T1", "T2", "G3"])
-		const group2 = new Group("G2", "Group 2", ["T2", "T3"])
-		const group3 = new Group("G3", "Group 3", ["T3", "G4"])
-		const group4 = new Group("G4", "Group 4", ["T4", "T5"])
-		const group5 = new Group("G5", "Group 5", ["T2", "G6"])
-		const group6 = new Group("G6", "Group 6", ["T3", "G5"])
+		const group1 = new Group("G1", ["T1", "T2", "G3"])
+		const group2 = new Group("G2", ["T2", "T3"])
+		const group3 = new Group("G3", ["T3", "G4"])
+		const group4 = new Group("G4", ["T4", "T5"])
+		const group5 = new Group("G5", ["T2", "G6"])
+		const group6 = new Group("G6", ["T3", "G5"])
 		
 		// test duplicate identifier finding
 		expect(() => checkNoDuplicateIdentifiersInGroups([group1, group2, group3, group4])).not.toThrow()
@@ -111,8 +100,8 @@ describe("Task Transformation", () => { // set up tasks & groups
 	const task6 = new Task("T6", "Task 6", "Person", 6, ["T5"])
 	const task7 = new Task("T7", "Task 7", "Person", 7, ["G1"])
 
-	const group1 = new Group("G1", "Group 1", ["T1", "T2", "G2"])
-	const group2 = new Group("G2", "Group 2", ["T1", "T4"])
+	const group1 = new Group("G1", ["T1", "T2", "G2"])
+	const group2 = new Group("G2", ["T1", "T4"])
 	
 	test("Task Full Referencing", () => {
 		expect(fullReferenceTasks([task1, task2, task3, task4, task5, task6])[5].dependencies).toContain("T4") // task 6 depends on task 4 but doesn't say so directly

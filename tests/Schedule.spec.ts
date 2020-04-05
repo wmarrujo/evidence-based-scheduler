@@ -1,4 +1,4 @@
-import {makeRule, makePeriodsOnDate, Schedule, getNextWorkDayFrom} from "@/Schedule"
+import {makeRule, makePeriodsOnDate, Schedule, parseRule} from "@/Schedule"
 import {DateTime} from "luxon"
 
 describe("Schedule Rule Evaluation", () => {
@@ -6,14 +6,14 @@ describe("Schedule Rule Evaluation", () => {
 		const times = [{from: {hour: 9, minute: 0}, to: {hour: 17, minute: 0}}]
 		
 		test("include date rule", () => {
-			const rule = makeRule("include from 09:00 to 17:00 on 2020-02-20")
+			const rule = makeRule(parseRule("include from 09:00 to 17:00 on 2020-02-20"))
 			expect(rule(DateTime.fromISO("2020-02-19"))).toBeUndefined() // before
 			expect(rule(DateTime.fromISO("2020-02-20"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-20"), times)) // during
 			expect(rule(DateTime.fromISO("2020-02-21"))).toBeUndefined() // after
 		})
 		
 		test("include from to rule", () => {
-			const rule = makeRule("include from 09:00 to 17:00 from 2020-02-10 to 2020-02-20")
+			const rule = makeRule(parseRule("include from 09:00 to 17:00 from 2020-02-10 to 2020-02-20"))
 			expect(rule(DateTime.fromISO("2020-02-05"))).toBeUndefined() // before
 			expect(rule(DateTime.fromISO("2020-02-10"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-10"), times)) // on leading edge
 			expect(rule(DateTime.fromISO("2020-02-15"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-15"), times)) // during
@@ -22,7 +22,7 @@ describe("Schedule Rule Evaluation", () => {
 		})
 		
 		test("include from for repeat rule", () => {
-			const rule = makeRule("include from 09:00 to 17:00 from 2020-02-10 for 5 days every 2 weeks")
+			const rule = makeRule(parseRule("include from 09:00 to 17:00 from 2020-02-10 for 5 days every 2 weeks"))
 			expect(rule(DateTime.fromISO("2020-02-05"))).toBeUndefined() // before date
 			expect(rule(DateTime.fromISO("2020-02-12"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-12"), times)) // on first occurrance
 			expect(rule(DateTime.fromISO("2020-02-19"))).toBeUndefined() // between occurrances
@@ -33,7 +33,7 @@ describe("Schedule Rule Evaluation", () => {
 		})
 		
 		test("include every rule", () => {
-			const dayRule = makeRule("include from 09:00 to 17:00 every day")
+			const dayRule = makeRule(parseRule("include from 09:00 to 17:00 every day"))
 			expect(dayRule(DateTime.fromISO("2020-02-10"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-10"), times)) // monday
 			expect(dayRule(DateTime.fromISO("2020-02-11"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-11"), times)) // tuesday
 			expect(dayRule(DateTime.fromISO("2020-02-12"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-12"), times)) // wednesday
@@ -42,7 +42,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(dayRule(DateTime.fromISO("2020-02-15"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-15"), times)) // saturday
 			expect(dayRule(DateTime.fromISO("2020-02-16"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-16"), times)) // sunday
 			
-			const weekdayRule = makeRule("include from 09:00 to 17:00 every weekday")
+			const weekdayRule = makeRule(parseRule("include from 09:00 to 17:00 every weekday"))
 			expect(weekdayRule(DateTime.fromISO("2020-02-10"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-10"), times)) // monday
 			expect(weekdayRule(DateTime.fromISO("2020-02-11"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-11"), times)) // tuesday
 			expect(weekdayRule(DateTime.fromISO("2020-02-12"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-12"), times)) // wednesday
@@ -51,7 +51,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(weekdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(weekdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const weekendRule = makeRule("include from 09:00 to 17:00 every weekend")
+			const weekendRule = makeRule(parseRule("include from 09:00 to 17:00 every weekend"))
 			expect(weekendRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(weekendRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(weekendRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -60,7 +60,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(weekendRule(DateTime.fromISO("2020-02-15"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-15"), times)) // saturday
 			expect(weekendRule(DateTime.fromISO("2020-02-16"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-16"), times)) // sunday
 			
-			const mondayRule = makeRule("include from 09:00 to 17:00 every monday")
+			const mondayRule = makeRule(parseRule("include from 09:00 to 17:00 every monday"))
 			expect(mondayRule(DateTime.fromISO("2020-02-10"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-10"), times)) // monday
 			expect(mondayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(mondayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -69,7 +69,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(mondayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(mondayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const tuesdayRule = makeRule("include from 09:00 to 17:00 every tuesday")
+			const tuesdayRule = makeRule(parseRule("include from 09:00 to 17:00 every tuesday"))
 			expect(tuesdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-11"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-11"), times)) // tuesday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -78,7 +78,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(tuesdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const wednesdayRule = makeRule("include from 09:00 to 17:00 every wednesday")
+			const wednesdayRule = makeRule(parseRule("include from 09:00 to 17:00 every wednesday"))
 			expect(wednesdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-12"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-12"), times)) // wednesday
@@ -87,7 +87,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(wednesdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const thursdayRule = makeRule("include from 09:00 to 17:00 every thursday")
+			const thursdayRule = makeRule(parseRule("include from 09:00 to 17:00 every thursday"))
 			expect(thursdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(thursdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(thursdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -96,7 +96,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(thursdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(thursdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const fridayRule = makeRule("include from 09:00 to 17:00 every friday")
+			const fridayRule = makeRule(parseRule("include from 09:00 to 17:00 every friday"))
 			expect(fridayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(fridayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(fridayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -105,7 +105,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(fridayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(fridayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const saturdayRule = makeRule("include from 09:00 to 17:00 every saturday")
+			const saturdayRule = makeRule(parseRule("include from 09:00 to 17:00 every saturday"))
 			expect(saturdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(saturdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(saturdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -114,7 +114,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(saturdayRule(DateTime.fromISO("2020-02-15"))).toEqual(makePeriodsOnDate(DateTime.fromISO("2020-02-15"), times)) // saturday
 			expect(saturdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const sundayRule = makeRule("include from 09:00 to 17:00 every sunday")
+			const sundayRule = makeRule(parseRule("include from 09:00 to 17:00 every sunday"))
 			expect(sundayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(sundayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(sundayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -127,14 +127,14 @@ describe("Schedule Rule Evaluation", () => {
 		// EXCLUDE FORMS
 		
 		test("exclude date rule", () => {
-			const rule = makeRule("exclude on 2020-02-20")
+			const rule = makeRule(parseRule("exclude on 2020-02-20"))
 			expect(rule(DateTime.fromISO("2020-02-19"))).toBeUndefined() // before
 			expect(rule(DateTime.fromISO("2020-02-20"))).toEqual([]) // during
 			expect(rule(DateTime.fromISO("2020-02-21"))).toBeUndefined() // after
 		})
 		
 		test("exclude from to rule", () => {
-			const rule = makeRule("exclude from 2020-02-10 to 2020-02-20")
+			const rule = makeRule(parseRule("exclude from 2020-02-10 to 2020-02-20"))
 			expect(rule(DateTime.fromISO("2020-02-05"))).toBeUndefined() // before
 			expect(rule(DateTime.fromISO("2020-02-10"))).toEqual([]) // on leading edge
 			expect(rule(DateTime.fromISO("2020-02-15"))).toEqual([]) // during
@@ -143,7 +143,7 @@ describe("Schedule Rule Evaluation", () => {
 		})
 		
 		test("exclude from for repeat rule", () => {
-			const rule = makeRule("exclude from 2020-02-10 for 5 days every 2 weeks")
+			const rule = makeRule(parseRule("exclude from 2020-02-10 for 5 days every 2 weeks"))
 			expect(rule(DateTime.fromISO("2020-02-05"))).toBeUndefined() // before date
 			expect(rule(DateTime.fromISO("2020-02-12"))).toEqual([]) // on first occurrance
 			expect(rule(DateTime.fromISO("2020-02-19"))).toBeUndefined() // between occurrances
@@ -154,7 +154,7 @@ describe("Schedule Rule Evaluation", () => {
 		})
 		
 		test("exclude every rule", () => {
-			const dayRule = makeRule("exclude every day")
+			const dayRule = makeRule(parseRule("exclude every day"))
 			expect(dayRule(DateTime.fromISO("2020-02-10"))).toEqual([]) // monday
 			expect(dayRule(DateTime.fromISO("2020-02-11"))).toEqual([]) // tuesday
 			expect(dayRule(DateTime.fromISO("2020-02-12"))).toEqual([]) // wednesday
@@ -163,7 +163,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(dayRule(DateTime.fromISO("2020-02-15"))).toEqual([]) // saturday
 			expect(dayRule(DateTime.fromISO("2020-02-16"))).toEqual([]) // sunday
 			
-			const weekdayRule = makeRule("exclude every weekday")
+			const weekdayRule = makeRule(parseRule("exclude every weekday"))
 			expect(weekdayRule(DateTime.fromISO("2020-02-10"))).toEqual([]) // monday
 			expect(weekdayRule(DateTime.fromISO("2020-02-11"))).toEqual([]) // tuesday
 			expect(weekdayRule(DateTime.fromISO("2020-02-12"))).toEqual([]) // wednesday
@@ -172,7 +172,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(weekdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(weekdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const weekendRule = makeRule("exclude every weekend")
+			const weekendRule = makeRule(parseRule("exclude every weekend"))
 			expect(weekendRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(weekendRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(weekendRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -181,7 +181,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(weekendRule(DateTime.fromISO("2020-02-15"))).toEqual([]) // saturday
 			expect(weekendRule(DateTime.fromISO("2020-02-16"))).toEqual([]) // sunday
 			
-			const mondayRule = makeRule("exclude every monday")
+			const mondayRule = makeRule(parseRule("exclude every monday"))
 			expect(mondayRule(DateTime.fromISO("2020-02-10"))).toEqual([]) // monday
 			expect(mondayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(mondayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -190,7 +190,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(mondayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(mondayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const tuesdayRule = makeRule("exclude every tuesday")
+			const tuesdayRule = makeRule(parseRule("exclude every tuesday"))
 			expect(tuesdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-11"))).toEqual([]) // tuesday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -199,7 +199,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(tuesdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(tuesdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const wednesdayRule = makeRule("exclude every wednesday")
+			const wednesdayRule = makeRule(parseRule("exclude every wednesday"))
 			expect(wednesdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-12"))).toEqual([]) // wednesday
@@ -208,7 +208,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(wednesdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(wednesdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const thursdayRule = makeRule("exclude every thursday")
+			const thursdayRule = makeRule(parseRule("exclude every thursday"))
 			expect(thursdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(thursdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(thursdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -217,7 +217,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(thursdayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(thursdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const fridayRule = makeRule("exclude every friday")
+			const fridayRule = makeRule(parseRule("exclude every friday"))
 			expect(fridayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(fridayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(fridayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -226,7 +226,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(fridayRule(DateTime.fromISO("2020-02-15"))).toBeUndefined() // saturday
 			expect(fridayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const saturdayRule = makeRule("exclude every saturday")
+			const saturdayRule = makeRule(parseRule("exclude every saturday"))
 			expect(saturdayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(saturdayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(saturdayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday
@@ -235,7 +235,7 @@ describe("Schedule Rule Evaluation", () => {
 			expect(saturdayRule(DateTime.fromISO("2020-02-15"))).toEqual([]) // saturday
 			expect(saturdayRule(DateTime.fromISO("2020-02-16"))).toBeUndefined() // sunday
 			
-			const sundayRule = makeRule("exclude every sunday")
+			const sundayRule = makeRule(parseRule("exclude every sunday"))
 			expect(sundayRule(DateTime.fromISO("2020-02-10"))).toBeUndefined() // monday
 			expect(sundayRule(DateTime.fromISO("2020-02-11"))).toBeUndefined() // tuesday
 			expect(sundayRule(DateTime.fromISO("2020-02-12"))).toBeUndefined() // wednesday

@@ -27,6 +27,10 @@ describe("Schedule Rule Parser Combinators", () => {
 	})
 })
 
+describe("Schedule Rule Parser Error Reporting", () => {
+	
+})
+
 describe("Rule Parsing", () => {
 	
 	test("include date rule", () => {
