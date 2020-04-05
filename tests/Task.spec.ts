@@ -4,11 +4,9 @@ import {ValidationError} from "@/Error"
 describe("Task & Group Structure", () => {
 	test("Task Definition", () => {
 		// Test task defaults
-		const defaultTask = new Task("T1", "Task 1", "Person 1", 3)
+		const defaultTask = new Task("T1", "Person 1", 3)
 		
 		expect(defaultTask.identifier).toBe("T1")
-		expect(defaultTask.name).toBe("Task 1")
-		expect(defaultTask.description).toBe("")
 		expect(defaultTask.resource).toBe("Person 1")
 		expect(defaultTask.dependencies.size).toBe(0)
 		expect(defaultTask.prediction).toBe(3)
@@ -17,11 +15,9 @@ describe("Task & Group Structure", () => {
 		expect(defaultTask.accuracy).toBeUndefined()
 		
 		// Test task specifics
-		const specificTask = new Task("T2", "Task 2", "Person 2", 4, [defaultTask.identifier], 3, true, "description")
+		const specificTask = new Task("T2", "Person 2", 4, [defaultTask.identifier], 3, true)
 		
 		expect(specificTask.identifier).toBe("T2")
-		expect(specificTask.name).toBe("Task 2")
-		expect(specificTask.description).toBe("description")
 		expect(specificTask.resource).toBe("Person 2")
 		expect(specificTask.dependencies).toContain("T1")
 		expect(specificTask.prediction).toBe(4)
@@ -41,12 +37,12 @@ describe("Task & Group Structure", () => {
 describe("Task & Group Validation", () => {
 	test("Task List Validation", () => {
 		// set up tasks
-		const task1 = new Task("T1", "Task 1", "Person", 1, [])
-		const task2 = new Task("T2", "Task 2", "Person", 2, [])
-		const task3 = new Task("T3", "Task 3", "Person", 3, ["T1"])
-		const task4 = new Task("T4", "Task 4", "Person", 4, ["T1"])
-		const task5 = new Task("T5", "Task 5", "Person", 5, ["T6"])
-		const task6 = new Task("T6", "Task 6", "Person", 6, ["T5"]) // will lead to circular dependency
+		const task1 = new Task("T1", "Person", 1, [])
+		const task2 = new Task("T2", "Person", 2, [])
+		const task3 = new Task("T3", "Person", 3, ["T1"])
+		const task4 = new Task("T4", "Person", 4, ["T1"])
+		const task5 = new Task("T5", "Person", 5, ["T6"])
+		const task6 = new Task("T6", "Person", 6, ["T5"]) // will lead to circular dependency
 		
 		// test duplicate identifier finding
 		expect(() => checkNoDuplicateIdentifiersInTasks([task1, task2, task3, task4, task5, task6])).not.toThrow()
@@ -92,13 +88,13 @@ describe("Task & Group Validation", () => {
 })
 
 describe("Task Transformation", () => { // set up tasks & groups
-	const task1 = new Task("T1", "Task 1", "Person", 1, [])
-	const task2 = new Task("T2", "Task 2", "Person", 2, ["T1"])
-	const task3 = new Task("T3", "Task 3", "Person", 3, ["T1"])
-	const task4 = new Task("T4", "Task 4", "Person", 4, [])
-	const task5 = new Task("T5", "Task 5", "Person", 5, ["T4"])
-	const task6 = new Task("T6", "Task 6", "Person", 6, ["T5"])
-	const task7 = new Task("T7", "Task 7", "Person", 7, ["G1"])
+	const task1 = new Task("T1", "Person", 1, [])
+	const task2 = new Task("T2", "Person", 2, ["T1"])
+	const task3 = new Task("T3", "Person", 3, ["T1"])
+	const task4 = new Task("T4", "Person", 4, [])
+	const task5 = new Task("T5", "Person", 5, ["T4"])
+	const task6 = new Task("T6", "Person", 6, ["T5"])
+	const task7 = new Task("T7", "Person", 7, ["G1"])
 
 	const group1 = new Group("G1", ["T1", "T2", "G2"])
 	const group2 = new Group("G2", ["T1", "T4"])

@@ -1,10 +1,11 @@
 import {DateTime} from "luxon"
-import {ISODateString, ResourceIdentifier} from "./types/aliases"
+import {ResourceIdentifier, TaskIdentifier, ISODateString, ISODateTimeString} from "./types/aliases"
 import {ProjectObject} from "./types/convenience"
 import {ValidationError, rethrowValidationError} from "./Error"
 import {Task, Group, internalizeTasks} from "./Task"
 import {Schedule} from "./Schedule"
 import {Performance} from "./Performance"
+import {scheduleTasks} from "./Simulation"
 
 // RE-EXPORTS
 
@@ -26,10 +27,14 @@ export {ValidationError} from "./Error"
 export class Project {
 	// INSTANCE VARIABLES
 	
+	// set by constructor
 	private _start: DateTime // internal representation
 	private _tasks: Array<Task> // internal saving of tasks list
 	private _schedules: Record<ResourceIdentifier, Schedule> // internal saving of schedules
 	private _performances: Record<ResourceIdentifier, Performance> // internal saving of performances
+	
+	// caches
+	private _taskSchedule: Array<{task: TaskIdentifier, begin: ISODateTimeString, end: ISODateTimeString}> | undefined = undefined // a cache of the generated schedule
 	
 	// CONSTRUCTOR
 	
@@ -80,7 +85,7 @@ export class Project {
 		
 		// turn projectObject tasks into actual task objects
 		const originalTasks = rawTasks.map(task => {
-			return new Task(task.identifier, task.name || "Unnamed Task", task.resource, task.prediction, task.dependencies, task.actual, task.done, task.description)
+			return new Task(task.identifier, task.resource, task.prediction, task.dependencies, task.actual, task.done)
 		})
 		
 		// validate groups
@@ -160,12 +165,26 @@ export class Project {
 		return this._start.toISODate()
 	}
 	
+	get schedule(): Array<{task: TaskIdentifier, begin: ISODateTimeString, end: ISODateTimeString}> {
+		if (!this._taskSchedule) { // if the task schedule has not been calculated yet
+			this._taskSchedule = scheduleTasks(this._tasks, this._start, this._schedules) // calculate it
+				.map(scheduledTask => { // for each result
+					return { // convert it into an exportable format
+						task: scheduledTask.task,
+						begin: scheduledTask.begin.toISO(),
+						end: scheduledTask.end.toISO()
+					}
+				})
+		}
+		return this._taskSchedule
+	}
+	
 	// SETTERS
 	
-	set start(date: ISODateString) {
+	startOn(date: ISODateString): Project {
 		const parsed = DateTime.fromISO(date)
 		if (parsed.isValid) { // if it could parse the date
-			this._start = DateTime.fromISO(date)
+			return new Project(DateTime.fromISO(date), this._tasks, this._schedules, this._performances)
 		} else { // if it could not parse the date
 			throw new ValidationError(parsed.invalidExplanation!, "invalid date", date)
 		}
@@ -181,5 +200,3 @@ export class Project {
 	
 	// CLASS FUNCTIONS
 }
-
-// TODO: function clone() // all setters will use this

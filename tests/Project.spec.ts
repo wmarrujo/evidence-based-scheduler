@@ -1,13 +1,13 @@
-import {scheduleTasks} from "@/Project"
+import {scheduleTasks} from "@/Simulation"
 import {Task} from "@/Task"
 import {DateTime} from "luxon"
 import {Schedule} from "@/Schedule"
 
 describe("Task Scheduling", () => {
 	const tasks = [ // tasks
-		new Task("T1", "Task 1", "Person", 2, []),
-		new Task("T2", "Task 2", "Person", 2, ["T1"]),
-		new Task("T3", "Task 2", "Person", 8, ["T3"])
+		new Task("T1", "Person", 2, []),
+		new Task("T2", "Person", 2, ["T1"]),
+		new Task("T3", "Person", 8, ["T3"])
 	]
 	const friday = DateTime.fromISO("2020-03-27") // start date
 	const monday = DateTime.fromISO("2020-03-30") // the monday after

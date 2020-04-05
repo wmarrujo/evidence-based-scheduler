@@ -8,8 +8,6 @@ export interface ProjectObject {
 	start?: ISODateString,
 	tasks?: Array<{
 		identifier: TaskIdentifier,
-		name?: string,
-		description?: string,
 		dependencies?: Array<TaskIdentifier>,
 		resource: ResourceIdentifier,
 		prediction: Hours,

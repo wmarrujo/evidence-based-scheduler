@@ -7,18 +7,14 @@ import {ValidationError, rethrowValidationError} from "./Error"
 
 export class Task {
 	identifier: TaskIdentifier
-	name: string
-	description: string
 	resource: ResourceIdentifier
 	dependencies: Set<TaskIdentifier>
 	prediction: number
 	actual: number
 	done: boolean
 	
-	constructor(identifier: TaskIdentifier, name: string, resource: ResourceIdentifier, prediction: number, dependencies: Iterable<TaskIdentifier> = [], actual: number = 0, done = false, description: string = "") {
+	constructor(identifier: TaskIdentifier, resource: ResourceIdentifier, prediction: number, dependencies: Iterable<TaskIdentifier> = [], actual: number = 0, done = false) {
 		this.identifier = identifier
-		this.name = name
-		this.description = description
 		this.resource = resource
 		this.dependencies = new Set([...dependencies])
 		this.prediction = prediction
@@ -71,7 +67,7 @@ export function internalizeTasks(tasks: Array<Task>, groups: Array<Group>): Arra
 			newDependencies = newDependencies.flat() // flatten any arrays we just added
 		} while (replacement) // end when it checked everything, and there were no
 		// return a copy of the task with new, internally referencing dependencies
-		return new Task(task.identifier, task.name, task.resource, task.prediction, newDependencies as Array<string>, task.actual, task.done, task.description)
+		return new Task(task.identifier, task.resource, task.prediction, newDependencies as Array<string>, task.actual, task.done)
 	})
 	
 	// fail if tasks aren't self-consistent
@@ -108,7 +104,7 @@ export function fullReferenceTasks(tasks: Array<Task>): Array<Task> { // make th
 			dependencies[dependency].forEach(higherLevelDependency => unvisitedDependencies.add(higherLevelDependency))
 		}
 		
-		return new Task(task.identifier, task.name, task.resource, task.prediction, allDependencies, task.actual, task.done, task.description) // return a copy of the task with the new dependencies replaced
+		return new Task(task.identifier, task.resource, task.prediction, allDependencies, task.actual, task.done) // return a copy of the task with the new dependencies replaced
 	})
 }
 
