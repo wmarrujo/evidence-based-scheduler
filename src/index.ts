@@ -1,11 +1,12 @@
 import {DateTime} from "luxon"
-import {ResourceIdentifier, TaskIdentifier, ISODateString, ISODateTimeString} from "./types/aliases"
+import {ResourceIdentifier, TaskIdentifier, ISODateString, ISODateTimeString, Probability} from "./types/aliases"
 import {ProjectObject} from "./types/convenience"
 import {ValidationError, rethrowValidationError} from "./Error"
 import {Task, Group, internalizeTasks} from "./Task"
-import {Schedule} from "./Schedule"
+import {Schedule, Period} from "./Schedule"
 import {Performance} from "./Performance"
-import {scheduleTasks} from "./Simulation"
+import {scheduleTasks, monteCarloSimulations} from "./Simulation"
+import {cumulativeProbability} from "./Probability"
 
 // RE-EXPORTS
 
@@ -34,7 +35,8 @@ export class Project {
 	private _performances: Record<ResourceIdentifier, Performance> // internal saving of performances
 	
 	// caches
-	private _taskSchedule: Array<{task: TaskIdentifier, begin: ISODateTimeString, end: ISODateTimeString}> | undefined = undefined // a cache of the generated schedule
+	private _taskSchedule: Array<{task: TaskIdentifier, begin: ISODateTimeString, end: ISODateTimeString}> | undefined // a cache of the generated schedule
+	private _simulations: Array<DateTime> | undefined
 	
 	// CONSTRUCTOR
 	
@@ -165,38 +167,57 @@ export class Project {
 		return this._start.toISODate()
 	}
 	
+	/**
+	 * This returns the tasks with begin and end dates assigned. It schedules them
+	 * according to the schedules specified
+	 */
 	get schedule(): Array<{task: TaskIdentifier, begin: ISODateTimeString, end: ISODateTimeString}> {
 		if (!this._taskSchedule) { // if the task schedule has not been calculated yet
 			this._taskSchedule = scheduleTasks(this._tasks, this._start, this._schedules) // calculate it
-				.map(scheduledTask => { // for each result
-					return { // convert it into an exportable format
-						task: scheduledTask.task,
-						begin: scheduledTask.begin.toISO(),
-						end: scheduledTask.end.toISO()
-					}
-				})
+				.map(scheduledTask => ({task: scheduledTask.task, begin: scheduledTask.begin.toISO(), end: scheduledTask.end.toISO()})) // convert it into an exportable format
 		}
 		return this._taskSchedule
 	}
 	
 	// SETTERS
 	
+	/**
+	 * returns a this project, but with a different start date.
+	 */
 	startOn(date: ISODateString): Project {
 		const parsed = DateTime.fromISO(date)
-		if (parsed.isValid) { // if it could parse the date
-			return new Project(DateTime.fromISO(date), this._tasks, this._schedules, this._performances)
-		} else { // if it could not parse the date
-			throw new ValidationError(parsed.invalidExplanation!, "invalid date", date)
-		}
+		if (!parsed.isValid) throw new ValidationError(parsed.invalidExplanation!, "Invalid date", date)
+		
+		return new Project(DateTime.fromISO(date), this._tasks, this._schedules, this._performances)
 	}
 	
-	// COMPUTED INSTANCE VARIABLES
+	// METHODS
 	
+	/**
+	 * Gets the probability that the entire project will end on a specific date.
+	 * You can optionally specify how many simulations to do.
+	 */
+	async probabilityOfEndingOnDate(dateString: ISODateString, simulations: number = 1000): Promise<Probability> {
+		const date = DateTime.fromISO(dateString)
+		if (!date.isValid) throw new ValidationError(date.invalidExplanation!, "Invalid date", dateString)
+		
+		if (!this._simulations) { // if simulations have been done
+			this._simulations = await monteCarloSimulations(this._tasks, this._performances, this._schedules, simulations) // run simulations
+		}
+		
+		return cumulativeProbability(this._simulations, date)
+	}
 	
-	
-	// INSTANCE FUNCTIONS
-	
-	
-	
-	// CLASS FUNCTIONS
+	/**
+	 * Gets the scheduled times that a specifiedresource is working on the project 
+	 * over a specified date range.
+	 */
+	resourceScheduleInRange(resource: ResourceIdentifier, fromString: ISODateString, toString: ISODateString): Array<Period> {
+		const from = DateTime.fromISO(fromString)
+		const to = DateTime.fromISO(toString)
+		if (!from.isValid) throw new ValidationError(from.invalidExplanation!, "Invalid date", fromString)
+		if (!to.isValid) throw new ValidationError(to.invalidExplanation!, "Invalid date", toString)
+		
+		return this._schedules[resource].periodsInRange(from, to)
+	}
 }
