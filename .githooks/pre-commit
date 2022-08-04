@@ -1,3 +1,0 @@
-#!/bin/sh
-
-./node_modules/.bin/eslint . --ext ts,js # run linting without fixing, just give warning, then they can run `npm run lint` to fix
