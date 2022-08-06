@@ -5,27 +5,48 @@ import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+	<div class="logo-box">
+		<img style="height:140px;" src="./assets/electron.png" >
+		<span/>
+		<img style="height:140px;" src="./assets/vite.svg" >
+		<span/>
+		<img style="height:140px;" src="./assets/vue.png" >
+	</div>
+	<HelloWorld msg="Hello Vue 3 + TypeScript + Vite" />
+	<div class="static-public">
+		Place static files into the <code>/public</code> folder
+		<img style="width:77px;" :src="'./node.png'" >
+	</div>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
+<style>
+#app {
+	font-family: Avenir, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-align: center;
+	color: #2c3e50;
+	margin-top: 60px;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+.logo-box {
+	display: flex;
+	width: 100%;
+	justify-content: center;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+.logo-box span {
+	width: 74px;
+}
+.static-public {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.static-public code {
+	background-color: #eee;
+	padding: 2px 4px;
+	margin: 0 4px;
+	border-radius: 4px;
+	color: #304455;
 }
 </style>

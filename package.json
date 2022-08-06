@@ -1,20 +1,35 @@
 {
-  "name": "evidence-based-scheduler",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "vue": "^3.2.37"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^3.0.0",
-    "typescript": "^4.6.4",
-    "vite": "^3.0.0",
-    "vue-tsc": "^0.38.4"
-  }
+	"name": "evidence-based-scheduler",
+	"version": "0.0.0",
+	"main": "dist/electron/main/index.js",
+	"description": "Evidence based scheduling application.",
+	"author": "William Marrujo <willmarrujo@gmail.com>",
+	"license": "MIT",
+	"private": true,
+	"scripts": {
+		"dev": "vite",
+		"build": "vue-tsc --noEmit && vite build && electron-builder"
+	},
+	"engines": {
+		"node": ">=14.17.0"
+	},
+	"devDependencies": {
+		"@vitejs/plugin-vue": "^3.0.1",
+		"electron": "^19.0.8",
+		"electron-builder": "^23.1.0",
+		"typescript": "^4.7.4",
+		"vite": "^3.0.3",
+		"vite-plugin-electron": "^0.8.1",
+		"vue": "^3.2.37",
+		"vue-tsc": "^0.39.4"
+	},
+	"env": {
+		"VITE_DEV_SERVER_HOST": "127.0.0.1",
+		"VITE_DEV_SERVER_PORT": 3344
+	},
+	"keywords": [
+		"evidence",
+		"scheduling",
+		"scheduler"
+	]
 }
