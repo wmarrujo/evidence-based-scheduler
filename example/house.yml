@@ -85,6 +85,10 @@ tasks:
       - Furnish Kitchen
       - Furnish Bathroom
       - Furnish Bedroom
+  - name: Built
+    dependencies:
+      - Build Walls
+      - Build Roof
 
 resources:
   - name: Architect

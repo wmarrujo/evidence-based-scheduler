@@ -24,8 +24,6 @@ export const ROOT_PATH = {
 }
 
 let window: BrowserWindow | null = null
-// Here, you can also use other preload
-const preload = join(__dirname, "../preload/index.js")
 // 🚧 Use ["ENV_NAME"] avoid vite:define plugin
 const url = `http://${process.env["VITE_DEV_SERVER_HOST"]}:${process.env["VITE_DEV_SERVER_PORT"]}`
 const indexHtml = join(ROOT_PATH.dist, "index.html")
@@ -34,13 +32,9 @@ async function createWindow() {
 	window = new BrowserWindow({
 		title: "Main window",
 		icon: join(ROOT_PATH.public, "favicon.ico"),
+		fullscreen: true, // start in fullscreen
 		webPreferences: {
-			preload,
-			// Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
-			// Consider using contextBridge.exposeInMainWorld
-			// Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-			nodeIntegration: true,
-			contextIsolation: false,
+			preload: join(__dirname, "../preload/index.js"),
 		},
 	})
 	

@@ -33,8 +33,7 @@ export default defineConfig({
 					},
 				},
 			},
-			// Enables use of Node.js API in the Renderer-process
-			renderer: {},
+			renderer: {}, // Enables use of Node.js API in the Renderer-process
 		}),
 	],
 	server: {
