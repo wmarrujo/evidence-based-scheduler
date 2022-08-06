@@ -1,0 +1,120 @@
+project:
+  name: House
+  start: 2022-08-05
+
+tasks:
+  - name: Design
+    resources:
+      - name: Architect
+        prediction: 8h
+  - name: Lay Foundation
+    resources:
+      - name: Carpenter
+        prediction: 5h
+    dependencies:
+      - Design
+      - 2022-08-10
+  - name: Check Building Code
+    resources:
+      - name: Inspector
+        prediction: 2h
+    dependencies:
+      - Design
+  - name: Design Interior
+    resources:
+      - name: Decorator
+        prediction: 1h
+    dependencies:
+      - Design
+  - name: Build Walls
+    resources:
+      - name: Carpenter
+        prediction: 3h
+    dependencies:
+      - Lay Foundation
+  - name: Build Roof
+    resources:
+      - name: Carpenter
+        prediction: 3h
+    dependencies:
+      - Build Walls
+  - name: Paint Kitchen
+    resources:
+      - name: Painter
+        prediction: 2h
+    dependencies:
+      - Build Walls
+  - name: Paint Bathroom
+    resources:
+      - name: Painter
+        prediction: 1h
+    dependencies:
+      - Build Walls
+  - name: Paint Bedroom
+    resources:
+      - name: Painter
+        prediction: 2h
+    dependencies:
+      - Build Walls
+  - name: Furnish Kitchen
+    resources:
+      - name: Decorator
+        prediction: 2h
+    dependencies:
+      - Design Interior
+      - Paint Kitchen
+  - name: Furnish Bathroom
+    resources:
+      - name: Decorator
+        prediction: 1h
+    dependencies:
+      - Design Interior
+      - Paint Bathroom
+  - name: Furnish Bedroom
+    resources:
+      - name: Decorator
+        prediction: 2h
+    dependencies:
+      - Design Interior
+      - Paint Bedroom
+  - name: Inspect
+    resources:
+      - name: Inspector
+        prediction: 5h
+    dependencies:
+      - Furnish Kitchen
+      - Furnish Bathroom
+      - Furnish Bedroom
+
+resources:
+  - name: Architect
+    schedule:
+      - weekdays from 09:00 to 17:00
+      - not on weekends
+  - name: Carpenter
+    schedule:
+      - weekdays from 05:00 to 14:00
+      - not on fridays
+      - not on mondays every 1st week of the month
+    accuracy:
+      - date: 2022-06-10
+        accuracy: 1.0
+      - date: 2022-06-11
+        accuracy: 0.9
+      - date: 2022-06-12
+        accuracy: 1.1
+  - name: Painter
+    schedule:
+      - weekdays from 13:00-15:00
+      - not in december
+  - name: Decorator
+    schedule:
+      - weekdays from 13:00-17:00
+  - name: Inspector
+    schedule:
+      - tuesdays from 12:00-17:00
+    accuracy:
+      - date: 2022-05-05
+        accuracy: 1.5
+      - date: 2022-06-23
+        accuracy: 1.3
