@@ -2,28 +2,22 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-	"appId": "YourAppID",
+	"appId": "evidence-based-scheduler",
 	"asar": true,
 	"directories": {
 		"output": "release/${version}"
 	},
 	"files": [
-		"dist"
+		"dist/**/*", // copy built front-end files over
+		"electron/**/*" // copy back-end files over
 	],
 	"mac": {
 		"artifactName": "${productName}_${version}.${ext}",
-		"target": [
-			"dmg"
-		]
+		"target": ["dmg"]
 	},
 	"win": {
 		"target": [
-			{
-				"target": "nsis",
-				"arch": [
-					"x64"
-				]
-			}
+			{"target": "nsis", "arch": ["x64"]}
 		],
 		"artifactName": "${productName}_${version}.${ext}"
 	},
