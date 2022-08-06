@@ -1,12 +1,27 @@
 <template>
-	<h1>Evidence-Based Scheduler</h1>
-	<button class="btn btn-primary">Primary button</button>
+	<nav class="flex float-left bg-fixed">
+		<ul>
+			<li>Configuration</li>
+			<li>Gantt</li>
+			<li>Schedule</li>
+			<li>Histories</li>
+			<li>Predictions</li>
+			<li>Snapshots</li>
+		</ul>
+	</nav>
+	<h1 class="text-3xl">Evidence-Based Scheduler</h1>
 </template>
 
 <script setup lang="ts">
-import * as bootstrap from "bootstrap"
 </script>
 
 <style>
-@import "styles/main.scss"
+#app {
+	height: 100vh;
+	width: 100vw;
+}
+
+nav {
+	height: 100%;
+}
 </style>
