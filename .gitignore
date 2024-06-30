@@ -5,6 +5,7 @@ node_modules
 .vercel
 /.svelte-kit
 /build
+/package
 
 # OS
 .DS_Store
@@ -19,3 +20,10 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# EdgeDB
+dbschema/edgeql-js
+dbschema/interfaces.ts
+
+# Temporary
+**/tmp/

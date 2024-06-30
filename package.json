@@ -2,13 +2,32 @@
 	"name": "evidence-based-scheduler",
 	"version": "0.0.1",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"schemagen": "npx @edgedb/generate edgeql-js && npx @edgedb/generate interfaces"
+	},
+	"dependencies": {
+		"bits-ui": "^0.21.11",
+		"clsx": "^2.1.1",
+		"cmdk-sv": "^0.0.17",
+		"edgedb": "^1.5.7",
+		"formsnap": "^1.0.1",
+		"lucide-svelte": "^0.399.0",
+		"luxon": "^3.4.4",
+		"mode-watcher": "^0.3.1",
+		"svelte-legos": "^0.2.3",
+		"svelte-sonner": "^0.3.24",
+		"sveltekit-superforms": "^2.15.2",
+		"tailwind-merge": "^2.3.0",
+		"tailwind-variants": "^0.2.1",
+		"vaul-svelte": "^0.3.2",
+		"zod": "^3.23.8"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.0.0",
@@ -26,9 +45,9 @@
 		"svelte-check": "^3.6.0",
 		"tailwindcss": "^3.4.4",
 		"tslib": "^2.4.1",
+		"tsx": "^4.16.0",
 		"typescript": "^5.0.0",
 		"typescript-eslint": "^8.0.0-alpha.20",
 		"vite": "^5.0.3"
-	},
-	"type": "module"
+	}
 }
