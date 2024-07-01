@@ -20,6 +20,10 @@ export type Task = {
 	estimate: number // the current estimate, in hours
 	elapsed: number // the current elapsed time, in hours
 	dependsOn: Array<TaskId>
+	
+	// graph
+	x: number
+	y: number
 }
 
 export type ProjectId = number

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import {type Task} from "$lib/db"
+	import {db, type Task, type TaskId} from "$lib/db"
 	import {mode} from "mode-watcher"
+	import {drawCircle, drawArrow} from "$lib/canvas"
 	
 	// SETUP
 	
@@ -35,22 +36,30 @@
 	
 	const nodesById = nodes.reduce((acc, node) => { acc[node.id] = node; return acc }, {} as Record<number, Node>)
 	
-	function makeLink(source: Node | number, target: Node | number) {
+	async function makeLink(source: Node | number, target: Node | number) {
 		const s = typeof(source) == "number" ? nodesById[source] : source
 		const t = typeof(target) == "number" ? nodesById[target] : target
 		
-		if (s == t) return // can't make a link with yourself
-		// TODO: make sure we didn't add a loop
+		if (await makesLoop(s.id, t.id)) { console.error("Makes loop"); return} // can't make loops
 		
-		// TODO: add this information to the database
+		// add this information to the database
+		const task = (await db.tasks.get(t.id))!
+		task.dependsOn.push(s.id)
+		db.tasks.update(t.id, {dependsOn: task.dependsOn})
 		
 		// add the link to the list of links
 		simulation.stop()
-		
 		links.push({source: s.id, target: t.id})
-		
 		reInitializeSimulation()
 		simulation.restart()
+	}
+	
+	/** Returns true if the arrow from the source to the target would make a loop. */
+	async function makesLoop(source: TaskId, target: TaskId): Promise<boolean> {
+		const backLinks = (await db.tasks.get(source))?.dependsOn ?? []
+		return source == target // self loops aren't allowed
+			|| backLinks.includes(target) // check this link
+			|| !backLinks.every(task => !makesLoop(task, target)) // check recursively
 	}
 	
 	// SIMULATION
@@ -60,8 +69,9 @@
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0))
-			.force("charge", d3.forceManyBody())
+			.force("charge", d3.forceManyBody().distanceMax(200))
 			.on("tick", updateSimulation)
+			.alphaDecay(0) // never stop the simulation
 	}
 	
 	function reInitializeSimulation() {
@@ -85,10 +95,7 @@
 	
 	function drawNode(node: Node) {
 		context.fillStyle = $mode == "light" ? "black" : "white"
-		
-		context.beginPath()
-		context.arc(node.x!, node.y!, node.r, 0, 2 * Math.PI, false)
-		context.fill()
+		drawCircle(context, node.x!, node.y!, node.r)
 	}
 	
 	function drawLink(link: Link) {
@@ -96,22 +103,15 @@
 		const target = link.target as Node
 		
 		context.strokeStyle = $mode == "light" ? "black" : "white"
-		context.lineWidth = 2
 		
-		context.beginPath()
-		context.moveTo(source.x!, source.y!)
-		context.lineTo(target.x!, target.y!)
-		context.stroke()
+		drawArrow(context, source.x!, source.y!, target.x!, target.y!, 2)
 	}
 	
 	function drawConnector(source: Node) {
 		context.strokeStyle = $mode == "light" ? "black" : "white"
 		context.lineWidth = 2
 		
-		context.beginPath()
-		context.moveTo(source.x!, source.y!)
-		context.lineTo(mouse.x, mouse.y)
-		context.stroke()
+		drawArrow(context, source.x!, source.y!, mouse.x, mouse.y, 2)
 	}
 	
 	// INTERACTION
@@ -146,7 +146,6 @@
 	}
 	
 	function onDragStarted(event: DragEvent) {
-		if (!event.active) simulation.alphaTarget(0.3).restart() // run the simulation while dragging
 		event.subject.fx = transform.invertX(event.x)
 		event.subject.fy = transform.invertY(event.y)
 	}
@@ -157,7 +156,6 @@
 	}
 	
 	function onDragEnded(event: DragEvent) {
-		if (!event.active) simulation.alphaTarget(0) // set the simulation to decay again
 		event.subject.fx = undefined
 		event.subject.fy = undefined
 	}
@@ -177,21 +175,33 @@
 	
 	let selected: Node | undefined
 	
-	function onClick(event: MouseEvent) {
+	async function onClick(event: MouseEvent) {
 		if (!selected) { // if no node is selected yet
 			selected = getNode(event)
 		} else { // if a node is already selected
 			const target = getNode(event)
 			if (target) { // if we clicked on a node receiving
-				makeLink(selected, target)
+				await makeLink(selected, target)
 			} // if there is no target, drop it
 			selected = undefined // reset selection
 		}
+		// TODO: handle clicking on a link
 	}
 	
 	function onDoubleClick(event: MouseEvent) {
 		const node = getNode(event)
 		console.log("DOUBLE CLICK", node)
+		// TODO: handle double clicking on a link
+	}
+	
+	function onRightClick(event: MouseEvent) {
+		const node = getNode(event)
+		if (node) { // right clicked on a node
+			
+		} else { // right clicked in blank space
+			
+		}
+		// TODO: handle right clicking on a link
 	}
 	
 	// START
@@ -200,7 +210,7 @@
 		setCanvasDimensions()
 		context = canvas.getContext("2d")!
 		
-		transform = transform.translate(width / 2 / window.devicePixelRatio, height / 2 / window.devicePixelRatio)
+		transform = transform.translate((width / 2) / window.devicePixelRatio, (height / 2) / window.devicePixelRatio)
 		
 		simulation = buildForceSimulation()
 		
@@ -213,9 +223,11 @@
 			.on("mousemove", onMouseMove)
 			.on("click", onClick)
 			.on("dblclick", onDoubleClick)
-			// .on("click", (event) => { clearTimeout(clickTimeout); clickTimeout = setTimeout(() => onClick(event), 200) as unknown as number })
-			// .on("dblclick", (event) => { clearTimeout(clickTimeout); onDoubleClick(event) })
 	})
 </script>
 
-<canvas bind:this={canvas} class="w-full h-full" />
+<canvas
+	bind:this={canvas}
+	on:contextmenu={(event) => { event.preventDefault(); onRightClick(event) }}
+	class="w-full h-full"
+/>
