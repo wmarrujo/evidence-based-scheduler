@@ -2,6 +2,7 @@
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
 	import {type Task} from "$lib/db"
+	import {mode} from "mode-watcher"
 	
 	// SETUP
 	
@@ -22,7 +23,7 @@
 	
 	export let tasks: Array<Task> = []
 	
-	type Node = d3.SimulationNodeDatum
+	type Node = d3.SimulationNodeDatum & Task
 	
 	const nodes = tasks.map(task => Object.assign({}, task) as Node) // make copies
 	
@@ -46,8 +47,8 @@
 		// draw nodes
 		nodes.forEach((node) => {
 			context.beginPath()
-			context.arc(node.x!, node.y!, 10, 0, 2 * Math.PI, false)
-			context.fillStyle = "white"
+			context.arc(node.x!, node.y!, 10, 0, 2 * Math.PI, false) // TODO: use radius in node
+			context.fillStyle = $mode == "light" ? "black" : "white"
 			context.fill()
 		})
 		
@@ -71,7 +72,7 @@
 	
 	function dragSubject(event: DragEvent) {
 		const [x, y] = transform.invert([event.x, event.y])
-		const node = nodes.find(node => Math.sqrt((x - node.x!)**2 + (y - node.y!)**2) < 10)
+		const node = nodes.find(node => Math.sqrt((x - node.x!)**2 + (y - node.y!)**2) < 10) // TODO: use radius in node & use quadtree
 		if (node) {
 			node.x = transform.applyX(node.x!)
 			node.y = transform.applyY(node.y!)
