@@ -16,9 +16,9 @@ export type Task = {
 	name: string
 	description: string | undefined
 	doer: ResourceId | undefined
-	originalEstimate: number
-	estimate: number
-	elapsed: number
+	originalEstimate: number // the original estimate, in hours
+	estimate: number // the current estimate, in hours
+	elapsed: number // the current elapsed time, in hours
 	dependsOn: Array<TaskId>
 }
 
