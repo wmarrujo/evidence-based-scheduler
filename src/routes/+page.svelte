@@ -4,9 +4,14 @@
 	import * as Dialog from "$lib/components/ui/dialog"
 	import CreateTask from "$lib/components/create-task.svelte"
 	import CreateResource from "$lib/components/create-resource.svelte"
+	import {liveQuery} from "dexie"
+	import {db} from "$lib/db"
+	import DependencyGraph from "$lib/components/dependency-graph.svelte"
 	
 	let createResourceDialogOpen = false
 	let createTaskDialogOpen = false
+	
+	let tasks = liveQuery(() => db.tasks.toArray())
 </script>
 
 <div class="flex flex-col h-screen">
@@ -26,6 +31,8 @@
 		</div>
 	</div>
 	<main class="grow">
-		TODO: put in the force-directed graph
+		{#if $tasks}
+			<DependencyGraph tasks={$tasks} />
+		{/if}
 	</main>
 </div>
