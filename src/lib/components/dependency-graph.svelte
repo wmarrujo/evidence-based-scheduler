@@ -1,7 +1,9 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import {db, type Task, type TaskId} from "$lib/db"
+	import type {Task, TaskId, Resource, ResourceId} from "$lib/db"
+	import {db} from "$lib/db"
+	import {liveQuery} from "dexie"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
@@ -31,6 +33,10 @@
 	// DATA
 	
 	export let tasks: Array<Task> = []
+	
+	let resources = liveQuery(() => db.resources.toArray())
+	let resourcesById: Record<ResourceId, Resource> = {}
+	$: if ($resources) resourcesById = $resources.reduce((acc, resource) => { acc[resource.id] = resource; return acc }, {} as Record<ResourceId, Resource>)
 	
 	type Node = d3.SimulationNodeDatum & {
 		id: number
@@ -242,20 +248,19 @@
 	on:contextmenu={(event) => { event.preventDefault(); onRightClick(event) }}
 	class="w-full h-full"
 />
+
 <svelte:window on:mousemove={event => ({pageX, pageY} = event)} />
 <Card.Root bind:this={card} class={cn("absolute -translate-x-1/2", !hovered ? "hidden" : "", window.innerHeight / 2 < pageY ? "-translate-y-[calc(100%+2rem)]" : "translate-y-[2rem]")} style="top: {pageY}px; left: {pageX}px;">
 	<Card.Header>
 		<Card.Title>{cardTask?.name}</Card.Title>
-		{#if cardTask?.description}
-			<Card.Description>{cardTask?.description ?? ""}</Card.Description>
-		{/if}
 	</Card.Header>
 	<Card.Content>
 		{#if cardTask?.doer}
-			<div>Doer: {cardTask?.doer} hours</div>
+			<div>Doer: {resourcesById[cardTask?.doer].name}</div>
 		{/if}
 		<div>Estimate: {cardTask?.estimate} hours</div>
 		<div>Actual: {cardTask?.actual} hours</div>
 	</Card.Content>
 </Card.Root>
+
 <Toaster richColors position="top-center" />

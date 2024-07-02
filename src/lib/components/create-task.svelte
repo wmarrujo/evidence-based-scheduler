@@ -7,6 +7,7 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import {Textarea} from "$lib/components/ui/textarea"
+	import SelectResource from "$lib/components/select-resource.svelte"
 	import {db} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	
@@ -17,7 +18,7 @@
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
 		description: z.string().optional(),
-		doer: z.string().uuid().optional(),
+		doer: z.coerce.number().optional(),
 		estimate: z.coerce.number().positive(),
 		actual: z.coerce.number().nonnegative().default(0),
 	})
@@ -27,16 +28,17 @@
 		validators: zod(schema),
 		async onUpdate({form}) { // handle submission
 			if (!form.valid) return
-			const id = await db.tasks.add({
+			const task = {
 				name: form.data.name,
 				description: form.data.description == "" ? undefined : form.data.description,
-				doer: undefined, // TODO
-				originalEstimate: form.data.estimate,
+				doer: form.data.doer,
+				originalEstimate: form.data.estimate, // since this is a new task, the estimate is the original estimate
 				estimate: form.data.estimate,
 				actual: form.data.actual,
-				dependsOn: [], // TODO
-			})
-			dispatch("created", {id})
+				dependsOn: [], // a new task starts with no dependencies, we add those with the graph view
+			}
+			await db.tasks.add(task)
+			dispatch("created", task)
 		},
 	}), {form: data, enhance} = form
 </script>
@@ -45,14 +47,21 @@
 	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
 			<Form.Label>Name</Form.Label>
-			<Input type="text" bind:value={$data.name} {...attrs} />
+			<Input type="text" bind:value={$data.name} {...attrs} placeholder="Do thing" />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
 	<Form.Field {form} name="description">
 		<Form.Control let:attrs>
 			<Form.Label>Description</Form.Label>
-			<Textarea bind:value={$data.description} {...attrs} />
+			<Textarea bind:value={$data.description} {...attrs} placeholder="this is what I mean..." />
+		</Form.Control>
+		<Form.FieldErrors />
+	</Form.Field>
+	<Form.Field {form} name="doer">
+		<Form.Control let:attrs>
+			<Form.Label>Doer</Form.Label>
+			<SelectResource bind:value={$data.doer} {...attrs} class="w-full" />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
