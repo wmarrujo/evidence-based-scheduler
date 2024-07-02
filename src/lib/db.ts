@@ -18,12 +18,12 @@ export type Task = {
 	doer: ResourceId | undefined
 	originalEstimate: number // the original estimate, in hours
 	estimate: number // the current estimate, in hours
-	elapsed: number // the current elapsed time, in hours
+	actual: number // the actual time spent, in hours
 	dependsOn: Array<TaskId>
 	
-	// graph
-	x: number
-	y: number
+	// graph (cache these so it shows up how you left it when you load it the next time)
+	x?: number | undefined
+	y?: number | undefined
 }
 
 export type ProjectId = number

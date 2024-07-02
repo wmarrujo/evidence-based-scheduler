@@ -19,7 +19,7 @@
 		description: z.string().optional(),
 		doer: z.string().uuid().optional(),
 		estimate: z.coerce.number().positive(),
-		elapsed: z.coerce.number().nonnegative().default(0),
+		actual: z.coerce.number().nonnegative().default(0),
 	})
 	
 	const form = superForm(defaults(zod(schema)), {
@@ -33,7 +33,7 @@
 				doer: undefined, // TODO
 				originalEstimate: form.data.estimate,
 				estimate: form.data.estimate,
-				elapsed: form.data.elapsed,
+				actual: form.data.actual,
 				dependsOn: [], // TODO
 			})
 			dispatch("created", {id})
@@ -63,10 +63,10 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="elapsed">
+	<Form.Field {form} name="actual">
 		<Form.Control let:attrs>
-			<Form.Label>Elapsed Time (Hours)</Form.Label>
-			<Input type="number" bind:value={$data.elapsed} step="0.1" {...attrs} />
+			<Form.Label>Actual Time (Hours)</Form.Label>
+			<Input type="number" bind:value={$data.actual} step="0.1" {...attrs} />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>

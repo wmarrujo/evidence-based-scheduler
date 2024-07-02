@@ -4,11 +4,19 @@
 	import {db, type Task, type TaskId} from "$lib/db"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow} from "$lib/canvas"
+	import * as Card from "$lib/components/ui/card"
+	import {cn} from "$lib/utils"
+	import {Toaster} from "$lib/components/ui/sonner"
+	import {toast} from "svelte-sonner"
 	
 	// SETUP
 	
 	let canvas: HTMLCanvasElement
 	let context: CanvasRenderingContext2D
+	
+	let card: Card.Root
+	let pageX: number
+	let pageY: number
 	
 	let width: number
 	let height: number
@@ -34,32 +42,30 @@
 	const nodes: Array<Node> = tasks.map(task => ({id: task.id, name: task.name, r: 10})) // make copies // TODO: set the radius based on the size
 	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
 	
-	const nodesById = nodes.reduce((acc, node) => { acc[node.id] = node; return acc }, {} as Record<number, Node>)
-	
-	async function makeLink(source: Node | number, target: Node | number) {
-		const s = typeof(source) == "number" ? nodesById[source] : source
-		const t = typeof(target) == "number" ? nodesById[target] : target
-		
-		if (await makesLoop(s.id, t.id)) { console.error("Makes loop"); return} // can't make loops
+	async function makeLink(source: Node, target: Node) {
+		// guards
+		if (links.findIndex(link => link.source == source && link.target == target) != -1) { toast.error("That dependency already exists"); return}
+		if (source == target) return // if it's the same node, don't error, since it's actually probably just a double click
+		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
 		
 		// add this information to the database
-		const task = (await db.tasks.get(t.id))!
-		task.dependsOn.push(s.id)
-		db.tasks.update(t.id, {dependsOn: task.dependsOn})
+		const task = (await db.tasks.get(target.id))!
+		task.dependsOn.push(source.id)
+		db.tasks.update(target.id, {dependsOn: task.dependsOn})
 		
 		// add the link to the list of links
 		simulation.stop()
-		links.push({source: s.id, target: t.id})
+		links.push({source: source.id, target: target.id})
 		reInitializeSimulation()
 		simulation.restart()
 	}
 	
 	/** Returns true if the arrow from the source to the target would make a loop. */
 	async function makesLoop(source: TaskId, target: TaskId): Promise<boolean> {
-		const backLinks = (await db.tasks.get(source))?.dependsOn ?? []
-		return source == target // self loops aren't allowed
-			|| backLinks.includes(target) // check this link
-			|| !backLinks.every(task => !makesLoop(task, target)) // check recursively
+		// if (source == target) return true // no self-loops (and when it's come all the way around, though this is caught 1 level early) // NOTE: disabling for efficiency, since we're checking for this separately already
+		const backLinks = (await db.tasks.get(source))?.dependsOn ?? [] // get the backlinks of this source
+		if (backLinks.includes(target)) return true // check 1 level short (it would find it the next loop, but skip that work here)
+		return Promise.all(backLinks.map(task => makesLoop(task, target))).then(loops => loops.some(t => t)) // check the backlinks recursively
 	}
 	
 	// SIMULATION
@@ -95,23 +101,26 @@
 	
 	function drawNode(node: Node) {
 		context.fillStyle = $mode == "light" ? "black" : "white"
-		drawCircle(context, node.x!, node.y!, node.r)
+		if (hovered == node) context.strokeStyle = "gold"
+		if (selected == node) context.strokeStyle = "lightblue"
+		drawCircle(context, node.x!, node.y!, node.r, {border: hovered == node || selected == node, borderWidth: 3})
 	}
 	
 	function drawLink(link: Link) {
 		const source = link.source as Node
 		const target = link.target as Node
 		
+		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.strokeStyle = $mode == "light" ? "black" : "white"
 		
-		drawArrow(context, source.x!, source.y!, target.x!, target.y!, 2)
+		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
 	}
 	
-	function drawConnector(source: Node) {
+	function drawConnector(from: Node) {
+		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.strokeStyle = $mode == "light" ? "black" : "white"
-		context.lineWidth = 2
 		
-		drawArrow(context, source.x!, source.y!, mouse.x, mouse.y, 2)
+		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r})
 	}
 	
 	// INTERACTION
@@ -148,6 +157,7 @@
 	function onDragStarted(event: DragEvent) {
 		event.subject.fx = transform.invertX(event.x)
 		event.subject.fy = transform.invertY(event.y)
+		hovered = undefined // hide the card
 	}
 	
 	function onDrag(event: DragEvent) {
@@ -164,6 +174,7 @@
 	
 	let mouse: {x: number, y: number} = {x: 0, y: 0}
 	let hovered: Node | undefined
+	$: cardTask = hovered ? tasks.find(task => task.id == hovered?.id) : undefined
 	
 	function onMouseMove(event: MouseEvent) {
 		let [x, y] = transform.invert(d3.pointer(event))
@@ -231,3 +242,20 @@
 	on:contextmenu={(event) => { event.preventDefault(); onRightClick(event) }}
 	class="w-full h-full"
 />
+<svelte:window on:mousemove={event => ({pageX, pageY} = event)} />
+<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2", !hovered ? "hidden" : "", window.innerHeight / 2 < pageY ? "-translate-y-[calc(100%+2rem)]" : "translate-y-[2rem]")} style="top: {pageY}px; left: {pageX}px;">
+	<Card.Header>
+		<Card.Title>{cardTask?.name}</Card.Title>
+		{#if cardTask?.description}
+			<Card.Description>{cardTask?.description ?? ""}</Card.Description>
+		{/if}
+	</Card.Header>
+	<Card.Content>
+		{#if cardTask?.doer}
+			<div>Doer: {cardTask?.doer} hours</div>
+		{/if}
+		<div>Estimate: {cardTask?.estimate} hours</div>
+		<div>Actual: {cardTask?.actual} hours</div>
+	</Card.Content>
+</Card.Root>
+<Toaster richColors position="top-center" />
