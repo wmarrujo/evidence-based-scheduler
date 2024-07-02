@@ -94,11 +94,31 @@
 		// remove from database
 		const task = (await db.tasks.get(target.id))!
 		task.dependsOn = task.dependsOn.filter(s => s != source.id)
-		db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		await db.tasks.update(target.id, {dependsOn: task.dependsOn})
 		
 		// remove from list of links
 		simulation.stop()
 		links.splice(links.findIndex(l => l == link), 1)
+		reInitializeSimulation()
+		simulation.restart()
+	}
+	
+	async function removeNode(node: Node | undefined) {
+		if (!node) return // NOTE: this guard is needed for the typing to be correct in the html
+		// remove from database
+		await db.tasks.delete(node.id) // remove the node itself
+		const dependents = await db.tasks.filter(task => task.dependsOn.includes(node.id)).toArray() // find all tasks that reference the node
+		await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {dependsOn: task.dependsOn.filter(t => t != node.id)}}))) // remove all references to the node
+		
+		// remove from list of nodes
+		const badLinkIndices = links.reduce((acc, link, i) => {
+			if ((link.source as Node).id == node.id || (link.target as Node).id == node.id) { acc.push(i); return acc}
+			else { return acc }
+		}, [] as Array<number>).reverse()
+		
+		simulation.stop()
+		nodes.splice(nodes.findIndex(n => n.id == node.id), 1)
+		badLinkIndices.forEach(i => links.splice(i, 1))
 		reInitializeSimulation()
 		simulation.restart()
 	}
@@ -363,7 +383,7 @@
 <Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickPosition.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickPosition.y}px; left: {rightClickPosition.x}px;">
 	{#if rightClickNode}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openEditTaskDialog(event) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start"><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
 	{:else}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openCreateTaskDialog(event) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
 	{/if}
