@@ -8,11 +8,13 @@
 	import {drawCircle, drawArrow} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
+	import {Button} from "$lib/components/ui/button"
 	import CreateTask from "$lib/components/create-task.svelte"
+	import EditTask from "$lib/components/edit-task.svelte"
 	import {cn} from "$lib/utils"
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
-	import {SquareUserRound, AlarmClock, Timer} from "lucide-svelte"
+	import {SquareUserRound, AlarmClock, Timer, Plus, Trash2, Pencil} from "lucide-svelte"
 	
 	// SETUP
 	
@@ -50,6 +52,10 @@
 	
 	function taskToNode(task: Task): Node {
 		return {id: task.id, name: task.name, r: 10}
+	}
+	
+	function getTaskByIdUnsafe(id: TaskId): Task {
+		return tasks.find(task => task.id == id)!
 	}
 	
 	const nodes: Array<Node> = tasks.map(taskToNode) // make copies // TODO: set the radius based on the size
@@ -223,8 +229,8 @@
 	function onMouseMove(event: MouseEvent) {
 		let [x, y] = transform.invert(d3.pointer(event))
 		mouse.x = x; mouse.y = y
-		hovered = getNode(event)
-		if (!hovered && !selected) { hoveredLink = getLink(event, 5) }
+		if (!rightClickNode) hovered = getNode(event)
+		if (!hovered && !selected && !rightClickNode) { hoveredLink = getLink(event, 5) }
 		else { hoveredLink = undefined }
 	}
 	
@@ -233,8 +239,15 @@
 	let selected: Node | undefined
 	
 	async function onClick(event: MouseEvent) {
+		contextMenuOpen = false
+		rightClickNode = undefined
 		if (!selected) { // if no node is selected yet
 			selected = getNode(event)
+			
+			if (!selected && !hovered) { // if we didn't just select one now, and aren't doing anything else otherwise
+				const link = getLink(event, 5)
+				if (link) removeLink(link) // if we clicked on a link, remove it
+			}
 		} else { // if a node is already selected
 			const target = getNode(event)
 			if (target) { // if we clicked on a node receiving
@@ -242,17 +255,10 @@
 			} // if there is no target, drop it
 			selected = undefined // reset selection
 		}
-		
-		if (!selected && !hovered) { // if nothing else is being done at the moment
-			const link = getLink(event, 5)
-			if (link) { // if we clicked on a link
-				removeLink(link) // remove it
-			}
-		}
-		// TODO: handle clicking on a link
 	}
 	
 	let createTaskDialogOpen = false
+	let editTaskDialogOpen = false
 	let taskInsertionPoint = {x: 0, y: 0}
 	
 	function onDoubleClick(event: MouseEvent) {
@@ -260,20 +266,34 @@
 		if (node) { // if double clicked on a node
 			
 		} else { // if double clicked in empty space
-			const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y
-			createTaskDialogOpen = true // go make a task
+			openCreateTaskDialog(event)
 		}
-		// TODO: handle double clicking on a link
 	}
+	
+	function openCreateTaskDialog(event: MouseEvent) {
+		const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y
+		createTaskDialogOpen = true // go make a task
+	}
+	
+	function openEditTaskDialog(event: MouseEvent) {
+		editTaskDialogOpen = true // open the editor
+	}
+	
+	let contextMenuOpen = false
+	let rightClickNode: Node | undefined
+	let rightClickPosition = {x: 0, y: 0} // the page position of the mouse (saved so for when you right click it doesn't move)
 	
 	function onRightClick(event: MouseEvent) {
 		const node = getNode(event)
+		rightClickPosition.x = event.pageX; rightClickPosition.y = event.pageY // set this so we know the browser position of the node when it was clicked
 		if (node) { // right clicked on a node
-			
+			rightClickNode = node
+			hovered = undefined // unset the hover, so we don't see both boxes
 		} else { // right clicked in blank space
-			
+			rightClickNode = undefined
+			const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y // set this, just in case they want to make a new task here
 		}
-		// TODO: handle right clicking on a link
+		contextMenuOpen = true // show the context menu
 	}
 	
 	function onTaskCreated(event: CustomEvent<Task>) {
@@ -284,6 +304,18 @@
 		// add the task as a node
 		simulation.stop()
 		nodes.push(node)
+		reInitializeSimulation()
+		simulation.restart()
+	}
+	
+	function onTaskEdited(event: CustomEvent<Task>) {
+		const task = event.detail
+		const node = taskToNode(task)
+		
+		// add the task as a node
+		simulation.stop()
+		const oldNode = nodes.findIndex(n => n.id == node.id)
+		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
 		reInitializeSimulation()
 		simulation.restart()
 	}
@@ -317,7 +349,7 @@
 />
 
 <svelte:window on:mousemove={event => ({pageX, pageY} = event)} />
-<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2 max-w-96", !hovered ? "hidden" : "", window.innerHeight / 2 < pageY ? "-translate-y-[calc(100%+2rem)]" : "translate-y-[2rem]")} style="top: {pageY}px; left: {pageX}px;">
+<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2 max-w-96", !hovered && "hidden", pageY < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {pageY}px; left: {pageX}px;">
 	<Card.Header class="p-2">
 		<Card.Title>{cardTask?.name}</Card.Title>
 	</Card.Header>
@@ -327,9 +359,26 @@
 		<Timer /><span>{cardTask?.actual}h</span>
 	</Card.Content>
 </Card.Root>
+	
+<Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickPosition.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickPosition.y}px; left: {rightClickPosition.x}px;">
+	{#if rightClickNode}
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openEditTaskDialog(event) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start"><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+	{:else}
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openCreateTaskDialog(event) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
+	{/if}
+</Card.Root>
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
 	<Dialog.Content><CreateTask on:created={(event) => { createTaskDialogOpen = false; onTaskCreated(event) }} /></Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editTaskDialogOpen}>
+	<Dialog.Content>
+		{#if rightClickNode}
+			<EditTask initial={getTaskByIdUnsafe(rightClickNode.id)} on:edited={(event) => { editTaskDialogOpen = false; onTaskEdited(event) }} />
+		{/if}
+	</Dialog.Content>
 </Dialog.Root>
 
 <Toaster richColors position="top-center" />
