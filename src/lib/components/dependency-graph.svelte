@@ -81,6 +81,22 @@
 		return Promise.all(backLinks.map(task => makesLoop(task, target))).then(loops => loops.some(t => t)) // check the backlinks recursively
 	}
 	
+	async function removeLink(link: Link) {
+		const target = link.target as Node
+		const source = link.source as Node
+		
+		// remove from database
+		const task = (await db.tasks.get(target.id))!
+		task.dependsOn = task.dependsOn.filter(s => s != source.id)
+		db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		
+		// remove from list of links
+		simulation.stop()
+		links.splice(links.findIndex(l => l == link), 1)
+		reInitializeSimulation()
+		simulation.restart()
+	}
+	
 	// SIMULATION
 	
 	let simulation: d3.Simulation<Node, never>
@@ -88,7 +104,7 @@
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0))
-			.force("charge", d3.forceManyBody().distanceMax(200))
+			.force("charge", d3.forceManyBody().distanceMax(100))
 			.on("tick", updateSimulation)
 			.alphaDecay(0) // never stop the simulation
 	}
@@ -126,6 +142,7 @@
 		
 		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.strokeStyle = $mode == "light" ? "black" : "white"
+		if (hoveredLink == link) { context.fillStyle = "red"; context.strokeStyle = "red" }
 		
 		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
 	}
@@ -144,6 +161,18 @@
 	function getNode(event: Event | DragEvent): Node | undefined {
 		const [x, y] = transform.invert(d3.pointer(event))
 		return nodes.find(node => Math.sqrt((x - node.x!)**2 + (y - node.y!)**2) < node.r)
+	}
+	
+	function getLink(event: Event, fuzziness: number): Link | undefined {
+		const [x, y] = transform.invert(d3.pointer(event))
+		return links.find(link => {
+			const source = {x: (link.source as Node).x!, y: (link.source as Node).y!}
+			const target = {x: (link.target as Node).x!, y: (link.target as Node).y!}
+			
+			if (x < Math.min(source.x, target.x) - fuzziness || Math.max(source.x, target.x) + fuzziness < x) return false // it's outside the bounding box of the line, it's not on the line
+			if (y < Math.min(source.y, target.y) - fuzziness || Math.max(source.y, target.y) + fuzziness < y) return false // it's outside the bounding box of the line, it's not on the line
+			return Math.abs((target.x - source.x) * (source.y - y) - (target.y - source.y) * (source.x - x)) / Math.sqrt((target.x - source.x)**2 + (target.y - source.y)**2) <= fuzziness // right angle distance
+		})
 	}
 	
 	// Zoom
@@ -189,11 +218,14 @@
 	let mouse: {x: number, y: number} = {x: 0, y: 0}
 	let hovered: Node | undefined
 	$: cardTask = hovered ? tasks.find(task => task.id == hovered?.id) : undefined
+	let hoveredLink: Link | undefined
 	
 	function onMouseMove(event: MouseEvent) {
 		let [x, y] = transform.invert(d3.pointer(event))
 		mouse.x = x; mouse.y = y
 		hovered = getNode(event)
+		if (!hovered && !selected) { hoveredLink = getLink(event, 5) }
+		else { hoveredLink = undefined }
 	}
 	
 	// click
@@ -209,6 +241,13 @@
 				await makeLink(selected, target)
 			} // if there is no target, drop it
 			selected = undefined // reset selection
+		}
+		
+		if (!selected && !hovered) { // if nothing else is being done at the moment
+			const link = getLink(event, 5)
+			if (link) { // if we clicked on a link
+				removeLink(link) // remove it
+			}
 		}
 		// TODO: handle clicking on a link
 	}
