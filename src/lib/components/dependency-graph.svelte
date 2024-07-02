@@ -64,7 +64,7 @@
 	async function makeLink(source: Node, target: Node) {
 		// guards
 		if (links.findIndex(link => link.source == source && link.target == target) != -1) { toast.error("That dependency already exists"); return}
-		if (source == target) return // if it's the same node, don't error, since it's actually probably just a double click
+		if (source == target) return // if it's the same node, don't error, since it's spently probably just a double click
 		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
 		
 		// add this information to the database
@@ -376,7 +376,7 @@
 	<Card.Content class="p-2 grid grid-cols-[min-content_auto_min-content_auto] gap-1">
 		<SquareUserRound /><span class="col-span-3">{cardTask?.doer ? resourcesById[cardTask?.doer].name : "Unassigned"}</span>
 		<AlarmClock /><span>{cardTask?.estimate}h</span>
-		<Timer /><span>{cardTask?.actual}h</span>
+		<Timer /><span>{cardTask?.spent}h</span>
 	</Card.Content>
 </Card.Root>
 	
@@ -390,7 +390,9 @@
 </Card.Root>
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
-	<Dialog.Content><CreateTask on:created={(event) => { createTaskDialogOpen = false; onTaskCreated(event) }} /></Dialog.Content>
+	<Dialog.Content>
+		<CreateTask on:created={(event) => { createTaskDialogOpen = false; onTaskCreated(event) }} />
+	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>

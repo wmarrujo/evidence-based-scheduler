@@ -8,7 +8,7 @@
 	import {db, type Resource, type ResourceId} from "$lib/db"
 	import {Check, ChevronsUpDown} from "lucide-svelte"
 	
-	// pull these out separately (they are passed in from the "{...attrs}" call) these get passed to the actual input element, so forms know what to pull from
+	// pull these out separately (they are passed in from the "{...attrs}" call) these get passed to the spent input element, so forms know what to pull from
 	export let id: string | undefined = undefined // the form id
 	export let name: string | undefined = undefined // the form name
 	let className = ""
