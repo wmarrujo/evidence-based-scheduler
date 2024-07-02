@@ -20,10 +20,6 @@ export type Task = {
 	estimate: number // the current estimate, in hours
 	actual: number // the actual time spent, in hours
 	dependsOn: Array<TaskId>
-	
-	// graph (cache these so it shows up how you left it when you load it the next time)
-	x?: number | undefined
-	y?: number | undefined
 }
 
 export type ProjectId = number

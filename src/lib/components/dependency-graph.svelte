@@ -7,9 +7,12 @@
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
+	import * as Dialog from "$lib/components/ui/dialog"
+	import CreateTask from "$lib/components/create-task.svelte"
 	import {cn} from "$lib/utils"
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
+	import {SquareUserRound, AlarmClock, Timer} from "lucide-svelte"
 	
 	// SETUP
 	
@@ -45,7 +48,11 @@
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
-	const nodes: Array<Node> = tasks.map(task => ({id: task.id, name: task.name, r: 10})) // make copies // TODO: set the radius based on the size
+	function taskToNode(task: Task): Node {
+		return {id: task.id, name: task.name, r: 10}
+	}
+	
+	const nodes: Array<Node> = tasks.map(taskToNode) // make copies // TODO: set the radius based on the size
 	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
 	
 	async function makeLink(source: Node, target: Node) {
@@ -87,6 +94,7 @@
 	}
 	
 	function reInitializeSimulation() {
+		simulation.nodes(nodes) // make sure it has the updated list of nodes
 		simulation.force("link")!.initialize!(nodes, () => 0) // re-initialize forces
 		simulation.force("charge")!.initialize!(nodes, () => 0) // re-initialize forces
 	}
@@ -205,9 +213,17 @@
 		// TODO: handle clicking on a link
 	}
 	
+	let createTaskDialogOpen = false
+	let taskInsertionPoint = {x: 0, y: 0}
+	
 	function onDoubleClick(event: MouseEvent) {
 		const node = getNode(event)
-		console.log("DOUBLE CLICK", node)
+		if (node) { // if double clicked on a node
+			
+		} else { // if double clicked in empty space
+			const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y
+			createTaskDialogOpen = true // go make a task
+		}
 		// TODO: handle double clicking on a link
 	}
 	
@@ -219,6 +235,18 @@
 			
 		}
 		// TODO: handle right clicking on a link
+	}
+	
+	function onTaskCreated(event: CustomEvent<Task>) {
+		const task = event.detail
+		const node = taskToNode(task)
+		node.x = taskInsertionPoint.x; node.y = taskInsertionPoint.y
+		
+		// add the task as a node
+		simulation.stop()
+		nodes.push(node)
+		reInitializeSimulation()
+		simulation.restart()
 	}
 	
 	// START
@@ -250,17 +278,19 @@
 />
 
 <svelte:window on:mousemove={event => ({pageX, pageY} = event)} />
-<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2", !hovered ? "hidden" : "", window.innerHeight / 2 < pageY ? "-translate-y-[calc(100%+2rem)]" : "translate-y-[2rem]")} style="top: {pageY}px; left: {pageX}px;">
-	<Card.Header>
+<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2 max-w-96", !hovered ? "hidden" : "", window.innerHeight / 2 < pageY ? "-translate-y-[calc(100%+2rem)]" : "translate-y-[2rem]")} style="top: {pageY}px; left: {pageX}px;">
+	<Card.Header class="p-2">
 		<Card.Title>{cardTask?.name}</Card.Title>
 	</Card.Header>
-	<Card.Content>
-		{#if cardTask?.doer}
-			<div>Doer: {resourcesById[cardTask?.doer].name}</div>
-		{/if}
-		<div>Estimate: {cardTask?.estimate} hours</div>
-		<div>Actual: {cardTask?.actual} hours</div>
+	<Card.Content class="p-2 grid grid-cols-[min-content_auto_min-content_auto] gap-1">
+		<SquareUserRound /><span class="col-span-3">{cardTask?.doer ? resourcesById[cardTask?.doer].name : "Unassigned"}</span>
+		<AlarmClock /><span>{cardTask?.estimate}h</span>
+		<Timer /><span>{cardTask?.actual}h</span>
 	</Card.Content>
 </Card.Root>
+
+<Dialog.Root bind:open={createTaskDialogOpen}>
+	<Dialog.Content><CreateTask on:created={(event) => { createTaskDialogOpen = false; onTaskCreated(event) }} /></Dialog.Content>
+</Dialog.Root>
 
 <Toaster richColors position="top-center" />

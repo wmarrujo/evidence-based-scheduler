@@ -8,12 +8,12 @@
 	import {Input} from "$lib/components/ui/input"
 	import {Textarea} from "$lib/components/ui/textarea"
 	import SelectResource from "$lib/components/select-resource.svelte"
-	import {db} from "$lib/db"
+	import {db, type Task} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	
 	let className = ""
 	export {className as class}
-	const dispatch = createEventDispatcher()
+	const dispatch = createEventDispatcher<{created: Task}>()
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -37,8 +37,8 @@
 				actual: form.data.actual,
 				dependsOn: [], // a new task starts with no dependencies, we add those with the graph view
 			}
-			await db.tasks.add(task)
-			dispatch("created", task)
+			const id = await db.tasks.add(task) // insert (and get the id it created)
+			dispatch("created", {id, ...task}) // send the message, and return the task it created
 		},
 	}), {form: data, enhance} = form
 </script>
