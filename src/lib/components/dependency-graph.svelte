@@ -159,7 +159,7 @@
 	
 	type DragEvent = d3.D3DragEvent<HTMLCanvasElement, Node, Node>
 	
-	function getDragSubject(event: DragEvent) {
+	function getDragSubject(_event: DragEvent) {
 		const node = getNode(mouse)
 		if (node) { node.x = transform.applyX(node.x!); node.y = transform.applyY(node.y!) }
 		return node
@@ -167,7 +167,6 @@
 	
 	function onDragStarted(event: DragEvent) {
 		informationCardOpen = false // hide the card
-		// event.subject.fx = mouse.x; event.subject.fy = mouse.y // force the subject to follow mouse
 		event.subject.fx = transform.invertX(event.x); event.subject.fy = transform.invertY(event.y) // force the subject to follow mouse
 	}
 	
@@ -179,39 +178,12 @@
 		event.subject.fx = undefined; event.subject.fy = undefined
 	}
 	
-	/*
-	function getDragSubject(event: DragEvent) {
-		const node = getNode(event)
-		if (node) {
-			node.x = transform.applyX(node.x!)
-			node.y = transform.applyY(node.y!)
-		}
-		return node
-	}
-	
-	function onDragStarted(event: DragEvent) {
-		event.subject.fx = transform.invertX(event.x)
-		event.subject.fy = transform.invertY(event.y)
-		hovered = undefined // hide the card
-	}
-	
-	function onDrag(event: DragEvent) {
-		event.subject.fx = transform.invertX(event.x)
-		event.subject.fy = transform.invertY(event.y)
-	}
-	
-	function onDragEnded(event: DragEvent) {
-		event.subject.fx = undefined
-		event.subject.fy = undefined
-	}
-	*/
-	
 	// HOVER
 	
 	let hoveredNode: Node | undefined
 	let hoveredLink: Link | undefined
 	
-	function onMouseMove(event: MouseEvent) {
+	function onMouseMove(_event: MouseEvent) {
 		hoveredNode = getNode(mouse)
 		hoveredLink = getLink(mouse, 5)
 		
@@ -226,7 +198,7 @@
 	
 	let clickedNode: Node | undefined
 	
-	async function onClick(event: MouseEvent) {
+	async function onClick(_event: MouseEvent) {
 		contextMenuOpen = false
 		rightClickedNode = undefined
 		
@@ -249,7 +221,7 @@
 	
 	let doubleClickedNode: Node | undefined
 	
-	function onDoubleClick(event: MouseEvent) {
+	function onDoubleClick(_event: MouseEvent) {
 		doubleClickedNode = getNode(mouse)
 		if (doubleClickedNode) { // if double clicked on a node
 			if (doubleClickedNode.type == "Task") openEditTaskDialog(doubleClickedNode.id)
@@ -262,7 +234,7 @@
 	let rightClickedPoint: Point = {x: 0, y: 0}
 	let rightClickedNode: Node | undefined
 	
-	function onRightClick(event: MouseEvent) {
+	function onRightClick(_event: MouseEvent) {
 		informationCardOpen = false // close the information box, so we don't see both at the same time
 		selectedNode = undefined // stop drawing another arrow
 		rightClickedCursor = cursor // store the position of the cursor when this was clicked, so we can make the UI element not move with the mouse
@@ -410,10 +382,8 @@
 		simulation = buildForceSimulation()
 		
 		d3.select(canvas)
-			// @ts-ignore
-			.call(d3.drag().container(canvas).subject(getDragSubject).on("start", onDragStarted).on("drag", onDrag).on("end", onDragEnded)) // NOTE: this must be before zoom, to take precedence
-			// @ts-ignore
-			.call(d3.zoom().on("zoom", zoomed))
+			.call(d3.drag<HTMLCanvasElement, unknown>().container(canvas).subject(getDragSubject).on("start", onDragStarted).on("drag", onDrag).on("end", onDragEnded)) // NOTE: this must be before zoom, to take precedence
+			.call(d3.zoom<HTMLCanvasElement, unknown>().on("zoom", zoomed))
 			.on("dblclick.zoom", null) // disable default double click to zoom
 			.on("mousemove", onMouseMove)
 			.on("click", onClick)
@@ -421,7 +391,7 @@
 	})
 </script>
 
-<style>
+<style lang="pcss">
 	.deleteCursor {
 		cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZjAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS10cmFzaC0yIj48cGF0aCBkPSJNMyA2aDE4Ii8+PHBhdGggZD0iTTE5IDZ2MTRjMCAxLTEgMi0yIDJIN2MtMSAwLTItMS0yLTJWNiIvPjxwYXRoIGQ9Ik04IDZWNGMwLTEgMS0yIDItMmg0YzEgMCAyIDEgMiAydjIiLz48bGluZSB4MT0iMTAiIHgyPSIxMCIgeTE9IjExIiB5Mj0iMTciLz48bGluZSB4MT0iMTQiIHgyPSIxNCIgeTE9IjExIiB5Mj0iMTciLz48L3N2Zz4="), auto;
 	}
@@ -434,7 +404,7 @@
 	class={cn("w-full h-full", hoveredLink && !hoveredNode && "deleteCursor")}
 />
 
-<svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY; }} />
+<svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 
 <Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
 	{#if informationCardTask}

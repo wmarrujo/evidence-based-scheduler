@@ -42,25 +42,26 @@
 		abandoned: initial.abandoned,
 	}
 	
-	const form = superForm(defaults(initialData, zod(schema)), {
-		SPA: true,
-		validators: zod(schema),
-		async onUpdate({form}) { // handle submission
-			if (!form.valid) return
-			const updates = {
-				name: form.data.name,
-				description: form.data.description == "" ? undefined : form.data.description,
-				doer: form.data.doer,
-				original: form.data.original,
-				estimate: form.data.estimate,
-				spent: form.data.spent,
-				done: form.data.done,
-				abandoned: form.data.abandoned,
-			}
-			await db.tasks.update(initial.id, updates) // update the task with the updates from the form
-			dispatch("edited", {...initial, ...updates}) // send the message, and return the task it edited
-		},
-	}), {form: data, enhance} = form
+	const form =
+		superForm(defaults(initialData, zod(schema)), {
+			SPA: true,
+			validators: zod(schema),
+			async onUpdate({form}) { // handle submission
+				if (!form.valid) return
+				const updates = {
+					name: form.data.name,
+					description: form.data.description == "" ? undefined : form.data.description,
+					doer: form.data.doer,
+					original: form.data.original,
+					estimate: form.data.estimate,
+					spent: form.data.spent,
+					done: form.data.done,
+					abandoned: form.data.abandoned,
+				}
+				await db.tasks.update(initial.id, updates) // update the task with the updates from the form
+				dispatch("edited", {...initial, ...updates}) // send the message, and return the task it edited
+			},
+		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className)} use:enhance>

@@ -8,6 +8,8 @@
 	import {db} from "$lib/db"
 	import DependencyGraph from "$lib/components/dependency-graph.svelte"
 	
+	////////////////////////////////////////////////////////////////////////////////
+	
 	let createResourceDialogOpen = false
 	
 	let tasks = liveQuery(() => db.tasks.toArray())

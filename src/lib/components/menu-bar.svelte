@@ -13,8 +13,7 @@
 		input.type = "file"
 		input.onchange = async (event: Event) => {
 			if (!event.target) return
-			// @ts-ignore
-			let file = event.target.files[0]
+			let file = (event.target as EventTarget & {files: Array<Blob>}).files[0]
 			await db.delete({disableAutoOpen: false}) // wipe the database, and allow it to be recreated
 			db.import(file)
 			location.reload() // refresh the page so you get all the new data

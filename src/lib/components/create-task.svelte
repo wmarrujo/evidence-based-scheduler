@@ -29,25 +29,25 @@
 	})
 	
 	const form = superForm(defaults(zod(schema)), {
-		SPA: true,
-		validators: zod(schema),
-		async onUpdate({form}) { // handle submission
-			if (!form.valid) return
-			const task = {
-				name: form.data.name,
-				description: form.data.description == "" ? undefined : form.data.description,
-				doer: form.data.doer,
-				original: form.data.estimate, // since this is a new task, the estimate is the original estimate
-				estimate: form.data.estimate,
-				spent: form.data.spent,
-				done: form.data.done,
-				abandoned: form.data.abandoned,
-				dependsOn: [], // a new task starts with no dependencies, we add those with the graph view
-			}
-			const id = await db.tasks.add(task) // insert (and get the id it created)
-			dispatch("created", {id, ...task}) // send the message, and return the task it created
-		},
-	}), {form: data, enhance} = form
+			SPA: true,
+			validators: zod(schema),
+			async onUpdate({form}) { // handle submission
+				if (!form.valid) return
+				const task = {
+					name: form.data.name,
+					description: form.data.description == "" ? undefined : form.data.description,
+					doer: form.data.doer,
+					original: form.data.estimate, // since this is a new task, the estimate is the original estimate
+					estimate: form.data.estimate,
+					spent: form.data.spent,
+					done: form.data.done,
+					abandoned: form.data.abandoned,
+					dependsOn: [], // a new task starts with no dependencies, we add those with the graph view
+				}
+				const id = await db.tasks.add(task) // insert (and get the id it created)
+				dispatch("created", {id, ...task}) // send the message, and return the task it created
+			},
+		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className, "grid grid-cols-2 gap-2")} use:enhance>

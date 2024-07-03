@@ -20,16 +20,16 @@
 	})
 	
 	const form = superForm(defaults(zod(schema)), {
-		SPA: true,
-		validators: zod(schema),
-		async onUpdate({form}) { // handle submission
-			if (!form.valid) return
-			const id = await db.resources.add({
-				name: form.data.name,
-			})
-			dispatch("created", {id})
-		},
-	}), {form: data, enhance} = form
+			SPA: true,
+			validators: zod(schema),
+			async onUpdate({form}) { // handle submission
+				if (!form.valid) return
+				const id = await db.resources.add({
+					name: form.data.name,
+				})
+				dispatch("created", {id})
+			},
+		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className)} use:enhance>
