@@ -12,6 +12,8 @@
 	import {db, type Task} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	
+	////////////////////////////////////////////////////////////////////////////////
+	
 	let className = ""
 	export {className as class}
 	const dispatch = createEventDispatcher<{edited: Task}>()
@@ -80,19 +82,19 @@
 		<Form.Field {form} name="original" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Form.Label>Original</Form.Label>
-				<Input type="number" bind:value={$data.original} step="0.5" min="0" {...attrs} class="w-full" />
+				<Input type="number" bind:value={$data.original} min="0" step="0.1" {...attrs} class="w-full" />
 			</Form.Control>
 		</Form.Field>
 		<Form.Field {form} name="estimate" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Form.Label>Estimate</Form.Label>
-				<Input type="number" bind:value={$data.estimate} step="0.5" min="0" {...attrs} class="w-full" />
+				<Input type="number" bind:value={$data.estimate} min="0" step="0.1" {...attrs} class="w-full" />
 			</Form.Control>
 		</Form.Field>
 		<Form.Field {form} name="spent" class="flex flex-col" >
 			<Form.Control let:attrs>
 				<Form.Label>Spent</Form.Label>
-				<Input type="number" bind:value={$data.spent} step="0.5" min="0" {...attrs} class="w-full" />
+				<Input type="number" bind:value={$data.spent} min="0" step="0.1" {...attrs} class="w-full" />
 			</Form.Control>
 		</Form.Field>
 		<Form.Field {form} name="done" class="flex flex-col">

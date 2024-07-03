@@ -16,14 +16,12 @@
 	import {toast} from "svelte-sonner"
 	import {SquareUserRound, AlarmClock, Timer, Plus, Trash2, Pencil} from "lucide-svelte"
 	
+	////////////////////////////////////////////////////////////////////////////////
 	// SETUP
+	////////////////////////////////////////////////////////////////////////////////
 	
 	let canvas: HTMLCanvasElement
 	let context: CanvasRenderingContext2D
-	
-	let card: Card.Root
-	let pageX: number
-	let pageY: number
 	
 	let width: number
 	let height: number
@@ -35,7 +33,9 @@
 		height = canvas.clientHeight * window.devicePixelRatio
 	}
 	
+	////////////////////////////////////////////////////////////////////////////////
 	// DATA
+	////////////////////////////////////////////////////////////////////////////////
 	
 	export let tasks: Array<Task> = []
 	
@@ -45,13 +45,14 @@
 	
 	type Node = d3.SimulationNodeDatum & {
 		id: number
+		type: "Task" | "Project"
 		name: string
 		r: number // radius
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
 	function taskToNode(task: Task): Node {
-		return {id: task.id, name: task.name, r: 10}
+		return {id: task.id, type: "Task", name: task.name, r: 10}
 	}
 	
 	function getTaskByIdUnsafe(id: TaskId): Task {
@@ -60,6 +61,279 @@
 	
 	const nodes: Array<Node> = tasks.map(taskToNode) // make copies // TODO: set the radius based on the size
 	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// SIMULATION
+	////////////////////////////////////////////////////////////////////////////////
+	
+	let simulation: d3.Simulation<Node, never>
+	
+	function buildForceSimulation() {
+		return d3.forceSimulation(nodes)
+			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0))
+			.force("charge", d3.forceManyBody().distanceMax(100))
+			.on("tick", updateSimulation)
+			.alphaDecay(0) // never stop the simulation
+	}
+	
+	function reInitializeSimulation() {
+		simulation.nodes(nodes) // make sure it has the updated list of nodes
+		simulation.force("link")!.initialize!(nodes, () => 0) // re-initialize forces
+		simulation.force("charge")!.initialize!(nodes, () => 0) // re-initialize forces
+	}
+	
+	function updateSimulation() {
+		context.save()
+		context.clearRect(0, 0, width, height)
+		context.translate(transform.x * window.devicePixelRatio, transform.y * window.devicePixelRatio)
+		context.scale(transform.k * window.devicePixelRatio, transform.k * window.devicePixelRatio)
+		
+		// draw nodes
+		if (selectedNode) drawConnector(selectedNode)
+		links.forEach(drawLink)
+		nodes.forEach(drawNode)
+		
+		context.restore()
+	}
+	
+	function drawNode(node: Node) {
+		context.fillStyle = $mode == "light" ? "black" : "white"
+		if (hoveredNode == node) context.strokeStyle = "gold"
+		if (selectedNode == node) context.strokeStyle = "lightblue"
+		drawCircle(context, node.x!, node.y!, node.r, {border: hoveredNode == node || selectedNode == node, borderWidth: 3})
+	}
+	
+	function drawLink(link: Link) {
+		const source = link.source as Node
+		const target = link.target as Node
+		
+		context.fillStyle = $mode == "light" ? "black" : "white"
+		context.strokeStyle = $mode == "light" ? "black" : "white"
+		if (!hoveredNode && hoveredLink == link) { context.fillStyle = "red"; context.strokeStyle = "red" }
+		
+		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
+	}
+	
+	function drawConnector(from: Node) {
+		context.fillStyle = $mode == "light" ? "black" : "white"
+		context.strokeStyle = $mode == "light" ? "black" : "white"
+		
+		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r})
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// INTERACTION
+	////////////////////////////////////////////////////////////////////////////////
+	
+	let transform = d3.zoomIdentity
+	
+	type Point = {x: number, y: number}
+	let cursor: Point = {x: 0, y: 0} // the mouse coordinates, in the DOM's coordinate space
+	let mouse: Point = {x: 0, y: 0} // the mouse coordinates, in the canvas' coordinate space
+	
+	function getNode(point: Point): Node | undefined {
+		return nodes.find(node => Math.sqrt((point.x - node.x!)**2 + (point.y - node.y!)**2) < node.r)
+	}
+	
+	function getLink(point: Point, fuzziness: number): Link | undefined {
+		return links.find(link => {
+			const source = {x: (link.source as Node).x!, y: (link.source as Node).y!}
+			const target = {x: (link.target as Node).x!, y: (link.target as Node).y!}
+			
+			if (point.x < Math.min(source.x, target.x) - fuzziness || Math.max(source.x, target.x) + fuzziness < point.x) return false // it's outside the bounding box of the line, it's not on the line
+			if (point.y < Math.min(source.y, target.y) - fuzziness || Math.max(source.y, target.y) + fuzziness < point.y) return false // it's outside the bounding box of the line, it's not on the line
+			return Math.abs((target.x - source.x) * (source.y - point.y) - (target.y - source.y) * (source.x - point.x)) / Math.sqrt((target.x - source.x)**2 + (target.y - source.y)**2) <= fuzziness // right angle distance
+		})
+	}
+	
+	// ZOOM
+	
+	type ZoomEvent = d3.D3ZoomEvent<HTMLCanvasElement, Node>
+	
+	function zoomed(event: ZoomEvent) {
+		transform = event.transform.translate(width / 2 / window.devicePixelRatio, height / 2 / window.devicePixelRatio)
+		updateSimulation()
+	}
+	
+	// DRAG
+	
+	type DragEvent = d3.D3DragEvent<HTMLCanvasElement, Node, Node>
+	
+	function getDragSubject(event: DragEvent) {
+		const node = getNode(mouse)
+		if (node) { node.x = transform.applyX(node.x!); node.y = transform.applyY(node.y!) }
+		return node
+	}
+	
+	function onDragStarted(event: DragEvent) {
+		informationCardOpen = false // hide the card
+		// event.subject.fx = mouse.x; event.subject.fy = mouse.y // force the subject to follow mouse
+		event.subject.fx = transform.invertX(event.x); event.subject.fy = transform.invertY(event.y) // force the subject to follow mouse
+	}
+	
+	function onDrag(event: DragEvent) {
+		event.subject.fx = transform.invertX(event.x); event.subject.fy = transform.invertY(event.y) // force the subject to follow mouse
+	}
+	
+	function onDragEnded(event: DragEvent) {
+		event.subject.fx = undefined; event.subject.fy = undefined
+	}
+	
+	/*
+	function getDragSubject(event: DragEvent) {
+		const node = getNode(event)
+		if (node) {
+			node.x = transform.applyX(node.x!)
+			node.y = transform.applyY(node.y!)
+		}
+		return node
+	}
+	
+	function onDragStarted(event: DragEvent) {
+		event.subject.fx = transform.invertX(event.x)
+		event.subject.fy = transform.invertY(event.y)
+		hovered = undefined // hide the card
+	}
+	
+	function onDrag(event: DragEvent) {
+		event.subject.fx = transform.invertX(event.x)
+		event.subject.fy = transform.invertY(event.y)
+	}
+	
+	function onDragEnded(event: DragEvent) {
+		event.subject.fx = undefined
+		event.subject.fy = undefined
+	}
+	*/
+	
+	// HOVER
+	
+	let hoveredNode: Node | undefined
+	let hoveredLink: Link | undefined
+	
+	function onMouseMove(event: MouseEvent) {
+		hoveredNode = getNode(mouse)
+		hoveredLink = getLink(mouse, 5)
+		
+		if (hoveredNode) {
+			if (!contextMenuOpen) informationCardOpen = true
+		} else {
+			informationCardOpen = false
+		}
+	}
+	
+	// CLICK
+	
+	let clickedNode: Node | undefined
+	
+	async function onClick(event: MouseEvent) {
+		contextMenuOpen = false
+		rightClickedNode = undefined
+		
+		clickedNode = getNode(mouse)
+		
+		if (!selectedNode) { // if no node is selected yet
+			selectedNode = clickedNode
+			
+			if (!selectedNode && !hoveredNode) { // if we didn't just select a node now, and we aren't hovering over one (which would be a double click on the node)
+				const link = getLink(mouse, 5) // see if we clicked on a link
+				if (link) removeLink(link) // if we clicked on a link, remove it
+			}
+		} else { // if a node is already selected
+			if (clickedNode) { // if we clicked on a node receiving
+				await makeLink(selectedNode, clickedNode)
+			} // if there is no target, we clicked on empty space, drop it
+			selectedNode = undefined // reset selection
+		}
+	}
+	
+	let doubleClickedNode: Node | undefined
+	
+	function onDoubleClick(event: MouseEvent) {
+		doubleClickedNode = getNode(mouse)
+		if (doubleClickedNode) { // if double clicked on a node
+			if (doubleClickedNode.type == "Task") openEditTaskDialog(doubleClickedNode.id)
+		} else { // if double clicked in empty space
+			openCreateTaskDialog(mouse)
+		}
+	}
+	
+	let rightClickedCursor: Point = {x: 0, y: 0}
+	let rightClickedPoint: Point = {x: 0, y: 0}
+	let rightClickedNode: Node | undefined
+	
+	function onRightClick(event: MouseEvent) {
+		informationCardOpen = false // close the information box, so we don't see both at the same time
+		selectedNode = undefined // stop drawing another arrow
+		rightClickedCursor = cursor // store the position of the cursor when this was clicked, so we can make the UI element not move with the mouse
+		rightClickedPoint = mouse // store the position of the mouse when this was clicked, in case we want to do things like make a new node
+		rightClickedNode = getNode(mouse)
+		contextMenuOpen = true // show the context menu
+	}
+	
+	// SELECTIONS
+	
+	let selectedNode: Node | undefined
+	
+	// DIALOGS
+	
+	// Information Card
+	
+	let informationCard: Card.Root
+	let informationCardOpen = false
+	$: informationCardNode = hoveredNode
+	$: informationCardTask = tasks.find(task => task.id == informationCardNode?.id)
+	
+	// Context Menu
+	
+	let contextMenuOpen = false
+	
+	// Create Task
+	
+	let createTaskDialogOpen = false
+	let createTaskInsertionPoint: Point = {x: 0, y: 0}
+	
+	function openCreateTaskDialog(point: Point) {
+		createTaskInsertionPoint = point // record where we started making the task, so we can insert the node there
+		createTaskDialogOpen = true // go make a task
+	}
+	
+	// Edit Task
+	
+	let editTaskDialogOpen = false
+	let editTaskId: TaskId | undefined
+	
+	function openEditTaskDialog(id?: TaskId) {
+		if (!id) return // this can't happen, but have to guard against it so typescript is happy
+		editTaskId = id
+		editTaskDialogOpen = true
+	}
+	
+	// ACTIONS
+	
+	function onTaskCreated(event: CustomEvent<Task>) {
+		const task = event.detail
+		const node = taskToNode(task)
+		node.x = createTaskInsertionPoint.x; node.y = createTaskInsertionPoint.y
+		
+		// add the task as a node
+		simulation.stop()
+		nodes.push(node)
+		reInitializeSimulation()
+		simulation.restart()
+	}
+	
+	function onTaskEdited(event: CustomEvent<Task>) {
+		const task = event.detail
+		const node = taskToNode(task)
+		
+		// add the task as a node
+		simulation.stop()
+		const oldNode = nodes.findIndex(n => n.id == node.id)
+		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
+		reInitializeSimulation()
+		simulation.restart()
+	}
 	
 	async function makeLink(source: Node, target: Node) {
 		// guards
@@ -123,224 +397,9 @@
 		simulation.restart()
 	}
 	
-	// SIMULATION
-	
-	let simulation: d3.Simulation<Node, never>
-	
-	function buildForceSimulation() {
-		return d3.forceSimulation(nodes)
-			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0))
-			.force("charge", d3.forceManyBody().distanceMax(100))
-			.on("tick", updateSimulation)
-			.alphaDecay(0) // never stop the simulation
-	}
-	
-	function reInitializeSimulation() {
-		simulation.nodes(nodes) // make sure it has the updated list of nodes
-		simulation.force("link")!.initialize!(nodes, () => 0) // re-initialize forces
-		simulation.force("charge")!.initialize!(nodes, () => 0) // re-initialize forces
-	}
-	
-	function updateSimulation() {
-		context.save()
-		context.clearRect(0, 0, width, height)
-		context.translate(transform.x * window.devicePixelRatio, transform.y * window.devicePixelRatio)
-		context.scale(transform.k * window.devicePixelRatio, transform.k * window.devicePixelRatio)
-		
-		// draw nodes
-		if (selected) drawConnector(selected)
-		links.forEach(drawLink)
-		nodes.forEach(drawNode)
-		
-		context.restore()
-	}
-	
-	function drawNode(node: Node) {
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		if (hovered == node) context.strokeStyle = "gold"
-		if (selected == node) context.strokeStyle = "lightblue"
-		drawCircle(context, node.x!, node.y!, node.r, {border: hovered == node || selected == node, borderWidth: 3})
-	}
-	
-	function drawLink(link: Link) {
-		const source = link.source as Node
-		const target = link.target as Node
-		
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		context.strokeStyle = $mode == "light" ? "black" : "white"
-		if (hoveredLink == link) { context.fillStyle = "red"; context.strokeStyle = "red" }
-		
-		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
-	}
-	
-	function drawConnector(from: Node) {
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		context.strokeStyle = $mode == "light" ? "black" : "white"
-		
-		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r})
-	}
-	
-	// INTERACTION
-	
-	let transform = d3.zoomIdentity
-	
-	function getNode(event: Event | DragEvent): Node | undefined {
-		const [x, y] = transform.invert(d3.pointer(event))
-		return nodes.find(node => Math.sqrt((x - node.x!)**2 + (y - node.y!)**2) < node.r)
-	}
-	
-	function getLink(event: Event, fuzziness: number): Link | undefined {
-		const [x, y] = transform.invert(d3.pointer(event))
-		return links.find(link => {
-			const source = {x: (link.source as Node).x!, y: (link.source as Node).y!}
-			const target = {x: (link.target as Node).x!, y: (link.target as Node).y!}
-			
-			if (x < Math.min(source.x, target.x) - fuzziness || Math.max(source.x, target.x) + fuzziness < x) return false // it's outside the bounding box of the line, it's not on the line
-			if (y < Math.min(source.y, target.y) - fuzziness || Math.max(source.y, target.y) + fuzziness < y) return false // it's outside the bounding box of the line, it's not on the line
-			return Math.abs((target.x - source.x) * (source.y - y) - (target.y - source.y) * (source.x - x)) / Math.sqrt((target.x - source.x)**2 + (target.y - source.y)**2) <= fuzziness // right angle distance
-		})
-	}
-	
-	// Zoom
-	
-	type ZoomEvent = d3.D3ZoomEvent<HTMLCanvasElement, Node>
-	
-	function zoomed(event: ZoomEvent) {
-		transform = event.transform.translate(width / 2 / window.devicePixelRatio, height / 2 / window.devicePixelRatio)
-		updateSimulation()
-	}
-	
-	// Drag
-	
-	type DragEvent = d3.D3DragEvent<HTMLCanvasElement, Node, Node>
-	
-	function getDragSubject(event: DragEvent) {
-		const node = getNode(event)
-		if (node) {
-			node.x = transform.applyX(node.x!)
-			node.y = transform.applyY(node.y!)
-		}
-		return node
-	}
-	
-	function onDragStarted(event: DragEvent) {
-		event.subject.fx = transform.invertX(event.x)
-		event.subject.fy = transform.invertY(event.y)
-		hovered = undefined // hide the card
-	}
-	
-	function onDrag(event: DragEvent) {
-		event.subject.fx = transform.invertX(event.x)
-		event.subject.fy = transform.invertY(event.y)
-	}
-	
-	function onDragEnded(event: DragEvent) {
-		event.subject.fx = undefined
-		event.subject.fy = undefined
-	}
-	
-	// hover
-	
-	let mouse: {x: number, y: number} = {x: 0, y: 0}
-	let hovered: Node | undefined
-	$: cardTask = hovered ? tasks.find(task => task.id == hovered?.id) : undefined
-	let hoveredLink: Link | undefined
-	
-	function onMouseMove(event: MouseEvent) {
-		let [x, y] = transform.invert(d3.pointer(event))
-		mouse.x = x; mouse.y = y
-		if (!rightClickNode) hovered = getNode(event)
-		if (!hovered && !selected && !rightClickNode) { hoveredLink = getLink(event, 5) }
-		else { hoveredLink = undefined }
-	}
-	
-	// click
-	
-	let selected: Node | undefined
-	
-	async function onClick(event: MouseEvent) {
-		contextMenuOpen = false
-		rightClickNode = undefined
-		if (!selected) { // if no node is selected yet
-			selected = getNode(event)
-			
-			if (!selected && !hovered) { // if we didn't just select one now, and aren't doing anything else otherwise
-				const link = getLink(event, 5)
-				if (link) removeLink(link) // if we clicked on a link, remove it
-			}
-		} else { // if a node is already selected
-			const target = getNode(event)
-			if (target) { // if we clicked on a node receiving
-				await makeLink(selected, target)
-			} // if there is no target, drop it
-			selected = undefined // reset selection
-		}
-	}
-	
-	let createTaskDialogOpen = false
-	let editTaskDialogOpen = false
-	let taskInsertionPoint = {x: 0, y: 0}
-	
-	function onDoubleClick(event: MouseEvent) {
-		const node = getNode(event)
-		if (node) { // if double clicked on a node
-			
-		} else { // if double clicked in empty space
-			openCreateTaskDialog(event)
-		}
-	}
-	
-	function openCreateTaskDialog(event: MouseEvent) {
-		const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y
-		createTaskDialogOpen = true // go make a task
-	}
-	
-	function openEditTaskDialog(event: MouseEvent) {
-		editTaskDialogOpen = true // open the editor
-	}
-	
-	let contextMenuOpen = false
-	let rightClickNode: Node | undefined
-	let rightClickPosition = {x: 0, y: 0} // the page position of the mouse (saved so for when you right click it doesn't move)
-	
-	function onRightClick(event: MouseEvent) {
-		const node = getNode(event)
-		rightClickPosition.x = event.pageX; rightClickPosition.y = event.pageY // set this so we know the browser position of the node when it was clicked
-		if (node) { // right clicked on a node
-			rightClickNode = node
-			hovered = undefined // unset the hover, so we don't see both boxes
-		} else { // right clicked in blank space
-			rightClickNode = undefined
-			const [x, y] = transform.invert(d3.pointer(event)); taskInsertionPoint.x = x; taskInsertionPoint.y = y // set this, just in case they want to make a new task here
-		}
-		contextMenuOpen = true // show the context menu
-	}
-	
-	function onTaskCreated(event: CustomEvent<Task>) {
-		const task = event.detail
-		const node = taskToNode(task)
-		node.x = taskInsertionPoint.x; node.y = taskInsertionPoint.y
-		
-		// add the task as a node
-		simulation.stop()
-		nodes.push(node)
-		reInitializeSimulation()
-		simulation.restart()
-	}
-	
-	function onTaskEdited(event: CustomEvent<Task>) {
-		const task = event.detail
-		const node = taskToNode(task)
-		
-		// add the task as a node
-		simulation.stop()
-		const oldNode = nodes.findIndex(n => n.id == node.id)
-		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
-		reInitializeSimulation()
-		simulation.restart()
-	}
-	
+	////////////////////////////////////////////////////////////////////////////////
 	// START
+	////////////////////////////////////////////////////////////////////////////////
 	
 	onMount(() => {
 		setCanvasDimensions()
@@ -362,30 +421,44 @@
 	})
 </script>
 
+<style>
+	.deleteCursor {
+		cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZjAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS10cmFzaC0yIj48cGF0aCBkPSJNMyA2aDE4Ii8+PHBhdGggZD0iTTE5IDZ2MTRjMCAxLTEgMi0yIDJIN2MtMSAwLTItMS0yLTJWNiIvPjxwYXRoIGQ9Ik04IDZWNGMwLTEgMS0yIDItMmg0YzEgMCAyIDEgMiAydjIiLz48bGluZSB4MT0iMTAiIHgyPSIxMCIgeTE9IjExIiB5Mj0iMTciLz48bGluZSB4MT0iMTQiIHgyPSIxNCIgeTE9IjExIiB5Mj0iMTciLz48L3N2Zz4="), auto;
+	}
+</style>
+
 <canvas
 	bind:this={canvas}
-	on:contextmenu={(event) => { event.preventDefault(); onRightClick(event) }}
-	class="w-full h-full"
+	on:contextmenu={event => { event.preventDefault(); onRightClick(event) }}
+	on:mousemove={event => { let [x, y] = transform.invert(d3.pointer(event)); mouse.x = x; mouse.y = y }}
+	class={cn("w-full h-full", hoveredLink && !hoveredNode && "deleteCursor")}
 />
 
-<svelte:window on:mousemove={event => ({pageX, pageY} = event)} />
-<Card.Root bind:this={card} class={cn("absolute -translate-x-1/2 max-w-96", !hovered && "hidden", pageY < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {pageY}px; left: {pageX}px;">
-	<Card.Header class="p-2">
-		<Card.Title>{cardTask?.name}</Card.Title>
-	</Card.Header>
-	<Card.Content class="p-2 grid grid-cols-[min-content_auto_min-content_auto] gap-1">
-		<SquareUserRound /><span class="col-span-3">{cardTask?.doer ? resourcesById[cardTask?.doer].name : "Unassigned"}</span>
-		<AlarmClock /><span>{cardTask?.estimate}h</span>
-		<Timer /><span>{cardTask?.spent}h</span>
-	</Card.Content>
-</Card.Root>
-	
-<Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickPosition.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickPosition.y}px; left: {rightClickPosition.x}px;">
-	{#if rightClickNode}
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openEditTaskDialog(event) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+<svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY; }} />
+
+<Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
+	{#if informationCardTask}
+		<Card.Header class="p-2">
+			<Card.Title>{informationCardTask.name}</Card.Title>
+		</Card.Header>
+		<Card.Content class="p-2 grid grid-cols-[min-content_auto_min-content_auto] gap-1">
+			<SquareUserRound /><span class="col-span-3">{informationCardTask.doer ? resourcesById[informationCardTask.doer].name : "Unassigned"}</span>
+			<AlarmClock /><span>{informationCardTask.estimate}h</span>
+			<Timer /><span>{informationCardTask.spent}h</span>
+		</Card.Content>
 	{:else}
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={event => { contextMenuOpen = false; openCreateTaskDialog(event) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
+		<Card.Header class="p-2">
+			<Card.Title>Undefined Information</Card.Title>
+		</Card.Header>
+	{/if}
+</Card.Root>
+
+<Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickedCursor.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickedCursor.y}px; left: {rightClickedCursor.x}px;">
+	{#if rightClickedNode?.type == "Task"}
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+	{:else}
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openCreateTaskDialog(rightClickedPoint) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
 	{/if}
 </Card.Root>
 
@@ -397,8 +470,8 @@
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content>
-		{#if rightClickNode}
-			<EditTask initial={getTaskByIdUnsafe(rightClickNode.id)} on:edited={(event) => { editTaskDialogOpen = false; onTaskEdited(event) }} />
+		{#if editTaskId}
+			<EditTask initial={getTaskByIdUnsafe(editTaskId)} on:edited={(event) => { editTaskDialogOpen = false; onTaskEdited(event) }} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>

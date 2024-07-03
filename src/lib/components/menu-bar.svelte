@@ -5,6 +5,8 @@
 	import download from "downloadjs"
 	import {onMount} from "svelte"
 	
+	////////////////////////////////////////////////////////////////////////////////
+	
 	async function load() {
 		if (!window.confirm("Loading a database will remove any unsaved data")) return // confirm with the user that this will delete the existing database
 		var input = document.createElement("input")
