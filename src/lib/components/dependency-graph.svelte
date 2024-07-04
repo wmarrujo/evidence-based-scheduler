@@ -58,7 +58,7 @@
 	const defaultRadius = 10
 	
 	function taskToNode(task: Task): Node {
-		return {id: task.id, type: "Task", name: task.name, r: defaultRadius} // TODO: set the radius based on the size
+		return {id: task.id, type: "Task", name: task.name, r: Math.sqrt(task.estimate * defaultRadius**2)} // TODO: set the radius based on the size
 	}
 	
 	function getTaskByIdUnsafe(id: TaskId): Task {
@@ -67,6 +67,7 @@
 	
 	const nodes: Array<Node> = tasks.map(taskToNode)
 	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
+	// TODO: add projects to links
 	
 	$: unExpandedProjectNodes = nodes.filter(node => node.type == "Project") // all the nodes which are projects (so the un-expanded projects)
 	$: unExpandedProjectIds = unExpandedProjectNodes.map(node => node.id)
@@ -128,7 +129,6 @@
 		simulation.force("separator")!.initialize!(nodes, () => 0)
 		simulation.force("centerX")!.initialize!(nodes, () => 0)
 		simulation.force("centerY")!.initialize!(nodes, () => 0)
-		// simulation.force("flow")!.initialize!(nodes, () => 0)
 	}
 	
 	function updateSimulation() {
@@ -149,53 +149,43 @@
 	// DRAWING
 	
 	function drawNode(node: Node) {
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		if (hoveredNode == node) context.strokeStyle = "gold"
-		if (selectedNode == node) context.strokeStyle = "lightblue"
-		if (groupedNodes.includes(node)) context.fillStyle = "purple"
-		drawCircle(context, node.x!, node.y!, node.r, {border: hoveredNode == node || selectedNode == node, borderWidth: 3})
+		let color = $mode == "light" ? "black" : "white"
+		if (groupedNodes.includes(node)) color = "purple"
+		const border = hoveredNode == node || selectedNode == node
+		let borderColor
+		if (hoveredNode == node) borderColor = "gold"
+		if (selectedNode == node) borderColor = "lightblue"
+		
+		drawCircle(context, node.x!, node.y!, node.r, {border, borderWidth: 3, color, borderColor})
 	}
 	
 	function drawLink(link: Link) {
 		const source = link.source as Node
 		const target = link.target as Node
 		
-		context.save()
+		let color = $mode == "light" ? "black" : "white"
+		let headColor = $mode == "light" ? "black" : "white"
+		if (!hoveredNode && hoveredLink == link) { color = "red"; headColor = "red" }
 		
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		context.strokeStyle = $mode == "light" ? "black" : "white"
-		if (!hoveredNode && hoveredLink == link) { context.fillStyle = "red"; context.strokeStyle = "red" }
-		
-		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
-		
-		context.restore()
+		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: target.r, color, headColor})
 	}
 	
 	function drawConnector(from: Node) {
-		context.save()
+		const color = $mode == "light" ? "black" : "white"
+		const headColor = $mode == "light" ? "black" : "white"
 		
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		context.strokeStyle = $mode == "light" ? "black" : "white"
-		
-		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r})
-		
-		context.restore()
+		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r, color, headColor})
 	}
 	
 	function drawGroup(nodes: Array<Node>) {
-		context.save()
-		
-		context.fillStyle = $mode == "light" ? "black" : "white"
-		context.globalAlpha = 0.1
+		let color = $mode == "light" ? "black" : "white"
 		
 		const minX = Math.min(...nodes.map(node => node.x! - node.r))
 		const minY = Math.min(...nodes.map(node => node.y! - node.r))
 		const maxX = Math.max(...nodes.map(node => node.x! + node.r))
 		const maxY = Math.max(...nodes.map(node => node.y! + node.r))
 		
-		drawRectangle(context, minX, minY, maxX, maxY, {offset: defaultRadius})
-		
-		context.restore()
+		drawRectangle(context, minX, minY, maxX, maxY, {offset: defaultRadius, color, opacity: 0.1})
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
