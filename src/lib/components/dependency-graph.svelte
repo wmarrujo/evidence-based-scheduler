@@ -79,8 +79,6 @@
 		})
 		return acc
 	}, {} as Record<ProjectId, Array<Node>>)
-	// $: projectSubProjectIdsByProjectId = projects.reduce((acc, project) => { projects }, {} as Record<ProjectId, Array<ProjectId>>)
-	// $: expandedProjectSubNodesByProjectId = expandedProjects.reduce((acc, project) => {}, {} as Record<ProjectId, Array<Node>>)
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -88,18 +86,49 @@
 	
 	let simulation: d3.Simulation<Node, never>
 	
+	// FORCES
+	
+	function flow(alpha: number) {
+		let strength = 1
+		let idealDistance = defaultRadius * 5
+		
+		links.forEach(({source, target}) => {
+			source = source as Node; target = target as Node
+			
+			const sourceIdealX = target.x! - (idealDistance + target.r + source.r)
+			const targetIdealX = source.x! + (idealDistance + target.r + source.r)
+			
+			source.vx! += (sourceIdealX - source.x!) * 0.001 * strength * alpha
+			source.vy! += (target.y! - source.y!) * 0.001 * strength * alpha
+			
+			target.vx! += (targetIdealX - target.x!) * 0.001 * strength * alpha
+			target.vy! += (source.y! - target.y!) * 0.001 * strength * alpha
+		})
+	}
+	
+	// RUNNING
+	
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
-			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0))
-			.force("charge", d3.forceManyBody().distanceMax(100))
+			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0.001)) // connect nodes
+			.force("repulsion", d3.forceManyBody().strength(-5).distanceMax(defaultRadius * 10)) // keep nodes apart
+			.force("separator", d3.forceManyBody().strength(-0.1)) // try to separate things
+			.force("centerX", d3.forceX().strength(0.0001)) // make sure separate sections don't fly off forever
+			.force("centerY", d3.forceY().strength(0.001)) // make sure separate sections don't fly off forever
+			.force("flow", flow) // flow nodes left to right via their connections
 			.on("tick", updateSimulation)
 			.alphaDecay(0) // never stop the simulation
 	}
 	
 	function reInitializeSimulation() {
 		simulation.nodes(nodes) // make sure it has the updated list of nodes
-		simulation.force("link")!.initialize!(nodes, () => 0) // re-initialize forces
-		simulation.force("charge")!.initialize!(nodes, () => 0) // re-initialize forces
+		// re-initialize forces
+		simulation.force("link")!.initialize!(nodes, () => 0)
+		simulation.force("repulsion")!.initialize!(nodes, () => 0)
+		simulation.force("separator")!.initialize!(nodes, () => 0)
+		simulation.force("centerX")!.initialize!(nodes, () => 0)
+		simulation.force("centerY")!.initialize!(nodes, () => 0)
+		// simulation.force("flow")!.initialize!(nodes, () => 0)
 	}
 	
 	function updateSimulation() {
@@ -116,6 +145,8 @@
 		
 		context.restore()
 	}
+	
+	// DRAWING
 	
 	function drawNode(node: Node) {
 		context.fillStyle = $mode == "light" ? "black" : "white"
@@ -154,6 +185,7 @@
 	function drawGroup(nodes: Array<Node>) {
 		context.save()
 		
+		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.globalAlpha = 0.1
 		
 		const minX = Math.min(...nodes.map(node => node.x! - node.r))
