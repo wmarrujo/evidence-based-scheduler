@@ -55,7 +55,7 @@
 		<Form.Field {form} name="name" class="flex flex-col col-span-2">
 			<Form.Control let:attrs>
 				<Form.Label>Name</Form.Label>
-				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Do thing" class="" />
+				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Do thing" />
 			</Form.Control>
 		</Form.Field>
 		<Form.Field {form} name="doer" class="flex gap-2 col-span-2 space-y-0 items-center">

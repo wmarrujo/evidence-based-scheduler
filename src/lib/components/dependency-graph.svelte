@@ -1,16 +1,17 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import type {Task, TaskId, Resource, ResourceId} from "$lib/db"
+	import type {Task, TaskId, Resource, ResourceId, Project, ProjectId} from "$lib/db"
 	import {db} from "$lib/db"
 	import {liveQuery} from "dexie"
 	import {mode} from "mode-watcher"
-	import {drawCircle, drawArrow} from "$lib/canvas"
+	import {drawCircle, drawArrow, drawRectangle} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {Button} from "$lib/components/ui/button"
 	import CreateTask from "$lib/components/create-task.svelte"
 	import EditTask from "$lib/components/edit-task.svelte"
+	import CreateProject from "$lib/components/create-project.svelte"
 	import {cn} from "$lib/utils"
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
@@ -39,6 +40,9 @@
 	
 	export let tasks: Array<Task> = []
 	
+	export let projects: Array<Project> = []
+	$: projectsById = projects.reduce((acc, project) => { acc[project.id] = project; return acc }, {} as Record<ProjectId, Project>)
+	
 	let resources = liveQuery(() => db.resources.toArray())
 	let resourcesById: Record<ResourceId, Resource> = {}
 	$: if ($resources) resourcesById = $resources.reduce((acc, resource) => { acc[resource.id] = resource; return acc }, {} as Record<ResourceId, Resource>)
@@ -51,16 +55,32 @@
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
+	const defaultRadius = 10
+	
 	function taskToNode(task: Task): Node {
-		return {id: task.id, type: "Task", name: task.name, r: 10}
+		return {id: task.id, type: "Task", name: task.name, r: defaultRadius} // TODO: set the radius based on the size
 	}
 	
 	function getTaskByIdUnsafe(id: TaskId): Task {
 		return tasks.find(task => task.id == id)!
 	}
 	
-	const nodes: Array<Node> = tasks.map(taskToNode) // make copies // TODO: set the radius based on the size
+	const nodes: Array<Node> = tasks.map(taskToNode)
 	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
+	
+	$: unExpandedProjectNodes = nodes.filter(node => node.type == "Project") // all the nodes which are projects (so the un-expanded projects)
+	$: unExpandedProjectIds = unExpandedProjectNodes.map(node => node.id)
+	$: expandedProjects = projects.filter(project => !unExpandedProjectIds.includes(project.id))
+	$: expandedProjectNodes = expandedProjects.reduce((acc, project) => {
+		acc[project.id] = nodes.filter(node => { // get the nodes that should go inside this project's box
+			if (node.type == "Task") { return project.tasks.includes(node.id) }
+			else if (node.type == "Project") { return projectsById[project.id].tasks.intersects(projectsById[node.id].tasks) } // if there is any overlap, include this un-expanded project in this project's box
+			else return false
+		})
+		return acc
+	}, {} as Record<ProjectId, Array<Node>>)
+	// $: projectSubProjectIdsByProjectId = projects.reduce((acc, project) => { projects }, {} as Record<ProjectId, Array<ProjectId>>)
+	// $: expandedProjectSubNodesByProjectId = expandedProjects.reduce((acc, project) => {}, {} as Record<ProjectId, Array<Node>>)
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -88,9 +108,10 @@
 		context.translate(transform.x * window.devicePixelRatio, transform.y * window.devicePixelRatio)
 		context.scale(transform.k * window.devicePixelRatio, transform.k * window.devicePixelRatio)
 		
-		// draw nodes
-		if (selectedNode) drawConnector(selectedNode)
+		// draw
+		expandedProjects.forEach(project => { drawGroup(expandedProjectNodes[project.id]) })
 		links.forEach(drawLink)
+		if (selectedNode) drawConnector(selectedNode)
 		nodes.forEach(drawNode)
 		
 		context.restore()
@@ -100,6 +121,7 @@
 		context.fillStyle = $mode == "light" ? "black" : "white"
 		if (hoveredNode == node) context.strokeStyle = "gold"
 		if (selectedNode == node) context.strokeStyle = "lightblue"
+		if (groupedNodes.includes(node)) context.fillStyle = "purple"
 		drawCircle(context, node.x!, node.y!, node.r, {border: hoveredNode == node || selectedNode == node, borderWidth: 3})
 	}
 	
@@ -107,18 +129,41 @@
 		const source = link.source as Node
 		const target = link.target as Node
 		
+		context.save()
+		
 		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.strokeStyle = $mode == "light" ? "black" : "white"
 		if (!hoveredNode && hoveredLink == link) { context.fillStyle = "red"; context.strokeStyle = "red" }
 		
 		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: source.r})
+		
+		context.restore()
 	}
 	
 	function drawConnector(from: Node) {
+		context.save()
+		
 		context.fillStyle = $mode == "light" ? "black" : "white"
 		context.strokeStyle = $mode == "light" ? "black" : "white"
 		
 		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r})
+		
+		context.restore()
+	}
+	
+	function drawGroup(nodes: Array<Node>) {
+		context.save()
+		
+		context.globalAlpha = 0.1
+		
+		const minX = Math.min(...nodes.map(node => node.x! - node.r))
+		const minY = Math.min(...nodes.map(node => node.y! - node.r))
+		const maxX = Math.max(...nodes.map(node => node.x! + node.r))
+		const maxY = Math.max(...nodes.map(node => node.y! + node.r))
+		
+		drawRectangle(context, minX, minY, maxX, maxY, {offset: defaultRadius})
+		
+		context.restore()
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +249,9 @@
 		
 		clickedNode = getNode(mouse)
 		
-		if (!selectedNode) { // if no node is selected yet
+		if (grouping) { // if we're in grouping mode
+			if (clickedNode) groupedNodes.push(clickedNode) // add any node we clicked on
+		} else if (!selectedNode) { // if no node is selected yet
 			selectedNode = clickedNode
 			
 			if (!selectedNode && !hoveredNode) { // if we didn't just select a node now, and we aren't hovering over one (which would be a double click on the node)
@@ -247,6 +294,32 @@
 	
 	let selectedNode: Node | undefined
 	
+	// Grouping
+	
+	export let grouping = false // if we're in grouping mode
+	let groupedNodes: Array<Node> = []
+	
+	export function startGrouping() {
+		grouping = true
+	}
+	
+	export function cancelGrouping() {
+		grouping = false
+		groupedNodes = [] // clear the grouping
+	}
+	
+	export function finishGrouping() {
+		grouping = false
+		if (groupedNodes.length == 0) return // if we didn't actually group anything, don't make a group
+		createProjectTasks = groupedNodes.flatMap(node => {
+			if (node.type == "Task") { return [node.id] } // the node id is the task id
+			else if (node.type == "Project") { return projects.find(project => project.id == node.id)?.tasks ?? [] }
+			else { return [] }
+		})
+		createProjectDialogOpen = true // get the final information
+		groupedNodes = [] // clear the grouping
+	}
+	
 	// DIALOGS
 	
 	// Information Card
@@ -281,6 +354,11 @@
 		editTaskDialogOpen = true
 	}
 	
+	// Create Project
+	
+	let createProjectDialogOpen = false
+	let createProjectTasks: Array<TaskId> = []
+	
 	// ACTIONS
 	
 	function onTaskCreated(event: CustomEvent<Task>) {
@@ -307,12 +385,17 @@
 		simulation.restart()
 	}
 	
+	function onProjectCreated(event: CustomEvent<Project>) {
+		// TODO
+	}
+	
 	async function makeLink(source: Node, target: Node) {
 		// guards
 		if (links.findIndex(link => link.source == source && link.target == target) != -1) { toast.error("That dependency already exists"); return}
 		if (source == target) return // if it's the same node, don't error, since it's spently probably just a double click
 		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
 		
+		// FIXME: don't assume nodes are tasks
 		// add this information to the database
 		const task = (await db.tasks.get(target.id))!
 		task.dependsOn.push(source.id)
@@ -337,6 +420,7 @@
 		const target = link.target as Node
 		const source = link.source as Node
 		
+		// FIXME: don't assume nodes are tasks
 		// remove from database
 		const task = (await db.tasks.get(target.id))!
 		task.dependsOn = task.dependsOn.filter(s => s != source.id)
@@ -351,6 +435,8 @@
 	
 	async function removeNode(node: Node | undefined) {
 		if (!node) return // NOTE: this guard is needed for the typing to be correct in the html
+		
+		// FIXME: don't assume nodes are tasks
 		// remove from database
 		await db.tasks.delete(node.id) // remove the node itself
 		const dependents = await db.tasks.filter(task => task.dependsOn.includes(node.id)).toArray() // find all tasks that reference the node
@@ -434,15 +520,21 @@
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
 	<Dialog.Content>
-		<CreateTask on:created={(event) => { createTaskDialogOpen = false; onTaskCreated(event) }} />
+		<CreateTask on:created={event => { createTaskDialogOpen = false; onTaskCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content>
 		{#if editTaskId}
-			<EditTask initial={getTaskByIdUnsafe(editTaskId)} on:edited={(event) => { editTaskDialogOpen = false; onTaskEdited(event) }} />
+			<EditTask initial={getTaskByIdUnsafe(editTaskId)} on:edited={event => { editTaskDialogOpen = false; onTaskEdited(event) }} />
 		{/if}
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={createProjectDialogOpen}>
+	<Dialog.Content>
+		<CreateProject tasks={createProjectTasks} on:created={event => { createProjectDialogOpen = false; onProjectCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>
 
