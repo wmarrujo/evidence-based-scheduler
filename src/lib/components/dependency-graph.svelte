@@ -55,18 +55,18 @@
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
-	const defaultRadius = 10
+	const meter = 10 // unit of measure, in pixels
 	
 	function taskToNode(task: Task): Node {
-		return {id: task.id, type: "Task", name: task.name, r: Math.sqrt(task.estimate * defaultRadius**2)} // TODO: set the radius based on the size
+		return {id: task.id, type: "Task", name: task.name, r: Math.sqrt(task.estimate * meter**2)} // TODO: set the radius based on the size
 	}
 	
 	function getTaskByIdUnsafe(id: TaskId): Task {
 		return tasks.find(task => task.id == id)!
 	}
 	
-	const nodes: Array<Node> = tasks.map(taskToNode)
-	const links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
+	let nodes: Array<Node> = tasks.map(taskToNode)
+	let links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
 	// TODO: add projects to links
 	
 	$: unExpandedProjectNodes = nodes.filter(node => node.type == "Project") // all the nodes which are projects (so the un-expanded projects)
@@ -90,20 +90,54 @@
 	// FORCES
 	
 	function flow(alpha: number) {
-		let strength = 1
-		let idealDistance = defaultRadius * 5
+		const stiffness = 0.01 // the strength it adds per pixel farther to the right the source is from the target
+		const offset = meter * 5 // try to be at least this much farther than in-line with each other
 		
 		links.forEach(({source, target}) => {
 			source = source as Node; target = target as Node
 			
-			const sourceIdealX = target.x! - (idealDistance + target.r + source.r)
-			const targetIdealX = source.x! + (idealDistance + target.r + source.r)
+			const flippedness = Math.max(0, (source.x! - target.x!) + offset) // how many pixels the source is right of the target (how many it is in the flipped orientation)
 			
-			source.vx! += (sourceIdealX - source.x!) * 0.001 * strength * alpha
-			source.vy! += (target.y! - source.y!) * 0.001 * strength * alpha
+			source.vx! -= flippedness * stiffness * alpha
+			target.vx! += flippedness * stiffness * alpha
+		})
+	}
+	
+	function group(alpha: number) {
+		const strength = 0.01
+		const buffer = meter * 3 // how much farther away nodes should try to be from a group
+		
+		const projectBoxes = Object.keys(expandedProjectNodes).map(id => {
+			const projectNodes = expandedProjectNodes[Number(id)]
+			const minX = Math.min(...projectNodes.map(node => node.x! - node.r))
+			const minY = Math.min(...projectNodes.map(node => node.y! - node.r))
+			const maxX = Math.max(...projectNodes.map(node => node.x! + node.r))
+			const maxY = Math.max(...projectNodes.map(node => node.y! + node.r))
 			
-			target.vx! += (targetIdealX - target.x!) * 0.001 * strength * alpha
-			target.vy! += (source.y! - target.y!) * 0.001 * strength * alpha
+			return {id, minX, minY, maxX, maxY}
+		})
+		
+		nodes.forEach(node => {
+			const projects = Object.keys(expandedProjectNodes).filter(id => expandedProjectNodes[Number(id)].includes(node)) // the projects this node is in
+			const infractions = projectBoxes.filter(box => { // the boxes which this node is in that it shouldn't be in
+				return !projects.includes(box.id) // if this node is not included in this project
+					&& (box.minX - buffer < node.x! && node.x! < box.maxX + buffer && box.minY - buffer < node.y! && node.y! < box.maxY + buffer) // and we're inside the box
+			})
+			
+			infractions.forEach(box => {
+				const center = {x: box.minX + (box.maxX - box.minX) / 2, y: box.minY + (box.maxY - box.minY) / 2} // the box's center
+				
+				if (box.minX < node.x! && node.x! < box.maxX && box.minY < node.y! && node.y! < box.maxY) { // if we're still inside the actual box
+					node.vx! += (node.x! - center.x) * strength * alpha
+					node.vy! += (node.y! - center.y) * strength * alpha
+				} else { // if we're in the buffer zone
+					// apply forces based on how far off it is, so it's more gradual & doesn't jitter
+					if (node.x! < box.minX) node.vx! += (node.x! - center.x) * ((node.x! - (box.minX - buffer)) / buffer) * strength * alpha // if we're to the left
+					if (node.y! < box.minY) node.vy! += (node.y! - center.y) * ((node.y! - (box.minY - buffer)) / buffer) * strength * alpha // if we're above
+					if (box.maxX < node.x!) node.vx! += (node.x! - center.x) * (((box.maxX + buffer) - node.x!) / buffer) * strength * alpha // if we're to the right
+					if (box.maxY < node.y!) node.vy! += (node.y! - center.y) * (((box.maxY + buffer) - node.y!) / buffer) * strength * alpha // if we're below
+				}
+			})
 		})
 	}
 	
@@ -112,24 +146,27 @@
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0.001)) // connect nodes
-			.force("repulsion", d3.forceManyBody().strength(-5).distanceMax(defaultRadius * 10)) // keep nodes apart
-			.force("separator", d3.forceManyBody().strength(-0.1)) // try to separate things
-			.force("centerX", d3.forceX().strength(0.0001)) // make sure separate sections don't fly off forever
-			.force("centerY", d3.forceY().strength(0.001)) // make sure separate sections don't fly off forever
+			.force("repulsion", d3.forceManyBody().strength(-5)) // keep nodes apart
+			.force("centerX", d3.forceX().strength(0.0001)) // make sure separated nodes don't fly apart forever
+			.force("centerY", d3.forceY().strength(0.001)) // make sure separated nodes don't fly apart forever
 			.force("flow", flow) // flow nodes left to right via their connections
+			.force("group", group) // nodes try to get out of group boxes
 			.on("tick", updateSimulation)
 			.alphaDecay(0) // never stop the simulation
 	}
 	
 	function reInitializeSimulation() {
+		simulation.stop()
 		simulation.nodes(nodes) // make sure it has the updated list of nodes
 		// re-initialize forces
 		simulation.force("link")!.initialize!(nodes, () => 0)
 		simulation.force("repulsion")!.initialize!(nodes, () => 0)
-		simulation.force("separator")!.initialize!(nodes, () => 0)
 		simulation.force("centerX")!.initialize!(nodes, () => 0)
 		simulation.force("centerY")!.initialize!(nodes, () => 0)
+		simulation.restart()
 	}
+	
+	$: if (simulation && (nodes || links)) reInitializeSimulation() // when nodes or links are updated, re-initialize the simulation
 	
 	function updateSimulation() {
 		context.save()
@@ -185,7 +222,7 @@
 		const maxX = Math.max(...nodes.map(node => node.x! + node.r))
 		const maxY = Math.max(...nodes.map(node => node.y! + node.r))
 		
-		drawRectangle(context, minX, minY, maxX, maxY, {offset: defaultRadius, color, opacity: 0.1})
+		drawRectangle(context, minX, minY, maxX, maxY, {offset: meter, color, opacity: 0.1})
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -389,10 +426,8 @@
 		node.x = createTaskInsertionPoint.x; node.y = createTaskInsertionPoint.y
 		
 		// add the task as a node
-		simulation.stop()
 		nodes.push(node)
-		reInitializeSimulation()
-		simulation.restart()
+		nodes = nodes // tell the forces about the update
 	}
 	
 	function onTaskEdited(event: CustomEvent<Task>) {
@@ -400,11 +435,9 @@
 		const node = taskToNode(task)
 		
 		// add the task as a node
-		simulation.stop()
 		const oldNode = nodes.findIndex(n => n.id == node.id)
 		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
-		reInitializeSimulation()
-		simulation.restart()
+		nodes = nodes // tell the forces about the update
 	}
 	
 	function onProjectCreated(event: CustomEvent<Project>) {
@@ -415,26 +448,28 @@
 		// guards
 		if (links.findIndex(link => link.source == source && link.target == target) != -1) { toast.error("That dependency already exists"); return}
 		if (source == target) return // if it's the same node, don't error, since it's spently probably just a double click
-		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
 		
-		// FIXME: don't assume nodes are tasks
 		// add this information to the database
-		const task = (await db.tasks.get(target.id))!
-		task.dependsOn.push(source.id)
-		db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		if (source.type == "Task" && target.type == "Task") {
+			if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
+			const task = (await db.tasks.get(target.id))!
+			task.dependsOn.push(source.id)
+			db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		} else {
+			return // don't make the link
+			// TODO: handle other types of links
+		}
 		
 		// add the link to the list of links
-		simulation.stop()
 		links.push({source: source.id, target: target.id})
-		reInitializeSimulation()
-		simulation.restart()
+		links = links // tell the forces about the update
 	}
 	
 	/** Returns true if the arrow from the source to the target would make a loop. */
 	async function makesLoop(source: TaskId, target: TaskId): Promise<boolean> {
 		// if (source == target) return true // no self-loops (and when it's come all the way around, though this is caught 1 level early) // NOTE: disabling for efficiency, since we're checking for this separately already
 		const backLinks = (await db.tasks.get(source))?.dependsOn ?? [] // get the backlinks of this source
-		if (backLinks.includes(target)) return true // check 1 level short (it would find it the next loop, but skip that work here)
+		if (backLinks.includes(target)) return true // check 1 level short (it would find it the next loop, but skip that work here) // NOTE: this line is for efficiency
 		return Promise.all(backLinks.map(task => makesLoop(task, target))).then(loops => loops.some(t => t)) // check the backlinks recursively
 	}
 	
@@ -442,27 +477,34 @@
 		const target = link.target as Node
 		const source = link.source as Node
 		
-		// FIXME: don't assume nodes are tasks
 		// remove from database
-		const task = (await db.tasks.get(target.id))!
-		task.dependsOn = task.dependsOn.filter(s => s != source.id)
-		await db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		if (source.type == "Task" && target.type == "Task") {
+			const task = (await db.tasks.get(target.id))!
+			task.dependsOn = task.dependsOn.filter(s => s != source.id)
+			await db.tasks.update(target.id, {dependsOn: task.dependsOn})
+		} else {
+			return // don't remove it
+			// TODO: handle if it's another type of link
+		}
 		
 		// remove from list of links
-		simulation.stop()
 		links.splice(links.findIndex(l => l == link), 1)
-		reInitializeSimulation()
-		simulation.restart()
+		links = links // tell the forces about the update
 	}
 	
 	async function removeNode(node: Node | undefined) {
 		if (!node) return // NOTE: this guard is needed for the typing to be correct in the html
 		
-		// FIXME: don't assume nodes are tasks
 		// remove from database
-		await db.tasks.delete(node.id) // remove the node itself
-		const dependents = await db.tasks.filter(task => task.dependsOn.includes(node.id)).toArray() // find all tasks that reference the node
-		await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {dependsOn: task.dependsOn.filter(t => t != node.id)}}))) // remove all references to the node
+		if (node.type == "Task") {
+			await db.tasks.delete(node.id) // remove the node itself
+			const dependents = await db.tasks.filter(task => task.dependsOn.includes(node.id)).toArray() // find all tasks that reference the node
+			await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {dependsOn: task.dependsOn.filter(t => t != node.id)}}))) // remove all references to the node
+			// TODO: remove the project if it was the last node in the project
+		} else {
+			return // don't remove it
+			// TODO: handle if it's another type of node
+		}
 		
 		// remove from list of nodes
 		const badLinkIndices = links.reduce((acc, link, i) => {
@@ -470,11 +512,9 @@
 			else { return acc }
 		}, [] as Array<number>).reverse()
 		
-		simulation.stop()
 		nodes.splice(nodes.findIndex(n => n.id == node.id), 1)
 		badLinkIndices.forEach(i => links.splice(i, 1))
-		reInitializeSimulation()
-		simulation.restart()
+		nodes = nodes // links = links // tell the forces about the update
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
