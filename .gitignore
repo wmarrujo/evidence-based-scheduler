@@ -21,9 +21,5 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# EdgeDB
-dbschema/edgeql-js
-dbschema/interfaces.ts
-
 # Temporary
 **/tmp/

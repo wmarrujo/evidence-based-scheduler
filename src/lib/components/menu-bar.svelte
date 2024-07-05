@@ -4,6 +4,7 @@
 	import {db} from "$lib/db"
 	import download from "downloadjs"
 	import {onMount} from "svelte"
+	import {Separator} from "$lib/components/ui/separator"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -32,13 +33,14 @@
 </script>
 
 <div class="w-full p-2 shadow flex justify-between">
-	<nav class="flex gap-2">
+	<nav class="flex gap-2 items-center">
 		<Button href="/">Graph</Button>
-		<Button href="/prediction">Prediction</Button>
-		<Button href="/prediction">Estimates</Button>
-		&nbsp;
+		<!-- <Button href="/prediction">Prediction</Button> -->
+		<!-- <Button href="/prediction">Estimates</Button> -->
+		<Separator vertical />
 		<Button on:click={save}><Save />Save</Button>
 		<Button on:click={load}><FileUp />Load</Button>
+		<span>ALPHA</span>
 	</nav>
 	<div class="flex gap-2">
 		<slot />
