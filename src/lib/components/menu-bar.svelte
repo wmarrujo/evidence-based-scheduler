@@ -34,6 +34,9 @@
 <div class="w-full p-2 shadow flex justify-between">
 	<nav class="flex gap-2">
 		<Button href="/">Graph</Button>
+		<Button href="/prediction">Prediction</Button>
+		<Button href="/prediction">Estimates</Button>
+		&nbsp;
 		<Button on:click={save}><Save />Save</Button>
 		<Button on:click={load}><FileUp />Load</Button>
 	</nav>
