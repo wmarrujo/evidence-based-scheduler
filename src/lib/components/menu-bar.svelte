@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {base} from "$app/paths"
 	import {Button} from "$lib/components/ui/button"
 	import {Save, FileUp} from "lucide-svelte"
 	import {db} from "$lib/db"
@@ -34,11 +35,11 @@
 
 <div class="w-full p-2 shadow flex justify-between">
 	<nav class="flex gap-2 items-center">
-		<Button href="/#about">About</Button>
-		<Button href="/graph">Graph</Button>
-		<Button href="/tasks">Tasks</Button>
-		<Button href="/resources">Resources</Button>
-		<Button href="/prediction">Prediction</Button>
+		<Button href="{base}/#about">About</Button>
+		<Button href="{base}/graph">Graph</Button>
+		<Button href="{base}/tasks">Tasks</Button>
+		<Button href="{base}/resources">Resources</Button>
+		<Button href="{base}/prediction">Prediction</Button>
 		<Separator vertical />
 		<Button on:click={save}><Save />Save</Button>
 		<Button on:click={load}><FileUp />Load</Button>

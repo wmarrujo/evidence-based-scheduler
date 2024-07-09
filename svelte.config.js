@@ -7,9 +7,8 @@ const config = {
 	preprocess: [vitePreprocess({})],
 	kit: {
 		adapter: adapter(),
-		alias: {
-			$routes: path.resolve("src/routes"),
-		},
+		alias: {$routes: path.resolve("src/routes")},
+		paths: {base: process.env.NODE_ENV == "development" ? "" : "/evidence-based-scheduler"}, // will be stored here in github pages
 	},
 }
 

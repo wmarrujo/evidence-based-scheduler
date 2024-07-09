@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {base} from "$app/paths"
 	import {Button} from "$lib/components/ui/button"
 	import {BookMarked, Coffee, Pickaxe} from "lucide-svelte"
 	import * as Collapsible from "$lib/components/ui/collapsible"
@@ -12,19 +13,19 @@
 		</div>
 		<div class="my-24 grid grid-cols-4 gap-6">
 			<div class="flex flex-col grow gap-2">
-				<Button href="/graph">Dependency Graph</Button>
+				<Button href="{base}/graph">Dependency Graph</Button>
 				<p>How tasks are connected to other tasks</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
-				<Button href="/tasks">Tasks</Button>
+				<Button href="{base}/tasks">Tasks</Button>
 				<p>Record your time & What should you do next</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
-				<Button href="/resources">Resources</Button>
+				<Button href="{base}/resources">Resources</Button>
 				<p>People, External Teams, Schedules, Machines</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
-				<Button href="/prediction">Prediction</Button>
+				<Button href="{base}/prediction">Prediction</Button>
 				<p>When you will finish</p>
 			</div>
 		</div>
