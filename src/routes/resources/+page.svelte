@@ -5,8 +5,7 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let tasks = liveQuery(() => db.tasks.toArray())
-	
+	let resources = liveQuery(() => db.resources.toArray())
 	
 </script>
 
@@ -17,7 +16,9 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
+		// TODO: list resources
+		// TODO: show & edit schedules
 		// TODO: estimated vs actual hours
-		// TODO: velocity spread per resource
+		// TODO: velocity spread
 	</main>
 </div>

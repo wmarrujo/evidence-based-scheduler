@@ -1,6 +1,6 @@
 {
 	"name": "evidence-based-scheduler",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -36,6 +36,7 @@
 		"@sveltejs/adapter-static": "^3.0.2",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@tailwindcss/typography": "^0.5.13",
 		"@types/d3": "^7.4.3",
 		"@types/downloadjs": "^1.4.6",
 		"@types/eslint": "^8.56.7",

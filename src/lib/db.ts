@@ -8,6 +8,8 @@ export type ResourceId = number
 export type Resource = {
 	id: ResourceId
 	name: string
+	// TODO: add schedules
+	// TODO: add type, like "external" or "machine" which will have different estimate limit warnings
 }
 
 export type TaskId = number
@@ -15,13 +17,14 @@ export type Task = {
 	id: TaskId
 	name: string
 	description: string | undefined
-	doer: ResourceId | undefined
-	original: number // the original estimate, in hours
+	doer: ResourceId | undefined // TODO: make this required, or at least give a prominent warning
+	original: number // the original estimate, in hours // TODO: remove this
 	estimate: number // the current estimate, in hours
 	spent: number // the spent time spent, in hours
 	done: boolean
 	abandoned: boolean
 	dependsOn: Array<TaskId>
+	// TODO: add priority
 }
 
 export type ProjectId = number

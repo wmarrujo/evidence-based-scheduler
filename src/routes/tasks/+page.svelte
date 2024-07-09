@@ -16,7 +16,7 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
-		// TODO: ship date probability graph
-		// TODO: ship date probability prediction history
+		// TODO: list of tasks
+		// TODO: stopwatch for current task
 	</main>
 </div>

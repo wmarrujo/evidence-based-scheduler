@@ -575,6 +575,9 @@
 	{#if rightClickedNode?.type == "Task"}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+		<!-- TODO: add duplicate -->
+		<!-- TODO: add duplicate with links -->
+		<!-- TODO: add transfer to another person -->
 	{:else}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openCreateTaskDialog(rightClickedPoint) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
 	{/if}

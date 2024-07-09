@@ -8,8 +8,6 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		alias: {
-			"$schema": path.resolve("dbschema/interfaces.ts"),
-			"$database": path.resolve("dbschema/edgeql-js"),
 			$routes: path.resolve("src/routes"),
 		},
 	},
