@@ -99,13 +99,13 @@
 				<li>
 					<Collapsible.Root>
 						<Collapsible.Trigger class="underline">What do I do about research-y or experimentation tasks?</Collapsible.Trigger>
-						<Collapsible.Content>handle these like normal tasks, break them up into the specific things you will do to answer the questions you have. Add more tasks as your questions get better, build in buffer to whatever milestone in anticipation of there being more tasks than you know about now. See it as similar to feature creep.</Collapsible.Content>
+						<Collapsible.Content>This is a clear sign you're not yet ready to plan your tasks yet. Whatever estimates this tool will give you will be wrong, so go out and test things until you have a concrete idea of a path to go down. Build a prototype, experiment, then finish your planning.</Collapsible.Content>
 					</Collapsible.Root>
 				</li>
 				<li>
 					<Collapsible.Root>
 						<Collapsible.Trigger class="underline">How do I transfer a task to another person?</Collapsible.Trigger>
-						<Collapsible.Content>If you haven&apos;t started it yet, you can just change it, but remember to have them put in <em>their</em> estimate before they start. If you have started it already, make them a new task which is a copy of yours, and mark yours as abandoned.</Collapsible.Content>
+						<Collapsible.Content>This is why we use version control, you can just change it. Be sure to have the new doer estimate it for themselves.</Collapsible.Content>
 					</Collapsible.Root>
 				</li>
 			</ul>

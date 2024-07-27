@@ -21,7 +21,7 @@
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
 		description: z.string().optional(),
-		doer: z.coerce.number().optional(),
+		doer: z.coerce.number(),
 		estimate: z.coerce.number().positive(),
 		spent: z.coerce.number().nonnegative().default(0),
 		done: z.boolean().default(false),
@@ -37,11 +37,9 @@
 					name: form.data.name,
 					description: form.data.description == "" ? undefined : form.data.description,
 					doer: form.data.doer,
-					original: form.data.estimate, // since this is a new task, the estimate is the original estimate
 					estimate: form.data.estimate,
 					spent: form.data.spent,
 					done: form.data.done,
-					abandoned: form.data.abandoned,
 					dependsOn: [], // a new task starts with no dependencies, we add those with the graph view
 				}
 				const id = await db.tasks.add(task) // insert (and get the id it created)

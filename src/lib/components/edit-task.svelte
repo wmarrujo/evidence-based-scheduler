@@ -21,12 +21,10 @@
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
 		description: z.string().optional(),
-		doer: z.coerce.number().optional(),
-		original: z.coerce.number().positive(),
+		doer: z.coerce.number(),
 		estimate: z.coerce.number().positive(),
 		spent: z.coerce.number().nonnegative().default(0),
 		done: z.boolean().default(false),
-		abandoned: z.boolean().default(false),
 	})
 	
 	export let initial: Task
@@ -35,11 +33,9 @@
 		name: initial.name,
 		description: initial.description,
 		doer: initial.doer,
-		original: initial.original,
 		estimate: initial.estimate,
 		spent: initial.spent,
 		done: initial.done,
-		abandoned: initial.abandoned,
 	}
 	
 	const form =
@@ -52,11 +48,9 @@
 					name: form.data.name,
 					description: form.data.description == "" ? undefined : form.data.description,
 					doer: form.data.doer,
-					original: form.data.original,
 					estimate: form.data.estimate,
 					spent: form.data.spent,
 					done: form.data.done,
-					abandoned: form.data.abandoned,
 				}
 				await db.tasks.update(initial.id, updates) // update the task with the updates from the form
 				dispatch("edited", {...initial, ...updates}) // send the message, and return the task it edited
@@ -80,12 +74,6 @@
 				<SelectResource bind:value={$data.doer} {...attrs} class="grow" />
 			</Form.Control>
 		</Form.Field>
-		<Form.Field {form} name="original" class="flex flex-col">
-			<Form.Control let:attrs>
-				<Form.Label>Original</Form.Label>
-				<Input type="number" bind:value={$data.original} min="0" step="0.1" {...attrs} class="w-full" />
-			</Form.Control>
-		</Form.Field>
 		<Form.Field {form} name="estimate" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Form.Label>Estimate</Form.Label>
@@ -102,12 +90,6 @@
 			<Form.Control let:attrs>
 				<Form.Label class="mt-0">Done</Form.Label>
 				<Switch bind:checked={$data.done} {...attrs} />
-			</Form.Control>
-		</Form.Field>
-		<Form.Field {form} name="abandoned" class="flex flex-col">
-			<Form.Control let:attrs>
-				<Form.Label class="mt-0">Abandoned</Form.Label>
-				<Switch bind:checked={$data.abandoned} {...attrs} />
 			</Form.Control>
 		</Form.Field>
 	</div>

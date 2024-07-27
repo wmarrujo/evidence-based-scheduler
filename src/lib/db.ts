@@ -17,12 +17,10 @@ export type Task = {
 	id: TaskId
 	name: string
 	description: string | undefined
-	doer: ResourceId | undefined // TODO: make this required, or at least give a prominent warning
-	original: number // the original estimate, in hours // TODO: remove this
+	doer: ResourceId
 	estimate: number // the current estimate, in hours
 	spent: number // the spent time spent, in hours
 	done: boolean
-	abandoned: boolean
 	dependsOn: Array<TaskId>
 	// TODO: add priority
 }

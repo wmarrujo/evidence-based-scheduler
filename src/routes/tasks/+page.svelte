@@ -8,6 +8,8 @@
 	
 	let tasks = liveQuery(() => db.tasks.toArray())
 	
+	console.log(tasks)
+	
 </script>
 
 <div class="flex flex-col h-screen">
