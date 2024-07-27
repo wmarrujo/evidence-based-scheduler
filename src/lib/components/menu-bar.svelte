@@ -35,11 +35,11 @@
 
 <div class="w-full p-2 shadow flex justify-between">
 	<nav class="flex gap-2 items-center">
-		<Button href="{base}/#about">About</Button>
-		<Button href="{base}/graph">Graph</Button>
-		<Button href="{base}/tasks">Tasks</Button>
-		<Button href="{base}/resources">Resources</Button>
-		<Button href="{base}/prediction">Prediction</Button>
+		<Button href="{base}/#about" variant="link">About</Button>
+		<Button href="{base}/graph" variant="link">Graph</Button>
+		<Button href="{base}/tasks" variant="link">Tasks</Button>
+		<Button href="{base}/resources" variant="link">Resources</Button>
+		<Button href="{base}/prediction" variant="link">Prediction</Button>
 		<Separator vertical />
 		<Button on:click={save}><Save />Save</Button>
 		<Button on:click={load}><FileUp />Load</Button>

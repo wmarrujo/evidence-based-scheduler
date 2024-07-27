@@ -36,32 +36,32 @@
 		</div>
 		<article id="about" class="prose dark:prose-invert">
 			<h1>What even is this?</h1>
-			<p>It&#39;s a project management / task scheduling program that knows that everyone sucks at estimating and still gives reliable predictions for when projects are going to be done. It is an implementation of the &quot;Evidence-Based Scheduling&quot; idea, which is proposed in <a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">this blog post</a> by Joel Spoolsky.</p>
+			<p>It&apos;s a project management / task scheduling program that knows that everyone sucks at estimating and still gives reliable predictions for when projects are going to be done. It is an implementation of the &quot;Evidence-Based Scheduling&quot; idea, which is proposed in <a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">this blog post</a> by Joel Spoolsky.</p>
 			<p>It is free &amp; open source</p>
 			<p>It lets you</p>
 			<ul>
 				<li>see your task dependencies clearly</li>
 				<li>manage resources</li>
 				<li>record project progress</li>
-				<li>come up with reliable predictions of when you&#39;ll be done</li>
+				<li>come up with reliable predictions of when you&apos;ll be done</li>
 			</ul>
 			
 			<h1>Core Ideas</h1>
 			
 			<h2>Evidence-Based</h2>
-			<p>This type of scheduling is best understood if you read <a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">this blog post</a>, but here&#39;s a quick summary:</p>
+			<p>This type of scheduling is best understood if you read <a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">this blog post</a>, but here&apos;s a quick summary:</p>
 			
 			<h3>Break down tasks</h3>
-			<p>You&#39;re <em>sooo</em> bad at estimating anything that is too big. But you can more or less reliably estimate things that are small enough to accomplish in a couple of hours. So you have to break tasks down to this, down to about a maximum of 16 hours.</p>
+			<p>You&apos;re <em>sooo</em> bad at estimating anything that is too big. But you can more or less reliably estimate things that are small enough to accomplish in a couple of hours. So you have to break tasks down to this, down to about a maximum of 16 hours.</p>
 			<p>Breaking things down forces you to <em>design</em> the features you want to build, which is what really adds the reliability to the schedule.</p>
 			
 			<h3>Keep the clock running</h3>
-			<p>Ok, so we know you suck at estimating tasks, but the hope is that you&#39;re at least consistently bad. So, we record the estimate, then compare it with how long it actually took you to finish.</p>
-			<p>What about interruptions or scheduled irrelevancies? It&#39;s simple: Keep the clock running. You&#39;re measuring the time from start to finish for the task. Everything else will be accounted for in the average over time.</p>
+			<p>Ok, so we know you suck at estimating tasks, but the hope is that you&apos;re at least consistently bad. So, we record the estimate, then compare it with how long it actually took you to finish.</p>
+			<p>What about interruptions or scheduled irrelevancies? It&apos;s simple: Keep the clock running. You&apos;re measuring the time from start to finish for the task. Everything else will be accounted for in the average over time.</p>
 			
 			<h3>Simulate the future</h3>
 			<p>Now that we have the tasks, their estimates, and your estimation accuracy, we can extrapolate that into the future and tell you when the project will be done. The Monte Carlo method works fine for this and gives you a probability that the project will be done on any given date.</p>
-			<p>If you take snapshots over time as the project goes on, you can even check how the project&#39;s predicted done date is changing. You want to see the done date prediction stay stable or even move backward in time, and you want the range of probable dates to converge on one date. With this you can know with confidence when your project will be done.</p>
+			<p>If you take snapshots over time as the project goes on, you can even check how the project&apos;s predicted done date is changing. You want to see the done date prediction stay stable or even move backward in time, and you want the range of probable dates to converge on one date. With this you can know with confidence when your project will be done.</p>
 			<p>Note that you should still put buffer into your timelines, because there are always unforseen tasks that pop up, this method just gives reliability for the project scope as it stands today.</p>
 			
 			<h2>Fractal Projects</h2>
@@ -85,13 +85,13 @@
 				<li>
 					<Collapsible.Root>
 						<Collapsible.Trigger class="underline">How do I count time done fixing bugs from an already done task?</Collapsible.Trigger>
-						<Collapsible.Content>Count it towards the original task, you&#39;re spending more time finishing that task to it&#39;s definition of done after all</Collapsible.Content>
+						<Collapsible.Content>Count it towards the original task, you&apos;re spending more time finishing that task to it&apos;s definition of done after all</Collapsible.Content>
 					</Collapsible.Root>
 				</li>
 				<li>
 					<Collapsible.Root>
 						<Collapsible.Trigger class="underline">What do I do about tasks that might become unnecessary?</Collapsible.Trigger>
-						<Collapsible.Content>Put it in as if you need to do it. when you discover that you don&#39;t need to do it, mark it as abandoned and you&#39;ll be happy that your completion date moves up</Collapsible.Content>
+						<Collapsible.Content>Put it in as if you need to do it. when you discover that you don&apos;t need to do it, mark it as abandoned and you&apos;ll be happy that your completion date moves up</Collapsible.Content>
 					</Collapsible.Root>
 				</li>
 				<li>
@@ -103,7 +103,7 @@
 				<li>
 					<Collapsible.Root>
 						<Collapsible.Trigger class="underline">How do I transfer a task to another person?</Collapsible.Trigger>
-						<Collapsible.Content>If you haven&#39;t started it yet, you can just change it, but remember to have them put in <em>their</em> estimate before they start. If you have started it already, make them a new task which is a copy of yours, and mark yours as abandoned.</Collapsible.Content>
+						<Collapsible.Content>If you haven&apos;t started it yet, you can just change it, but remember to have them put in <em>their</em> estimate before they start. If you have started it already, make them a new task which is a copy of yours, and mark yours as abandoned.</Collapsible.Content>
 					</Collapsible.Root>
 				</li>
 			</ul>

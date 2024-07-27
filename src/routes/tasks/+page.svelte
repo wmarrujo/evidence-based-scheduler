@@ -2,6 +2,7 @@
 	import MenuBar from "$lib/components/menu-bar.svelte"
 	import {liveQuery} from "dexie"
 	import {db} from "$lib/db"
+	import * as Table from "$lib/components/ui/table"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -16,7 +17,15 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
-		// TODO: list of tasks
-		// TODO: stopwatch for current task
+		<!-- // TODO: list of tasks -->
+		<!-- // TODO: stopwatch for current task -->
+		<Table.Root>
+			<Table.Header>
+				<Table.Row>
+					<Table.Head>Name</Table.Head>
+				</Table.Row>
+			</Table.Header>
+			<Table.Row></Table.Row>
+		</Table.Root>
 	</main>
 </div>

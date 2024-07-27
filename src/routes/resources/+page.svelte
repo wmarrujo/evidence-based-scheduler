@@ -16,9 +16,9 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
-		// TODO: list resources
-		// TODO: show & edit schedules
-		// TODO: estimated vs actual hours
-		// TODO: velocity spread
+		<!-- // TODO: list resources -->
+		<!-- // TODO: show & edit schedules -->
+		<!-- // TODO: estimated vs actual hours -->
+		<!-- // TODO: velocity spread -->
 	</main>
 </div>
