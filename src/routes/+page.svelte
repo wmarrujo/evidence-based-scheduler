@@ -49,7 +49,7 @@
 			<h1>Core Ideas</h1>
 			
 			<h2>Evidence-Based</h2>
-			<p>This type of scheduling is best understood if you read <a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">this blog post</a>, but here&apos;s a quick summary:</p>
+			<p>here&#39;s a quick summary:</p>
 			
 			<h3>Break down tasks</h3>
 			<p>You&apos;re <em>sooo</em> bad at estimating anything that is too big. But you can more or less reliably estimate things that are small enough to accomplish in a couple of hours. So you have to break tasks down to this, down to about a maximum of 16 hours.</p>
@@ -76,6 +76,8 @@
 			<h1>Inspiration</h1>
 			<ul>
 				<li><a href="https://www.joelonsoftware.com/2007/10/26/evidence-based-scheduling/">Evidence Based Scheduling</a>, obviously</li>
+				<li>the <a href="https://agilemanifesto.org/">Agile Manifesto</a> and it&apos;s <a href="https://agilemanifesto.org/principles.html">12 points</a></li>
+				<li><a href="https://www.brightball.com/articles/story-points-are-pointless-measure-queues">Measure in Queues</a></li>
 				<li>the <a href="https://medium.com/@bre/the-cult-of-done-manifesto-724ca1c2ff13">Cult of Done</a></li>
 				<li>&quot;No one ever died on a deadline&quot; - from <a href="https://www.blackswanltd.com/never-split-the-difference">Never Split the Difference</a> by Chris Voss</li>
 			</ul>
