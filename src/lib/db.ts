@@ -1,4 +1,5 @@
 import Dexie, {type EntityTable} from "dexie"
+import type {Readable} from "svelte/store"
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -58,3 +59,9 @@ db.version(1).stores({
 	projects: "++id, name",
 	milestones: "++id, name",
 })
+
+// fix of: https://github.com/dexie/Dexie.js/issues/1907
+export function liveQuery<T>(querier: () => T | Promise<T>): Readable<T> {
+	const dexieObservable = Dexie.liveQuery(querier)
+	return {subscribe(run, invalidate) { return dexieObservable.subscribe(run, invalidate).unsubscribe }}
+}

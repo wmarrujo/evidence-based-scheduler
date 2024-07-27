@@ -1,7 +1,6 @@
 <script lang="ts">
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {liveQuery} from "dexie"
-	import {db} from "$lib/db"
+	import {db, liveQuery} from "$lib/db"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	

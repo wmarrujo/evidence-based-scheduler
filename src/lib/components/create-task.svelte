@@ -80,12 +80,6 @@
 				<Switch bind:checked={$data.done} {...attrs} />
 			</Form.Control>
 		</Form.Field>
-		<Form.Field {form} name="abandoned" class="flex flex-col">
-			<Form.Control let:attrs>
-				<Form.Label class="mt-0">Abandoned</Form.Label>
-				<Switch bind:checked={$data.abandoned} {...attrs} />
-			</Form.Control>
-		</Form.Field>
 	</div>
 	<div class="h-full flex">
 		<Form.Field {form} name="description" class="h-full w-full flex flex-col mt-2">

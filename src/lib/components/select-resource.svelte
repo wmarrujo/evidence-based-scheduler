@@ -4,8 +4,7 @@
 	import * as Command from "$lib/components/ui/command"
 	import {buttonVariants} from "$lib/components/ui/button"
 	import {onMount} from "svelte"
-	import {liveQuery} from "dexie"
-	import {db, type Resource, type ResourceId} from "$lib/db"
+	import {db, liveQuery, type Resource, type ResourceId} from "$lib/db"
 	import {Check, ChevronsUpDown} from "lucide-svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
