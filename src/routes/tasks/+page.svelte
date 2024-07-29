@@ -14,12 +14,8 @@
 </script>
 
 <div class="flex flex-col h-screen">
-	<MenuBar>
-		<div class="flex gap-2">
-			
-		</div>
-	</MenuBar>
-	<main class="grow grid grid-cols-2">
+	<MenuBar />
+	<main class="grow grid grid-cols-2 gap-2 p-2">
 		<Table on:select={event => selected = event.detail} />
 		<div>
 			{#if 1 < selected.length}

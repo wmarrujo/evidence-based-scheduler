@@ -71,7 +71,7 @@
 		<Form.Field {form} name="doer" class="flex gap-2 col-span-3 space-y-0 items-center">
 			<Form.Control let:attrs>
 				<Form.Label>Doer</Form.Label>
-				<SelectResource bind:value={$data.doer} {...attrs} class="grow" />
+				<SelectResource bind:value={$data.doer} initial={$data.doer} {...attrs} class="grow" />
 			</Form.Control>
 		</Form.Field>
 		<Form.Field {form} name="estimate" class="flex flex-col">

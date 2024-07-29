@@ -128,7 +128,7 @@
 		}),
 	])
 	
-	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns)
+	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns, {rowDataId: row => String(row.id)})
 	
 	const {pageIndex, pageSize} = pluginStates.page
 	const {filterValue} = pluginStates.filter
@@ -147,11 +147,11 @@
 	
 	const dispatch = createEventDispatcher()
 	
-	$: dispatch("select", Object.keys($selectedDataIds).map(Number) as Array<TaskId>)
+	$: dispatch("select", Object.keys($selectedDataIds).map(Number))
 </script>
 
-<div class="p-2">
-	<div class="flex items-center pb-2">
+<div class="flex flex-col gap-2">
+	<div class="flex items-center">
 		<Input type="text" bind:value={$filterValue} placeholder="Search name..." class="max-w-sm" />
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
@@ -251,7 +251,7 @@
 			</Table.Body>
 		</Table.Root>
 	</div>
-	<div class="flex items-center pt-2">
+	<div class="flex items-center">
 		<div class="text-muted-foreground flex-1 text-sm text-nowrap">
 			{Object.keys($selectedDataIds).length} of {$rows.length} task{$rows.length == 1 ? "" : "s"} selected
 		</div>
