@@ -1,0 +1,32 @@
+<script lang="ts">
+	import {Ellipsis} from "lucide-svelte"
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
+	import {Button} from "$lib/components/ui/button"
+	
+	export let task: number
+</script>
+
+<DropdownMenu.Root>
+	<DropdownMenu.Trigger asChild let:builder>
+		<Button size="icon" variant="ghost" builders={[builder]} class="relative h-8 w-8 p-0"><Ellipsis class="h-4 w-4" /></Button>
+	</DropdownMenu.Trigger>
+	<DropdownMenu.Content>
+		<!-- TODO: delete -->
+		<DropdownMenu.Item>Delete</DropdownMenu.Item>
+		<DropdownMenu.Separator />
+		<!-- TODO: attach to (show diagram) -->
+		<DropdownMenu.Item>Attach To</DropdownMenu.Item>
+		<!-- TODO: dependency of (show diagram) -->
+		<DropdownMenu.Item>Dependency Of</DropdownMenu.Item>
+		<DropdownMenu.Separator />
+		<!-- TODO: make new project -->
+		<DropdownMenu.Item>New Project with Selection</DropdownMenu.Item>
+		<!-- TODO: add to project -->
+		<DropdownMenu.Item>Add to Project</DropdownMenu.Item>
+		<DropdownMenu.Separator />
+		<!-- TODO: make new milestone -->
+		<DropdownMenu.Item>New Milestone with Selection</DropdownMenu.Item>
+		<!-- TODO: add to milestone -->
+		<DropdownMenu.Item>Add to Milestone</DropdownMenu.Item>
+	</DropdownMenu.Content>
+</DropdownMenu.Root>
