@@ -13,16 +13,16 @@
 		</div>
 		<div class="my-24 grid grid-cols-4 gap-6">
 			<div class="flex flex-col grow gap-2">
-				<Button href="{base}/graph">Dependency Graph</Button>
-				<p>How tasks are connected to other tasks</p>
+				<Button href="{base}/resources">Resources</Button>
+				<p>People, External Teams, Schedules, Machines</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
 				<Button href="{base}/tasks">Tasks</Button>
 				<p>Record your time & What should you do next</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
-				<Button href="{base}/resources">Resources</Button>
-				<p>People, External Teams, Schedules, Machines</p>
+				<Button href="{base}/graph">Dependency Graph</Button>
+				<p>How tasks are connected to other tasks</p>
 			</div>
 			<div class="flex flex-col grow gap-2">
 				<Button href="{base}/prediction">Prediction</Button>

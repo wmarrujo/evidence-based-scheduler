@@ -8,12 +8,15 @@
 	import {derived} from "svelte/store"
 	import TableCheckbox from "./table-checkbox.svelte"
 	import TableActions from "./table-actions.svelte"
-	import {ArrowUpDown, ChevronDown} from "lucide-svelte"
+	import {ChevronDown, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	let tasks = liveQuery(() => db.tasks.toArray())
+	let resources = liveQuery(() => db.tasks.toArray())
+	
+	// $: let resourcesById = resources
 	
 	const table = createTable(derived(tasks, ts => ts ?? [], []), {
 		page: addPagination(),
@@ -46,8 +49,10 @@
 			accessor: "name",
 			header: "Name",
 		}),
-		// description: string | undefined
-		// doer: ResourceId
+		table.column({
+			accessor: "doer",
+			header: "Doer",
+		}),
 		table.column({
 			accessor: "estimate",
 			header: "Estimate",
@@ -56,7 +61,14 @@
 				filter: {exclude: true},
 			},
 		}),
-		// spent: number // the spent time spent, in hours
+		table.column({
+			accessor: "spent",
+			header: "Spent",
+			cell: ({value}) => value.toFixed(1),
+			plugins: {
+				filter: {exclude: true},
+			},
+		}),
 		table.column({
 			accessor: "done",
 			header: "Done",
@@ -65,6 +77,9 @@
 			},
 		}),
 		// dependsOn: Array<TaskId>
+		// dependants
+		// projects
+		// milestones
 		table.column({
 			accessor: ({id}) => id,
 			header: "",
@@ -89,9 +104,9 @@
 	const hidableColumns = ["estimate", "done"]
 </script>
 
-<div>
-	<div class="flex items-center py-4">
-		<Input type="text" bind:value={$filterValue} placeholder="Filter" class="max-w-sm" />
+<div class="p-2">
+	<div class="flex items-center pb-2">
+		<Input type="text" bind:value={$filterValue} placeholder="Search name..." class="max-w-sm" />
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
 				<Button variant="outline" builders={[builder]} class="ml-auto">Columns <ChevronDown class="ml-2 h-4 w-4" /></Button>
@@ -113,16 +128,31 @@
 						<Table.Row>
 							{#each headerRow.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
-									<Table.Head {...attrs} class="[&:has([role=checkbox])]:pl-3">
-										{#if cell.id == "estimate"}
-											<div class="text-right">
+									<Table.Head {...attrs} class="[&:has([role=checkbox])]:pl-3 p-1">
+										{#if cell.id == "id"}
+											<div class="pt-1">
 												<Render of={cell.render()} />
 											</div>
-										{:else}
-											<Button variant="ghost" on:click={props.sort.toggle}>
+										{:else if ["estimate", "spent"].includes(cell.id)}
+											<Button variant="ghost" on:click={props.sort.toggle} class="p-0 hover:bg-transparent w-full justify-end">
 												<Render of={cell.render()} />
-												<ArrowUpDown class="ml-2 h-4 w-4" />
+												{#if props.sort.order == "asc"}
+													<ArrowDown01 class="h-4 w-4" />
+												{:else if props.sort.order == "desc"}
+													<ArrowUp10 class="h-4 w-4" />
+												{/if}
 											</Button>
+										{:else if ["name", "doer", "done"].includes(cell.id)}
+											<Button variant="ghost" on:click={props.sort.toggle} class="p-0 hover:bg-transparent w-full justify-start">
+												<Render of={cell.render()} />
+												{#if props.sort.order == "asc"}
+													<ArrowDownAZ class="h-4 w-4" />
+												{:else if props.sort.order == "desc"}
+													<ArrowUpZA class="h-4 w-4" />
+												{/if}
+											</Button>
+										{:else}
+											<Render of={cell.render()} />
 										{/if}
 									</Table.Head>
 								</Subscribe>
@@ -137,13 +167,19 @@
 						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
-									<Table.Cell {...attrs}>
-										{#if cell.id == "estimate"}
+									<Table.Cell class="p-1" {...attrs}>
+										{#if cell.id == "id"}
+											<div class="pl-2 pt-1">
+												<Render of={cell.render()} />
+											</div>
+										{:else if ["estimate", "spent"].includes(cell.id)}
 											<div class="text-right">
 												<Render of={cell.render()} /><span class="text-muted-foreground">h</span>
 											</div>
 										{:else}
-											<Render of={cell.render()} />
+											<div class="">
+												<Render of={cell.render()} />
+											</div>
 										{/if}
 									</Table.Cell>
 								</Subscribe>
@@ -154,10 +190,9 @@
 			</Table.Body>
 		</Table.Root>
 	</div>
-	<div class="flex items-center justify-end space-x-4 py-4">
+	<div class="flex items-center justify-end space-x-4 pt-2">
 		<div class="text-muted-foreground flex-1 text-sm">
-			{Object.keys($selectedDataIds).length} of{" "}
-			{$rows.length} row(s) selected
+			{Object.keys($selectedDataIds).length} of {$rows.length} task{$rows.length == 1 ? "" : "s"} selected
 		</div>
 		<Button variant="outline" on:click={() => $pageIndex = $pageIndex - 1} disabled={!$hasPreviousPage}>Preview</Button>
 		<Button variant="outline" on:click={() => $pageIndex = $pageIndex + 1} disabled={!$hasNextPage}>Next</Button>
