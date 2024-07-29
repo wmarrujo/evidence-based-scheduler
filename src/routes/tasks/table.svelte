@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {cn} from "$lib/utils"
 	import {db, liveQuery} from "$lib/db"
-	import type {Resource, ResourceId} from "$lib/db"
+	import type {TaskId, Resource, ResourceId} from "$lib/db"
 	import * as Table from "$lib/components/ui/table"
 	import {createTable, Render, Subscribe, createRender} from "svelte-headless-table"
 	import {addPagination, addSortBy, addTableFilter, addHiddenColumns, addSelectedRows} from "svelte-headless-table/plugins"
@@ -12,7 +12,11 @@
 	import TableActions from "./table-actions.svelte"
 	import {ChevronDown, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
+	import * as Pagination from "$lib/components/ui/pagination"
+	import {createEventDispatcher} from "svelte"
 	
+	////////////////////////////////////////////////////////////////////////////////
+	// DATA
 	////////////////////////////////////////////////////////////////////////////////
 	
 	let tasks = derived(liveQuery(() => db.tasks.toArray()), ts => ts ?? [], [])
@@ -33,14 +37,19 @@
 		}))
 	}, [])
 	
+	////////////////////////////////////////////////////////////////////////////////
+	// TABLE
+	////////////////////////////////////////////////////////////////////////////////
+	
 	const table = createTable(data, {
-		page: addPagination(),
+		page: addPagination({initialPageSize: 10}),
 		sort: addSortBy(),
 		filter: addTableFilter({
 			fn: ({filterValue, value}) => value.toLowerCase().includes(filterValue.toLowerCase().trim()),
 		}),
 		hide: addHiddenColumns(),
 		select: addSelectedRows(),
+		// select: addSelectedRows({initialSelectedDataIds: Object.fromEntries(selected.map(t => [t, true]))}),
 	})
 	
 	const columns = table.createColumns([
@@ -121,7 +130,7 @@
 	
 	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns)
 	
-	const {hasNextPage, hasPreviousPage, pageIndex} = pluginStates.page
+	const {pageIndex, pageSize} = pluginStates.page
 	const {filterValue} = pluginStates.filter
 	const {hiddenColumnIds} = pluginStates.hide
 	const {selectedDataIds} = pluginStates.select
@@ -131,6 +140,14 @@
 	let hideColumnById = Object.fromEntries(ids.map(id => [id, !initialHiddenColumns.includes(id)]))
 	$: $hiddenColumnIds = Object.entries(hideColumnById).filter(([_, hide]) => !hide).map(([id]) => id)
 	const hidableColumns = ["doer", "estimate", "spent", "done", "status"]
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// EXPORT
+	////////////////////////////////////////////////////////////////////////////////
+	
+	const dispatch = createEventDispatcher()
+	
+	$: dispatch("select", Object.keys($selectedDataIds).map(Number) as Array<TaskId>)
 </script>
 
 <div class="p-2">
@@ -234,11 +251,25 @@
 			</Table.Body>
 		</Table.Root>
 	</div>
-	<div class="flex items-center justify-end space-x-4 pt-2">
-		<div class="text-muted-foreground flex-1 text-sm">
+	<div class="flex items-center pt-2">
+		<div class="text-muted-foreground flex-1 text-sm text-nowrap">
 			{Object.keys($selectedDataIds).length} of {$rows.length} task{$rows.length == 1 ? "" : "s"} selected
 		</div>
-		<Button variant="outline" on:click={() => $pageIndex = $pageIndex - 1} disabled={!$hasPreviousPage}>Preview</Button>
-		<Button variant="outline" on:click={() => $pageIndex = $pageIndex + 1} disabled={!$hasNextPage}>Next</Button>
+		<!-- TODO: figure out how to link the pagination here with the table variables -->
+		<Pagination.Root count={$rows.length} bind:perPage={$pageSize} let:pages let:currentPage onPageChange={page => $pageIndex = page - 1}>
+			<Pagination.Content>
+				<Pagination.Item><Pagination.PrevButton /></Pagination.Item>
+				{#each pages as page (page.key)}
+					{#if page.type == "ellipsis"}
+						<Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
+					{:else}
+						<Pagination.Item><Pagination.Link {page} isActive={page.value == currentPage}>{page.value}</Pagination.Link></Pagination.Item>
+					{/if}
+				{/each}
+				<Pagination.Item><Pagination.NextButton /></Pagination.Item>
+			</Pagination.Content>
+		</Pagination.Root>
+		<!-- <Button variant="outline" on:click={() => $pageIndex = $pageIndex - 1} disabled={!$hasPreviousPage}>Preview</Button> -->
+		<!-- <Button variant="outline" on:click={() => $pageIndex = $pageIndex + 1} disabled={!$hasNextPage}>Next</Button> -->
 	</div>
 </div>
