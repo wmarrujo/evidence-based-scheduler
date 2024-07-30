@@ -4,27 +4,36 @@
 	import type {Task, TaskId} from "$lib/db"
 	import Table from "./table.svelte"
 	import TaskCard from "./task-card.svelte"
+	import * as Card from "$lib/components/ui/card"
+	import {Trash2} from "lucide-svelte"
+	import {Button} from "$lib/components/ui/button"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	let selected: Array<TaskId> = []
-	let selectedTask: Task | undefined // for when a single task is selected
-	function selectTask(task: Task | undefined) {selectedTask = task} // made into its own function because svelte reactivity would cause a loop
-	$: db.tasks.get(selected[0]).then(selectTask)
-	$: console.log(selected)
+	let selectedTasks: Array<Task> = []
+	
+	function setTasks(tasks: Array<Task>) { selectedTasks = tasks } // made into its own function because svelte reactivity would cause a loop
+	$: db.tasks.bulkGet(selected).then(tasks => setTasks((tasks.filter(t => t) as Array<Task>)))
 </script>
 
 <div class="flex flex-col h-screen">
 	<MenuBar />
 	<main class="grow grid grid-cols-2 gap-2 p-2">
-		<Table on:select={event => selected = event.detail} />
+		<Table on:selection={event => selected = event.detail} />
 		<div>
-			{#if 1 < selected.length}
-				<span>multiple</span>
-			{:else if selectedTask}
-				<TaskCard task={selectedTask} />
+			{#if selected.length <= 1}
+				<TaskCard task={selectedTasks[0]} />
 			{:else}
-				<span>none</span>
+				<Card.Root>
+					<Card.Header class="text-center">
+						<Card.Title>Multiple Tasks Selected</Card.Title>
+					</Card.Header>
+					<Card.Content class="text-center">
+						<Button variant="destructive" class="text-md"><Trash2 class="mr-4 w-4 h-4" />Delete</Button>
+						<!-- TODO: other actions on multiple -->
+					</Card.Content>
+				</Card.Root>
 			{/if}
 		</div>
 	</main>

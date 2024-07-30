@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {cn} from "$lib/utils"
 	import {db, liveQuery} from "$lib/db"
-	import type {TaskId, Resource, ResourceId} from "$lib/db"
+	import type {Resource, ResourceId} from "$lib/db"
 	import * as Table from "$lib/components/ui/table"
 	import {createTable, Render, Subscribe, createRender} from "svelte-headless-table"
 	import {addPagination, addSortBy, addTableFilter, addHiddenColumns, addSelectedRows} from "svelte-headless-table/plugins"
@@ -115,16 +115,6 @@
 		// dependants
 		// projects
 		// milestones
-		table.column({
-			id: "action",
-			accessor: "id",
-			header: "",
-			cell: ({value}) => createRender(TableActions, {task: value}),
-			plugins: {
-				sort: {disable: true},
-				filter: {exclude: true},
-			},
-		}),
 	])
 	
 	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns)
@@ -148,12 +138,31 @@
 	const dispatch = createEventDispatcher()
 	
 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
-	$: dispatch("select", Object.keys($selectedDataIds).map(row => $rows[Number(row)].original.id))
+	$: dispatch("selection", Object.keys($selectedDataIds).map(row => $rows[Number(row)].original.id))
+	
+	// type ArrayElementType<A> = A extends readonly (infer E)[] ? E : never;
+	
+	// function rowClicked(row: ArrayElementType<typeof $rows>) {
+	// 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
+	// 	db.tasks.get(row.original.id).then(task => dispatch("task-clicked", task))
+	// }
 </script>
 
 <div class="flex flex-col gap-2">
 	<div class="flex items-center">
 		<Input type="text" bind:value={$filterValue} placeholder="Search name..." class="max-w-sm" />
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger asChild let:builder>
+				<Button size="icon" variant="ghost" builders={[builder]} class="ml-auto"><Columns3 /></Button>
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content>
+				{#each flatColumns as column (column.id)}
+					{#if hidableColumns.includes(column.id)}
+						<DropdownMenu.CheckboxItem bind:checked={hideColumnById[column.id]}>{column.header}</DropdownMenu.CheckboxItem>
+					{/if}
+				{/each}
+			</DropdownMenu.Content>
+		</DropdownMenu.Root>
 	</div>
 	<div class="rounded-md border">
 		<Table.Root {...$tableAttrs}>
@@ -165,28 +174,12 @@
 								<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
 									<Table.Head {...attrs}
 										class={cn("[&:has([role=checkbox])]:pl-3 p-1",
-											["checkbox", "action", "estimate", "spent", "done", "status"].includes(cell.id) && "w-0", // shrink
+											["checkbox", "estimate", "spent", "done", "status"].includes(cell.id) && "w-0", // shrink
 										)}
 									>
 										{#if cell.id == "checkbox"}
 											<div class="pt-1 pr-2">
 												<Render of={cell.render()} />
-											</div>
-											{:else if cell.id == "action"}
-											<div class="">
-												<Render of={cell.render()} />
-												<DropdownMenu.Root>
-													<DropdownMenu.Trigger asChild let:builder>
-														<Button size="icon" variant="ghost" builders={[builder]} class="ml-auto"><Columns3 /></Button>
-													</DropdownMenu.Trigger>
-													<DropdownMenu.Content>
-														{#each flatColumns as column (column.id)}
-															{#if hidableColumns.includes(column.id)}
-																<DropdownMenu.CheckboxItem bind:checked={hideColumnById[column.id]}>{column.header}</DropdownMenu.CheckboxItem>
-															{/if}
-														{/each}
-													</DropdownMenu.Content>
-												</DropdownMenu.Root>
 											</div>
 										{:else if ["estimate", "spent"].includes(cell.id)}
 											<Button variant="ghost" on:click={props.sort.toggle} class="p-0 hover:bg-transparent w-full justify-end">
@@ -228,7 +221,7 @@
 			<Table.Body {...$tableBodyAttrs}>
 				{#each $pageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} {...rowAttrs}>
+						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} class="h-10" {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
 									<Table.Cell class="p-1" {...attrs}>
@@ -239,10 +232,6 @@
 										{:else if ["estimate", "spent"].includes(cell.id)}
 											<div class="text-right">
 												<Render of={cell.render()} /><span class="text-muted-foreground">h</span>
-											</div>
-										{:else if cell.id == "action"}
-											<div class="text-center">
-												<Render of={cell.render()} />
 											</div>
 										{:else}
 											<Render of={cell.render()} />
