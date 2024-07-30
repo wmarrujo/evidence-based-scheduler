@@ -13,6 +13,8 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Pagination from "$lib/components/ui/pagination"
 	import {createEventDispatcher} from "svelte"
+	import YesNoChip from "./yes-no-chip.svelte"
+	import StatusChip from "./status-chip.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// DATA
@@ -96,7 +98,7 @@
 		table.column({
 			accessor: "done",
 			header: "Done",
-			cell: ({value}) => value ? "YES" : "NO", // TODO: make fancy chip for this
+			cell: ({value}) => createRender(YesNoChip, {status: value}),
 			plugins: {
 				sort: {getSortValue: (value) => value ? 1 : 0},
 				filter: {exclude: true},
@@ -105,7 +107,7 @@
 		table.column({
 			accessor: "status",
 			header: "Status",
-			cell: ({value}) => ["Planned", "Started", "Done"][value], // TODO: make fancy chip for this
+			cell: ({value}) => createRender(StatusChip, {status: value}),
 			plugins: {
 				filter: {exclude: true},
 			},
