@@ -8,17 +8,19 @@
 	export {className as class}
 	
 	export let value: boolean | undefined = undefined
+	
+	export let colorized: boolean = false
 </script>
 
-<div class={cn(className, "flex gap-1 rounded-md bg-secondary h-10 items-center justify-stretch shadow-inner p-1")}>
-	<div class={cn("grow bg-transparent rounded-md h-full", value === true && "bg-background shadow")}>
+<div class={cn(className, "flex gap-1 rounded-md bg-secondary h-10 items-center justify-stretch shadow-inner p-1", colorized && value && "bg-green-100 dark:bg-green-800", colorized && !value && "bg-red-100 dark:bg-red-800")}>
+	<button class={cn("grow bg-transparent rounded-md h-full flex items-center justify-center", value === true && "bg-background shadow")} on:click={() => value = true}>
 		<slot name="true">
-			<Check />
+			<Check class={cn("w-full h-full rounded-md", colorized && "text-green-500 hover:text-white hover:bg-green-400")} />
 		</slot>
-	</div>
-	<div class={cn("grow bg-transparent rounded-md h-full", value === false && "bg-background shadow")}>
+	</button>
+	<button class={cn("grow bg-transparent rounded-md h-full flex items-center justify-center", value === false && "bg-background shadow")} on:click={() => value = false}>
 		<slot name="false">
-			<X />
+			<X class={cn("w-full h-full rounded-md", colorized && "text-red-500 hover:text-white hover:bg-red-400")} />
 		</slot>
-	</div>
+	</button>
 </div>

@@ -29,7 +29,7 @@
 			</div>
 			<div class="flex flex-col flex-1 gap-2">
 				<div class="flex"><SquareCheck class="mr-1" />Done</div>
-				<Toggle bind:value={task.done} />
+				<Toggle bind:value={task.done} colorized />
 			</div>
 		</div>
 		<!-- TODO: markdown description -->
