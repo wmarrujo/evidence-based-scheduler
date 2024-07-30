@@ -141,13 +141,23 @@
 	type ArrayElementType<A> = A extends readonly (infer E)[] ? E : never;
 	type Row = ArrayElementType<typeof $rows>
 	
-	function rowSingleClick(row: Row) {
-		$selectedDataIds[row.id] = !$selectedDataIds[row.id] // toggle row
-	}
-	
-	function rowDoubleClick(row: Row) {
-		$allRowsSelected = false // deselect all rows
-		$selectedDataIds[row.id] = true // select this row
+	let rangeSelectionStartRowId: string | undefined
+	function rowClicked(event: MouseEvent, row: Row) {
+		if (event.metaKey) { // if command or control are selected while clicking
+			$selectedDataIds[row.id] = !$selectedDataIds[row.id] // toggle row
+			rangeSelectionStartRowId = row.id
+		} else if (event.shiftKey) {
+			// NOTE: assumes we don't have sub-rows
+			const start = Math.min(Number(rangeSelectionStartRowId), Number(row.id))
+			const end = Math.max(Number(rangeSelectionStartRowId), Number(row.id)) + 1
+			const rows = Array.from(Array(end - start).keys()).map(i => String(i + start))
+			rows.forEach(id => $selectedDataIds[id] = true) // select all rows between last and here
+		} else {
+			const previous = $selectedDataIds[row.id]
+			$allRowsSelected = false // deselect all rows
+			$selectedDataIds[row.id] = !previous // toggle row
+			rangeSelectionStartRowId = row.id
+		}
 	}
 </script>
 
@@ -224,7 +234,7 @@
 			<Table.Body {...$tableBodyAttrs}>
 				{#each $pageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} on:click={event => { if (event.detail == 2) { rowDoubleClick(row) } else { rowSingleClick(row) }}} class="h-10" {...rowAttrs}>
+						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} on:click={event => rowClicked(event, row)} class="h-10 select-none cursor-pointer" {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
 									<Table.Cell class="p-1" {...attrs}>
