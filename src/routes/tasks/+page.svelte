@@ -11,6 +11,7 @@
 	let selectedTask: Task | undefined // for when a single task is selected
 	function selectTask(task: Task | undefined) {selectedTask = task} // made into its own function because svelte reactivity would cause a loop
 	$: db.tasks.get(selected[0]).then(selectTask)
+	$: console.log(selected)
 </script>
 
 <div class="flex flex-col h-screen">

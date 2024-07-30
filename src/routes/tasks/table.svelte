@@ -10,7 +10,7 @@
 	import {derived, type Readable} from "svelte/store"
 	import TableCheckbox from "./table-checkbox.svelte"
 	import TableActions from "./table-actions.svelte"
-	import {ChevronDown, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
+	import {Columns3, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Pagination from "$lib/components/ui/pagination"
 	import {createEventDispatcher} from "svelte"
@@ -49,7 +49,6 @@
 		}),
 		hide: addHiddenColumns(),
 		select: addSelectedRows(),
-		// select: addSelectedRows({initialSelectedDataIds: Object.fromEntries(selected.map(t => [t, true]))}),
 	})
 	
 	const columns = table.createColumns([
@@ -128,7 +127,8 @@
 		}),
 	])
 	
-	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns, {rowDataId: row => String(row.id)})
+	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns)
+	// const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns, {rowDataId: row => String(row.id)})
 	
 	const {pageIndex, pageSize} = pluginStates.page
 	const {filterValue} = pluginStates.filter
@@ -147,24 +147,13 @@
 	
 	const dispatch = createEventDispatcher()
 	
-	$: dispatch("select", Object.keys($selectedDataIds).map(Number))
+	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
+	$: dispatch("select", Object.keys($selectedDataIds).map(row => $rows[Number(row)].original.id))
 </script>
 
 <div class="flex flex-col gap-2">
 	<div class="flex items-center">
 		<Input type="text" bind:value={$filterValue} placeholder="Search name..." class="max-w-sm" />
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger asChild let:builder>
-				<Button variant="outline" builders={[builder]} class="ml-auto">Columns <ChevronDown class="ml-2 h-4 w-4" /></Button>
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content>
-				{#each flatColumns as column (column.id)}
-					{#if hidableColumns.includes(column.id)}
-						<DropdownMenu.CheckboxItem bind:checked={hideColumnById[column.id]}>{column.header}</DropdownMenu.CheckboxItem>
-					{/if}
-				{/each}
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
 	</div>
 	<div class="rounded-md border">
 		<Table.Root {...$tableAttrs}>
@@ -182,6 +171,22 @@
 										{#if cell.id == "checkbox"}
 											<div class="pt-1 pr-2">
 												<Render of={cell.render()} />
+											</div>
+											{:else if cell.id == "action"}
+											<div class="">
+												<Render of={cell.render()} />
+												<DropdownMenu.Root>
+													<DropdownMenu.Trigger asChild let:builder>
+														<Button size="icon" variant="ghost" builders={[builder]} class="ml-auto"><Columns3 /></Button>
+													</DropdownMenu.Trigger>
+													<DropdownMenu.Content>
+														{#each flatColumns as column (column.id)}
+															{#if hidableColumns.includes(column.id)}
+																<DropdownMenu.CheckboxItem bind:checked={hideColumnById[column.id]}>{column.header}</DropdownMenu.CheckboxItem>
+															{/if}
+														{/each}
+													</DropdownMenu.Content>
+												</DropdownMenu.Root>
 											</div>
 										{:else if ["estimate", "spent"].includes(cell.id)}
 											<Button variant="ghost" on:click={props.sort.toggle} class="p-0 hover:bg-transparent w-full justify-end">
@@ -226,7 +231,7 @@
 						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
-									<Table.Cell class={cn("p-1"/*, cell.id == "checkbox" && "w-min", cell.id == "action" && "w-10"*/)} {...attrs}>
+									<Table.Cell class="p-1" {...attrs}>
 										{#if cell.id == "checkbox"}
 											<div class="pl-2 pt-1">
 												<Render of={cell.render()} />
@@ -236,7 +241,7 @@
 												<Render of={cell.render()} /><span class="text-muted-foreground">h</span>
 											</div>
 										{:else if cell.id == "action"}
-											<div>
+											<div class="text-center">
 												<Render of={cell.render()} />
 											</div>
 										{:else}
@@ -255,7 +260,6 @@
 		<div class="text-muted-foreground flex-1 text-sm text-nowrap">
 			{Object.keys($selectedDataIds).length} of {$rows.length} task{$rows.length == 1 ? "" : "s"} selected
 		</div>
-		<!-- TODO: figure out how to link the pagination here with the table variables -->
 		<Pagination.Root count={$rows.length} bind:perPage={$pageSize} let:pages let:currentPage onPageChange={page => $pageIndex = page - 1}>
 			<Pagination.Content>
 				<Pagination.Item><Pagination.PrevButton /></Pagination.Item>
@@ -269,7 +273,5 @@
 				<Pagination.Item><Pagination.NextButton /></Pagination.Item>
 			</Pagination.Content>
 		</Pagination.Root>
-		<!-- <Button variant="outline" on:click={() => $pageIndex = $pageIndex - 1} disabled={!$hasPreviousPage}>Preview</Button> -->
-		<!-- <Button variant="outline" on:click={() => $pageIndex = $pageIndex + 1} disabled={!$hasNextPage}>Next</Button> -->
 	</div>
 </div>

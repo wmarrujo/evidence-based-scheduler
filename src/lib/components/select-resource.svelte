@@ -34,7 +34,7 @@
 		role="combobox"
 		aria-expanded={open}
 		{...$$restProps}
-		class={cn(className, buttonVariants({variant: "outline"}), "justify-between pl-3 text-left font-normal", !resource && "text-muted-foreground")}
+		class={cn(buttonVariants({variant: "outline"}), "justify-between pl-3 text-left font-normal", !resource && "text-muted-foreground", className)}
 	>
 		{#if resource}
 			{resource?.name}
