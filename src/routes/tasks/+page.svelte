@@ -28,6 +28,7 @@
 				<Card.Root>
 					<Card.Header class="text-center">
 						<Card.Title>Multiple Tasks Selected</Card.Title>
+						<!-- TODO: bulk editing of estimates, spent, done -->
 					</Card.Header>
 					<Card.Content class="text-center">
 						<Button variant="destructive" class="text-md"><Trash2 class="mr-2" />Delete</Button>
