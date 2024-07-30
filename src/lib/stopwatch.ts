@@ -52,7 +52,8 @@ function createStopwatchStore() {
 	
 	function resume() {
 		running = true
-		if (!interval) interval = begin()
+		interval = begin()
+		subscribers.forEach(callback => callback({time: ticks ? ticks / ticksPerHour : undefined, task, running}))
 	}
 	
 	function stop() {

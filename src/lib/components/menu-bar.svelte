@@ -8,6 +8,7 @@
 	import {onMount} from "svelte"
 	import {Separator} from "$lib/components/ui/separator"
 	import {page} from "$app/stores"
+	import Stopwatch from "$lib/components/stopwatch.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -35,7 +36,7 @@
 	})
 </script>
 
-<div class="w-full p-2 shadow flex justify-between">
+<div class="w-full p-2 shadow flex justify-start gap-2">
 	<nav class="flex gap-2 items-center">
 		<Button href="{base}/#about" variant="link" class="px-2">About</Button>
 		<Separator vertical />
@@ -47,8 +48,10 @@
 		<Button on:click={save} variant="outline"><Save class="mr-2" />Save</Button>
 		<Button on:click={load} variant="outline"><FileUp class="mr-2" />Load</Button>
 	</nav>
+	<Separator vertical />
+	<Stopwatch />
 	<!-- TODO: current timer preview & controls -->
-	<div class="flex gap-2">
+	<div class="flex gap-2 grow justify-end">
 		<slot />
 	</div>
 </div>
