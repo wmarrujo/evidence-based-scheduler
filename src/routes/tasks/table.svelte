@@ -9,7 +9,6 @@
 	import {Input} from "$lib/components/ui/input"
 	import {derived, type Readable} from "svelte/store"
 	import TableCheckbox from "./table-checkbox.svelte"
-	import TableActions from "./table-actions.svelte"
 	import {Columns3, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Pagination from "$lib/components/ui/pagination"
@@ -62,7 +61,7 @@
 			cell: ({row}, {pluginStates}) => {
 				const {getRowState} = pluginStates.select
 				const {isSelected} = getRowState(row)
-				return createRender(TableCheckbox, {checked: isSelected})
+				return createRender(TableCheckbox, {checked: isSelected, preventDefault: true})
 			},
 			plugins: {
 				sort: {disable: true},
@@ -111,19 +110,18 @@
 				filter: {exclude: true},
 			},
 		}),
-		// dependsOn: Array<TaskId>
-		// dependants
-		// projects
-		// milestones
+		// TODO: dependsOn: Array<TaskId>
+		// TODO: dependants
+		// TODO: projects
+		// TODO: milestones
 	])
 	
 	const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns)
-	// const {headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates, flatColumns, rows} = table.createViewModel(columns, {rowDataId: row => String(row.id)})
 	
 	const {pageIndex, pageSize} = pluginStates.page
 	const {filterValue} = pluginStates.filter
 	const {hiddenColumnIds} = pluginStates.hide
-	const {selectedDataIds} = pluginStates.select
+	const {selectedDataIds, allRowsSelected} = pluginStates.select
 	
 	const ids = flatColumns.map(col => col.id)
 	let initialHiddenColumns = ["spent", "done"]
@@ -132,7 +130,7 @@
 	const hidableColumns = ["doer", "estimate", "spent", "done", "status"]
 	
 	////////////////////////////////////////////////////////////////////////////////
-	// EXPORT
+	// INTERACTION
 	////////////////////////////////////////////////////////////////////////////////
 	
 	const dispatch = createEventDispatcher()
@@ -140,12 +138,17 @@
 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
 	$: dispatch("selection", Object.keys($selectedDataIds).map(row => $rows[Number(row)].original.id))
 	
-	// type ArrayElementType<A> = A extends readonly (infer E)[] ? E : never;
+	type ArrayElementType<A> = A extends readonly (infer E)[] ? E : never;
+	type Row = ArrayElementType<typeof $rows>
 	
-	// function rowClicked(row: ArrayElementType<typeof $rows>) {
-	// 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
-	// 	db.tasks.get(row.original.id).then(task => dispatch("task-clicked", task))
-	// }
+	function rowSingleClick(row: Row) {
+		$selectedDataIds[row.id] = !$selectedDataIds[row.id] // toggle row
+	}
+	
+	function rowDoubleClick(row: Row) {
+		$allRowsSelected = false // deselect all rows
+		$selectedDataIds[row.id] = true // select this row
+	}
 </script>
 
 <div class="flex flex-col gap-2">
@@ -221,7 +224,7 @@
 			<Table.Body {...$tableBodyAttrs}>
 				{#each $pageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} class="h-10" {...rowAttrs}>
+						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} on:click={event => { if (event.detail == 2) { rowDoubleClick(row) } else { rowSingleClick(row) }}} class="h-10" {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
 									<Table.Cell class="p-1" {...attrs}>

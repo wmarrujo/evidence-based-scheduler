@@ -30,7 +30,7 @@
 						<Card.Title>Multiple Tasks Selected</Card.Title>
 					</Card.Header>
 					<Card.Content class="text-center">
-						<Button variant="destructive" class="text-md"><Trash2 class="mr-4 w-4 h-4" />Delete</Button>
+						<Button variant="destructive" class="text-md"><Trash2 class="mr-2" />Delete</Button>
 						<!-- TODO: other actions on multiple -->
 					</Card.Content>
 				</Card.Root>
