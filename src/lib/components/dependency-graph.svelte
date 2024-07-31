@@ -596,7 +596,7 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={createProjectDialogOpen}>
-	<Dialog.Content>
+	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
 		<CreateProject tasks={createProjectTasks} on:created={event => { createProjectDialogOpen = false; onProjectCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>

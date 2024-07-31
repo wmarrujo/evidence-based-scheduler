@@ -72,11 +72,7 @@
 		</Card.Footer>
 	</Card.Root>
 {:else}
-	<Card.Root class="h-full">
-		<Card.Content class="text-center h-full flex flex-col justify-center items-center">
-			<Button class="text-md" on:click={() => createTaskDialogOpen = true}><Plus class="mr-2" />New Task</Button>
-		</Card.Content>
-	</Card.Root>
+	<Button on:click={() => createTaskDialogOpen = true} variant="outline" class="text-md w-full h-full"><Plus class="mr-2" />New Task</Button>
 {/if}
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
@@ -87,6 +83,6 @@
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content class="max-w-[90%] w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<EditTask task={task} on:saved={() => editTaskDialogOpen = false} class="h-full w-full z-10" />
+		<EditTask task={task} on:saved={() => editTaskDialogOpen = false} class="h-full w-full" />
 	</Dialog.Content>
 </Dialog.Root>

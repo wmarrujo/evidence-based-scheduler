@@ -74,7 +74,7 @@
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
-	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll p-2">
+	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
 		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
@@ -122,7 +122,8 @@
 			<Button type="submit">{task ? "Update" : "Create"}</Button>
 		</div>
 	</div>
-	<div class="flex-1 [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert">
+	<div class="flex-1 [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-140px)]">
 		<MarkdownEditor {carta} bind:value={$data.description} mode="tabs" />
+		<!-- [&_.carta-renderer]:h-[calc(90vh-140px)] -->
 	</div>
 </form>

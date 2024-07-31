@@ -6,9 +6,11 @@
 	import * as Form from "$lib/components/ui/form"
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
-	import {Textarea} from "$lib/components/ui/textarea"
 	import {db, type Project, type TaskId} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
+	import {Carta, MarkdownEditor} from "carta-md"
+	import {mode} from "mode-watcher"
+	import "$lib/styles/carta.pcss"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -37,22 +39,22 @@
 				dispatch("created", {id, ...project}) // send the message, and return the project it created
 			},
 		}), {form: data, enhance} = form
+	
+	const carta = new Carta({
+		sanitizer: false,
+		theme: $mode == "light" ? "github-light" : "github-dark",
+	})
 </script>
 
-<form class={cn(className)} use:enhance>
-	<Form.Field {form} name="name">
+<form class={cn(className, "flex flex-col gap-2")} use:enhance>
+	<Form.Field {form} name="name" class="">
 		<Form.Control let:attrs>
-			<Form.Label>Name</Form.Label>
-			<Input type="text" bind:value={$data.name} {...attrs} placeholder="Big thing" />
+			<Input type="text" bind:value={$data.name} placeholder="Project Name..." class="text-xl" {...attrs} />
 		</Form.Control>
 	</Form.Field>
-	<Form.Field {form} name="description">
-		<Form.Control let:attrs>
-			<Form.Label>Description</Form.Label>
-			<Textarea bind:value={$data.description} {...attrs} placeholder="this is what I mean..." />
-		</Form.Control>
-		<Form.FieldErrors />
-	</Form.Field>
+	<div class="grow [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-235px)]">
+		<MarkdownEditor {carta} bind:value={$data.description} mode="tabs" />
+	</div>
 	<div class="flex w-full justify-center">
 		<Button type="submit">Create</Button>
 	</div>

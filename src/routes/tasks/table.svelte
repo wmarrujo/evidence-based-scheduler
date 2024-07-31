@@ -9,12 +9,14 @@
 	import {Input} from "$lib/components/ui/input"
 	import {derived, type Readable} from "svelte/store"
 	import TableCheckbox from "./table-checkbox.svelte"
-	import {Columns3, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
+	import {Plus, Columns3, ArrowDownAZ, ArrowUpZA, ArrowDown01, ArrowUp10} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Pagination from "$lib/components/ui/pagination"
 	import {createEventDispatcher} from "svelte"
 	import YesNoChip from "./yes-no-chip.svelte"
 	import StatusChip from "./status-chip.svelte"
+	import * as Dialog from "$lib/components/ui/dialog"
+	import EditTask from "$lib/components/edit-task.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// DATA
@@ -161,11 +163,14 @@
 			rangeSelectionStartRowId = row.id
 		}
 	}
+	
+	let createTaskDialogOpen = false
 </script>
 
 <div class="flex flex-col gap-2">
-	<div class="flex items-center">
-		<Input type="text" bind:value={$filterValue} placeholder="Search name..." class="max-w-sm" />
+	<div class="flex gap-1">
+		<Input type="text" bind:value={$filterValue} placeholder="Search name..." />
+		<Button size="icon" variant="outline" on:click={() => createTaskDialogOpen = true}><Plus /></Button>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
 				<Button size="icon" variant="ghost" builders={[builder]} class="ml-auto"><Columns3 /></Button>
@@ -279,3 +284,9 @@
 		</Pagination.Root>
 	</div>
 </div>
+
+<Dialog.Root bind:open={createTaskDialogOpen}>
+	<Dialog.Content class="max-w-full pt-12">
+		<EditTask on:saved={() => createTaskDialogOpen = false} />
+	</Dialog.Content>
+</Dialog.Root>

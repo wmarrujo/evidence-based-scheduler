@@ -89,7 +89,7 @@
 /* Markdown input and renderer */
 .carta-theme__default .carta-input,
 .carta-theme__default .carta-renderer {
-	height: calc(90vh - 140px); /* NOTE: needs to be a specific height (not auto-generated) so that overflow kicks in. `calc` does this. This assumes it's only used in the edit-task dialog and it's always built the same way */
+	/* NOTE: must set height specifically per-use of the container, in tailwind use something like `[&_.carta-input]:h-[calc(90vh-235px)]` */
 	overflow-y: scroll;
 }
 

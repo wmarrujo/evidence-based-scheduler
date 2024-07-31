@@ -5,6 +5,10 @@ import path from "path"
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: [vitePreprocess()],
+	onwarn: (warning, handler) => {
+		if (warning.code == "css-unused-selector") return // disable this warning
+		handler(warning)
+	},
 	kit: {
 		adapter: adapter(),
 		alias: {$routes: path.resolve("src/routes")},
