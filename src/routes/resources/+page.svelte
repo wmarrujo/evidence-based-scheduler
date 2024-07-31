@@ -1,7 +1,6 @@
 <script lang="ts">
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {liveQuery} from "dexie"
-	import {db} from "$lib/db"
+	import {db, liveQuery} from "$lib/db"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -16,9 +15,10 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
-		// TODO: list resources
-		// TODO: show & edit schedules
-		// TODO: estimated vs actual hours
-		// TODO: velocity spread
+		<span>🚧 Under Construction 🚧</span>
+		<!-- // TODO: list resources -->
+		<!-- // TODO: show & edit schedules -->
+		<!-- // TODO: estimated vs actual hours -->
+		<!-- // TODO: velocity spread -->
 	</main>
 </div>

@@ -4,8 +4,7 @@
 	import {Group, Plus, X} from "lucide-svelte"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import CreateResource from "$lib/components/create-resource.svelte"
-	import {liveQuery} from "dexie"
-	import {db} from "$lib/db"
+	import {db, liveQuery} from "$lib/db"
 	import DependencyGraph from "$lib/components/dependency-graph.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////

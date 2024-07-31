@@ -2,14 +2,12 @@
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
 	import type {Task, TaskId, Resource, ResourceId, Project, ProjectId} from "$lib/db"
-	import {db} from "$lib/db"
-	import {liveQuery} from "dexie"
+	import {db, liveQuery} from "$lib/db"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow, drawRectangle} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {Button} from "$lib/components/ui/button"
-	import CreateTask from "$lib/components/create-task.svelte"
 	import EditTask from "$lib/components/edit-task.svelte"
 	import CreateProject from "$lib/components/create-project.svelte"
 	import {cn} from "$lib/utils"
@@ -585,20 +583,20 @@
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
 	<Dialog.Content>
-		<CreateTask on:created={event => { createTaskDialogOpen = false; onTaskCreated(event) }} />
+		<EditTask on:created={event => { createTaskDialogOpen = false; onTaskCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content>
 		{#if editTaskId}
-			<EditTask initial={getTaskByIdUnsafe(editTaskId)} on:edited={event => { editTaskDialogOpen = false; onTaskEdited(event) }} />
+			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:edited={event => { editTaskDialogOpen = false; onTaskEdited(event) }} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={createProjectDialogOpen}>
-	<Dialog.Content>
+	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
 		<CreateProject tasks={createProjectTasks} on:created={event => { createProjectDialogOpen = false; onProjectCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>

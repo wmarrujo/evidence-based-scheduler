@@ -1,7 +1,6 @@
 <script lang="ts">
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {liveQuery} from "dexie"
-	import {db} from "$lib/db"
+	import {db, liveQuery} from "$lib/db"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -16,7 +15,8 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
-		// TODO: ship date probability graph
-		// TODO: ship date probability prediction history
+		<span>🚧 Under Construction 🚧</span>
+		<!-- // TODO: ship date probability graph -->
+		<!-- // TODO: ship date probability prediction history -->
 	</main>
 </div>
