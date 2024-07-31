@@ -45,7 +45,7 @@
 	////////////////////////////////////////////////////////////////////////////////
 	
 	const table = createTable(data, {
-		page: addPagination({initialPageSize: 10}),
+		page: addPagination({initialPageSize: 100}),
 		sort: addSortBy(),
 		filter: addTableFilter({
 			fn: ({filterValue, value}) => value.toLowerCase().includes(filterValue.toLowerCase().trim()),
@@ -66,6 +66,7 @@
 				const {getRowState} = pluginStates.select
 				const {isSelected} = getRowState(row)
 				return createRender(TableCheckbox, {checked: isSelected, preventDefault: true})
+				// TODO: make it so when the checkboxes themselves are checked, it can multi-select without needing the meta key or shift key
 			},
 			plugins: {
 				sort: {disable: true},
@@ -137,6 +138,9 @@
 	// INTERACTION
 	////////////////////////////////////////////////////////////////////////////////
 	
+	let className = ""
+	export {className as class}
+	
 	const dispatch = createEventDispatcher()
 	
 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
@@ -167,13 +171,13 @@
 	let createTaskDialogOpen = false
 </script>
 
-<div class="flex flex-col gap-2">
+<div class={cn("flex flex-col gap-2", className)}>
 	<div class="flex gap-1">
 		<Input type="text" bind:value={$filterValue} placeholder="Search name..." />
-		<Button size="icon" variant="outline" on:click={() => createTaskDialogOpen = true}><Plus /></Button>
+		<Button variant="outline" on:click={() => createTaskDialogOpen = true} class="aspect-square p-0"><Plus /></Button>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
-				<Button size="icon" variant="ghost" builders={[builder]} class="ml-auto"><Columns3 /></Button>
+				<Button variant="ghost" builders={[builder]} class="ml-auto aspect-square p-0"><Columns3 /></Button>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content>
 				{#each flatColumns as column (column.id)}
@@ -184,16 +188,17 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
-	<div class="rounded-md border">
-		<Table.Root {...$tableAttrs}>
-			<Table.Header>
+	<div class="rounded-md border grow min-h-0">
+		<Table.Root {...$tableAttrs} class="border-separate border-spacing-0">
+			<Table.Header class="border-0">
 				{#each $headerRows as headerRow (headerRow.id)}
 					<Subscribe rowAttrs={headerRow.attrs()}>
-						<Table.Row>
+						<Table.Row class="border-0">
 							{#each headerRow.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
 									<Table.Head {...attrs}
-										class={cn("[&:has([role=checkbox])]:pl-3 p-1",
+										class={cn("[&:has([role=checkbox])]:pl-3 p-1 sticky top-0 bg-background border-b",
+										// class={cn("[&:has([role=checkbox])]:pl-3 p-1 sticky top-0 bg-background drop-shadow-[0_1px_0_rgb(228,228,231)] dark:drop-shadow-[0_1px_0_rgb(39,39,42)]",
 											["checkbox", "estimate", "spent", "done", "status"].includes(cell.id) && "w-0", // shrink
 										)}
 									>
@@ -238,13 +243,13 @@
 					</Subscribe>
 				{/each}
 			</Table.Header>
-			<Table.Body {...$tableBodyAttrs}>
+			<Table.Body {...$tableBodyAttrs} class="min-h-0 overflow-y-scroll">
 				{#each $pageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
 						<Table.Row data-state={$selectedDataIds[row.id] && "selected"} on:click={event => rowClicked(event, row)} class="h-10 select-none cursor-pointer" {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
-									<Table.Cell class="p-1" {...attrs}>
+									<Table.Cell class="p-1 border-b" {...attrs}>
 										{#if cell.id == "checkbox"}
 											<div class="pl-2 pt-1">
 												<Render of={cell.render()} />
@@ -286,7 +291,7 @@
 </div>
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
-	<Dialog.Content class="max-w-full pt-12">
+	<Dialog.Content class="min-w-[70%] pt-12">
 		<EditTask on:saved={() => createTaskDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>

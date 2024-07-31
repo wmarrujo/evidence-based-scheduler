@@ -122,8 +122,7 @@
 			<Button type="submit">{task ? "Update" : "Create"}</Button>
 		</div>
 	</div>
-	<div class="flex-1 [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-140px)]">
+	<div class="flex-1 [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-140px)] [&_.carta-renderer]:h-[calc(90vh-140px)]">
 		<MarkdownEditor {carta} bind:value={$data.description} mode="tabs" />
-		<!-- [&_.carta-renderer]:h-[calc(90vh-140px)] -->
 	</div>
 </form>

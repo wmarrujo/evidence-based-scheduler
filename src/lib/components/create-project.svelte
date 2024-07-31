@@ -52,7 +52,7 @@
 			<Input type="text" bind:value={$data.name} placeholder="Project Name..." class="text-xl" {...attrs} />
 		</Form.Control>
 	</Form.Field>
-	<div class="grow [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-235px)]">
+	<div class="grow [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-235px)] [&_.carta-renderer]:h-[calc(90vh-235px)]">
 		<MarkdownEditor {carta} bind:value={$data.description} mode="tabs" />
 	</div>
 	<div class="flex w-full justify-center">
