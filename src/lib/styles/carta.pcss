@@ -17,7 +17,7 @@
 .carta-theme__default.carta-editor {
 	border: 1px solid var(--border-color);
 	border-radius: 4px;
-	height: 100%; /* DEBUG: added */
+	height: 100%;
 }
 
 .carta-theme__default .carta-editor ::selection {
@@ -31,6 +31,11 @@
 
 .carta-theme__default .carta-wrapper {
 	padding: 0 1rem 0 1rem;
+	height: 100%;
+}
+
+.carta-theme__default .carta-container {
+	height: 100%;
 }
 
 .carta-theme__default .carta-container > * {
@@ -41,6 +46,7 @@
 .carta-theme__default .carta-input {
 	caret-color: var(--caret-color);
 	font-size: 0.95rem;
+	/* overflow-y: scroll; */
 }
 
 .carta-theme__default .carta-input ::placeholder {
@@ -83,7 +89,7 @@
 /* Markdown input and renderer */
 .carta-theme__default .carta-input,
 .carta-theme__default .carta-renderer {
-	/* height: 600px; */ /* DEBUG: removed */
+	height: calc(90vh - 140px); /* NOTE: needs to be a specific height (not auto-generated) so that overflow kicks in. `calc` does this. This assumes it's only used in the edit-task dialog and it's always built the same way */
 	overflow-y: scroll;
 }
 
@@ -131,7 +137,6 @@
 	background: none;
 	border: none;
 	font-size: 0.9rem;
-	/* padding-bottom: 4px; */ /* DEBUG: removed */
 	border-bottom: 2px solid transparent;
 	margin-right: 12px;
 	cursor: pointer;

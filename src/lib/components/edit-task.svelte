@@ -68,8 +68,8 @@
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
-	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
-		<Form.Field {form} name="name" class="flex flex-col col-span-3">
+	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll p-2">
+		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
 			</Form.Control>

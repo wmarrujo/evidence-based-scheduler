@@ -85,7 +85,7 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
-	<Dialog.Content class="max-w-[90%] w-[90%] max-h-[90%] h-[90%] pt-12">
-		<EditTask task={task} on:saved={() => editTaskDialogOpen = false} class="h-full w-full" />
+	<Dialog.Content class="max-w-[90%] w-[90%] max-h-[90vh] h-[90vh] pt-12">
+		<EditTask task={task} on:saved={() => editTaskDialogOpen = false} class="h-full w-full z-10" />
 	</Dialog.Content>
 </Dialog.Root>
