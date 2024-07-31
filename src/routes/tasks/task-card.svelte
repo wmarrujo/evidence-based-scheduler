@@ -28,7 +28,7 @@
 </script>
 
 {#if task}
-	<Card.Root>
+	<Card.Root class="h-full flex flex-col">
 		<Card.Header>
 			<div class="flex justify-center">
 				<div class="grid grid-cols-[auto_auto] w-fit gap-4">
@@ -58,10 +58,10 @@
 			<Card.Title class="text-3xl pt-4">{task.name}</Card.Title>
 			<Separator />
 		</Card.Header>
-		<Card.Content>
+		<Card.Content class="grow overflow-scroll">
 			<Markdown text={task.description} />
 		</Card.Content>
-		<Card.Footer class="flex gap-2">
+		<Card.Footer class="flex gap-2 mt-4">
 			<Button on:click={() => editTaskDialogOpen = true}><Pencil class="mr-2" />Edit</Button>
 			<Button variant="destructive" on:click={() => editTaskDialogOpen = true}><Trash2 class="mr-2" />Delete</Button>
 			<!-- TODO: actions -->

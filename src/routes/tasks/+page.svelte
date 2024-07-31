@@ -19,9 +19,9 @@
 
 <div class="flex flex-col h-screen">
 	<MenuBar />
-	<main class="grow grid grid-cols-2 gap-2 p-2">
+	<main class="grow grid grid-cols-2 gap-2 p-2 min-h-0">
 		<Table on:selection={event => selected = event.detail} />
-		<div>
+		<div class="min-h-0">
 			{#if selected.length <= 1}
 				<TaskCard task={selectedTasks[0]} />
 			{:else}
