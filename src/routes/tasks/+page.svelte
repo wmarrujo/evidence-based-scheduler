@@ -15,6 +15,10 @@
 	
 	function setTasks(tasks: Array<Task>) { selectedTasks = tasks } // made into its own function because svelte reactivity would cause a loop
 	$: db.tasks.bulkGet(selected).then(tasks => setTasks((tasks.filter(t => t) as Array<Task>)))
+	
+	function clickedDelete() {
+		db.tasks.bulkDelete(selectedTasks.map(task => task.id))
+	}
 </script>
 
 <div class="flex flex-col h-screen">
@@ -25,13 +29,13 @@
 			{#if selected.length <= 1}
 				<TaskCard task={selectedTasks[0]} />
 			{:else}
-				<Card.Root>
+				<Card.Root class="h-full">
 					<Card.Header class="text-center">
 						<Card.Title>Multiple Tasks Selected</Card.Title>
 						<!-- TODO: bulk editing of estimates, spent, done -->
 					</Card.Header>
 					<Card.Content class="text-center">
-						<Button variant="destructive" class="text-md"><Trash2 class="mr-2" />Delete</Button>
+						<Button variant="destructive" on:click={clickedDelete} class="text-md"><Trash2 class="mr-2" />Delete</Button>
 						<!-- TODO: other actions on multiple -->
 					</Card.Content>
 				</Card.Root>

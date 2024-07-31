@@ -23,7 +23,7 @@
 	{...$$restProps}
 >
 	<button
-		on:click={() => value = true}
+		on:click={event => { event.preventDefault(); value = true }}
 		class={cn("grow bg-transparent rounded-md h-full flex items-center justify-center",
 			value === true && "bg-background shadow",
 		)}
@@ -33,7 +33,7 @@
 		</slot>
 	</button>
 	<button
-		on:click={() => value = false}
+		on:click={event => { event.preventDefault(); value = false }}
 		class={cn("grow bg-transparent rounded-md h-full flex items-center justify-center",
 			value === false && "bg-background shadow",
 		)}

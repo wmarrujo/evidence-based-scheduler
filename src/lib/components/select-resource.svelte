@@ -18,7 +18,7 @@
 	
 	export let value: ResourceId | undefined = undefined // the id, to export to a form as if this was a single input element
 	let resource: Resource | undefined = undefined // the actual resource
-	function setResource(r: Resource | undefined) { resource = r } // pulled out to avoid reactive infinite loop
+	function setResource(r: Resource | undefined) { resource = r } // pulled out to avoid reactive infinite loop (unset value if we don't get a valid resource)
 	$: if (mounted && value) db.resources.get(value).then(setResource)
 	
 	let resources = liveQuery(() => db.resources.toArray())

@@ -12,8 +12,8 @@
 	import {Carta, MarkdownEditor} from "carta-md"
 	import Toggle from "$lib/components/toggle.svelte"
 	import {mode} from "mode-watcher"
-	// import "carta-md/default.css"
 	import "$lib/styles/carta.pcss"
+	import {Check, Minus} from "lucide-svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -26,9 +26,10 @@
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
-		description: z.string().optional(),
-		doer: z.number(),
-		estimate: z.number().positive(),
+		description: z.string(),
+		// @ts-expect-error the number default is 0, which is a valid task id that we don't want to select by default
+		doer: z.number().default(undefined),
+		estimate: z.number().positive().default(0),
 		spent: z.number().nonnegative().default(0),
 		done: z.boolean().default(false),
 	})
@@ -48,16 +49,21 @@
 			validators: zod(schema),
 			async onUpdate({form}) { // handle submission
 				if (!form.valid) return
-				const updates = {
-					name: form.data.name,
-					description: form.data.description == "" ? undefined : form.data.description,
-					doer: form.data.doer,
-					estimate: form.data.estimate,
-					spent: form.data.spent,
-					done: form.data.done,
+				if (task) { // if we are editing an existing task
+					const updates = {
+						name: form.data.name,
+						description: form.data.description ?? "",
+						doer: form.data.doer,
+						estimate: form.data.estimate,
+						spent: form.data.spent,
+						done: form.data.done,
+					}
+					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
+					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
+				} else { // if we are making a new task
+					const id = await db.tasks.add({...form.data, dependsOn: []})
+					dispatch("saved", {id, ...form.data, dependsOn: []}) // send the message, and return the task it edited
 				}
-				await db.tasks.update(task!.id, updates) // update the task with the updates from the form
-				dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
 			},
 		}), {form: data, enhance} = form
 	
@@ -73,6 +79,7 @@
 			<Form.Control let:attrs>
 				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
 			</Form.Control>
+			<Form.FieldErrors />
 		</Form.Field>
 		<div class="flex gap-2">
 			<Form.Field {form} name="doer" class="flex flex-col flex-1">
@@ -84,7 +91,14 @@
 			<Form.Field {form} name="done" class="flex flex-col flex-1">
 				<Form.Control let:attrs>
 					<Form.Label class="mt-0">Done</Form.Label>
-					<Toggle bind:value={$data.done} colorized {...attrs} />
+					<Toggle bind:value={$data.done} {...attrs}>
+						<div slot="true" class={cn("w-full h-full rounded-md flex items-center justify-center", $data.done && "bg-green-500 text-white")}>
+							<Check class="mr-2" /> Done
+						</div>
+						<div slot="false" class="w-full h-full rounded-md flex items-center justify-center">
+							<Minus class="mr-2" /> Not Done
+						</div>
+					</Toggle>
 				</Form.Control>
 			</Form.Field>
 		</div>
@@ -92,14 +106,16 @@
 			<Form.Field {form} name="estimate" class="flex flex-col flex-1">
 				<Form.Control let:attrs>
 					<Form.Label>Estimate</Form.Label>
-					<Input type="number" bind:value={$data.estimate} min="0" step="0.1" {...attrs} class="w-full" />
+					<Input type="number" bind:value={$data.estimate} min={0} step="any" {...attrs} class="w-full" />
 				</Form.Control>
+				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field {form} name="spent" class="flex flex-col flex-1" >
 				<Form.Control let:attrs>
 					<Form.Label>Spent</Form.Label>
-					<Input type="number" bind:value={$data.spent} min="0" step="0.1" {...attrs} class="w-full" />
+					<Input type="number" bind:value={$data.spent} min={0} step="any" {...attrs} class="w-full" />
 				</Form.Control>
+				<Form.FieldErrors />
 			</Form.Field>
 		</div>
 		<div class="flex w-full justify-center">

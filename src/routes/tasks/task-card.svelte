@@ -25,6 +25,10 @@
 		stopwatch.stop()
 		db.tasks.update(task.id, {done: !task.done})
 	}
+	
+	function clickedDelete() {
+		if (task) db.tasks.delete(task?.id)
+	}
 </script>
 
 {#if task}
@@ -63,16 +67,13 @@
 		</Card.Content>
 		<Card.Footer class="flex gap-2 mt-4">
 			<Button on:click={() => editTaskDialogOpen = true}><Pencil class="mr-2" />Edit</Button>
-			<Button variant="destructive" on:click={() => editTaskDialogOpen = true}><Trash2 class="mr-2" />Delete</Button>
+			<Button variant="destructive" on:click={clickedDelete}><Trash2 class="mr-2" />Delete</Button>
 			<!-- TODO: actions -->
 		</Card.Footer>
 	</Card.Root>
 {:else}
-	<Card.Root>
-		<Card.Header class="text-center">
-			<Card.Title>No Task Selected</Card.Title>
-		</Card.Header>
-		<Card.Content class="text-center">
+	<Card.Root class="h-full">
+		<Card.Content class="text-center h-full flex flex-col justify-center items-center">
 			<Button class="text-md" on:click={() => createTaskDialogOpen = true}><Plus class="mr-2" />New Task</Button>
 		</Card.Content>
 	</Card.Root>

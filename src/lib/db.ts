@@ -17,7 +17,7 @@ export type TaskId = number
 export type Task = {
 	id: TaskId
 	name: string
-	description: string | undefined
+	description: string
 	doer: ResourceId
 	estimate: number // the current estimate, in hours
 	spent: number // the spent time spent, in hours
@@ -30,7 +30,7 @@ export type ProjectId = number
 export type Project = {
 	id: ProjectId
 	name: string
-	description: string | undefined
+	description: string
 	tasks: Array<TaskId>
 }
 
@@ -38,7 +38,7 @@ export type MilestoneId = number
 export type Milestone = {
 	id: MilestoneId
 	name: string
-	description: string | undefined
+	description: string
 	dependsOn: Array<TaskId>
 }
 

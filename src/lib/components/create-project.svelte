@@ -20,7 +20,7 @@
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
-		description: z.string().optional(),
+		description: z.string(),
 	})
 	
 	const form = superForm(defaults(zod(schema)), {
@@ -30,7 +30,7 @@
 				if (!form.valid) return
 				const project = {
 					name: form.data.name,
-					description: form.data.description == "" ? undefined : form.data.description,
+					description: form.data.description ?? "",
 					tasks,
 				}
 				const id = await db.projects.add(project) // insert (and get the id it created)
