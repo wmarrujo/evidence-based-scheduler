@@ -6,6 +6,7 @@
 	export let task: number
 </script>
 
+<!-- TODO: turn this into a right-click contextmenu action list -->
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger asChild let:builder>
 		<Button size="icon" variant="ghost" builders={[builder]} class="relative h-8 w-8 p-0"><Ellipsis class="h-4 w-4" /></Button>

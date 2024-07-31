@@ -15,6 +15,7 @@
 		</div>
 	</MenuBar>
 	<main class="grow">
+		<span>🚧 Under Construction 🚧</span>
 		<!-- // TODO: list resources -->
 		<!-- // TODO: show & edit schedules -->
 		<!-- // TODO: estimated vs actual hours -->
