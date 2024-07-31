@@ -197,7 +197,7 @@
 							{#each headerRow.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
 									<Table.Head {...attrs}
-										class={cn("[&:has([role=checkbox])]:pl-3 p-1 sticky top-0 bg-background border-b",
+										class={cn("[&:has([role=checkbox])]:pl-3 p-1 sticky top-0 bg-background border-b first:rounded-tl-md last:rounded-tr-md",
 										// class={cn("[&:has([role=checkbox])]:pl-3 p-1 sticky top-0 bg-background drop-shadow-[0_1px_0_rgb(228,228,231)] dark:drop-shadow-[0_1px_0_rgb(39,39,42)]",
 											["checkbox", "estimate", "spent", "done", "status"].includes(cell.id) && "w-0", // shrink
 										)}
