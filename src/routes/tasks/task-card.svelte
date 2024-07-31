@@ -6,9 +6,10 @@
 	import {Plus, Play, Pause, Square, Pencil, Check, Trash2} from "lucide-svelte"
 	import {Button} from "$lib/components/ui/button"
 	import * as Dialog from "$lib/components/ui/dialog"
-	import CreateTask from "$lib/components/create-task.svelte"
 	import EditTask from "$lib/components/edit-task.svelte"
 	import stopwatch from "$lib/stopwatch"
+	import Markdown from "$lib/components/markdown.svelte"
+	import {Separator} from "$lib/components/ui/separator"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -18,7 +19,7 @@
 	let editTaskDialogOpen = false
 	
 	let spent: number = 0
-	$: if (task) spent = $stopwatch.time ?? task.spent
+	$: if (task) spent = ($stopwatch.task?.id == task.id ? $stopwatch.time : task.spent) ?? task.spent
 	
 	function clickedDone(task: Task) {
 		stopwatch.stop()
@@ -55,9 +56,10 @@
 				</div>
 			</div>
 			<Card.Title class="text-3xl pt-4">{task.name}</Card.Title>
+			<Separator />
 		</Card.Header>
 		<Card.Content>
-			<!-- TODO: markdown description -->
+			<Markdown text={task.description} />
 		</Card.Content>
 		<Card.Footer class="flex gap-2">
 			<Button on:click={() => editTaskDialogOpen = true}><Pencil class="mr-2" />Edit</Button>
@@ -77,15 +79,13 @@
 {/if}
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
-	<Dialog.Content>
-		<CreateTask on:created={() => createTaskDialogOpen = false} />
+	<Dialog.Content class="max-w-full pt-12">
+		<EditTask on:saved={() => createTaskDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
-	<Dialog.Content>
-		{#if task}
-			<EditTask initial={task} on:edited={() => editTaskDialogOpen = false} />
-		{/if}
+	<Dialog.Content class="max-w-[90%] w-[90%] max-h-[90%] h-[90%] pt-12">
+		<EditTask task={task} on:saved={() => editTaskDialogOpen = false} class="h-full w-full" />
 	</Dialog.Content>
 </Dialog.Root>

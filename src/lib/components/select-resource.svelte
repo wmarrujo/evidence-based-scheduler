@@ -14,17 +14,17 @@
 	export let name: string | undefined = undefined // the form name
 	let className = ""
 	export {className as class}
+	export let placeholder: string = "Select Resource..."
 	
-	export let initial: ResourceId | Resource | undefined = undefined // made available to the user so they can set an initial value
-	let resource = typeof(initial) == "number" ? undefined : initial
 	export let value: ResourceId | undefined = undefined // the id, to export to a form as if this was a single input element
-	$: value = resource?.id
+	let resource: Resource | undefined = undefined // the actual resource
+	function setResource(r: Resource | undefined) { resource = r } // pulled out to avoid reactive infinite loop
+	$: if (mounted && value) db.resources.get(value).then(setResource)
 	
 	let resources = liveQuery(() => db.resources.toArray())
 	
-	onMount(async () => {
-		if (resource == undefined && typeof(initial) == "number") resource = await db.resources.get(initial) // set this now that we can do an await
-	})
+	let mounted = false
+	onMount(async () => mounted = true)
 	
 	let open = false
 </script>
@@ -39,7 +39,7 @@
 		{#if resource}
 			{resource?.name}
 		{:else}
-			<span class="text-muted-foreground">Select Resource</span>
+			<span class="text-muted-foreground">{placeholder}</span>
 		{/if}
 		<ChevronsUpDown class="hl-2 h-4 w-4" />
 	</Popover.Trigger>
@@ -49,7 +49,7 @@
 			<Command.Empty>No resource found.</Command.Empty>
 			<Command.Group>
 				{#each $resources as option (option.id)}
-					<Command.Item value={option.name} onSelect={() => { resource = option; open = false }}>
+					<Command.Item value={option.name} onSelect={() => { resource = option; value = option.id; open = false }}>
 						{option.name}
 						<Check class={cn("ml-auto h-4 w-4", option.id !== value && "text-transparent")} />
 					</Command.Item>
@@ -58,4 +58,4 @@
 		</Command.Root>
 	</Popover.Content>
 </Popover.Root>
-<input hidden value={resource?.id} {id} {name} />
+<input type="number" hidden {value} {id} {name} />

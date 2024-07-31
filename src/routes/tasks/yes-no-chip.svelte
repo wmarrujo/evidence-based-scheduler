@@ -10,7 +10,7 @@
 	export let status: boolean
 </script>
 
-<div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs",
+<div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs text-white",
 	!status && "bg-red-500 dark:bg-red-700",
 	status && "bg-green-500 dark:bg-green-700")
 }>

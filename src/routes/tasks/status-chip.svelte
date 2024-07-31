@@ -16,8 +16,8 @@
 	export let status: Status
 </script>
 
-<div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs",
-	status == Status.Planned && "bg-gray-300 dark:bg-gray-600",
+<div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs text-white",
+	status == Status.Planned && "bg-gray-300 dark:bg-gray-600 text-foreground",
 	status == Status.Started && "bg-blue-400 dark:bg-blue-600",
 	status == Status.Done && "bg-green-500 dark:bg-green-700")
 }>
