@@ -423,8 +423,7 @@
 	
 	// ACTIONS
 	
-	function onTaskCreated(event: CustomEvent<Task>) {
-		const task = event.detail
+	function onTaskCreated(task: Task) {
 		const node = taskToNode(task)
 		node.x = createTaskInsertionPoint.x; node.y = createTaskInsertionPoint.y
 		
@@ -433,8 +432,8 @@
 		nodes = nodes // tell the forces about the update
 	}
 	
-	function onTaskEdited(event: CustomEvent<Task>) {
-		const task = event.detail
+	function onTaskEdited(task: Task) {
+		// FIXME: after editing the estimate of the task, it loses track of the links (it seems the old one stays in ghost form)
 		const node = taskToNode(task)
 		
 		// add the task as a node
@@ -584,14 +583,14 @@
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<EditTask on:created={event => { createTaskDialogOpen = false; onTaskCreated(event) }} />
+		<EditTask on:saved={event => { createTaskDialogOpen = false; onTaskCreated(event.detail) }} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
 		{#if editTaskId}
-			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:edited={event => { editTaskDialogOpen = false; onTaskEdited(event) }} />
+			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:saved={event => { editTaskDialogOpen = false; onTaskEdited(event.detail) }} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>

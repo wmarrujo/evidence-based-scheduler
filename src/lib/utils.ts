@@ -76,3 +76,9 @@ declare global {
 Array.prototype.intersects = function<T>(other: Array<T>): boolean {
 	return this.some(item => other.includes(item))
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+export function transpose<T>(matrix: Array<Array<T>>): Array<Array<T>> {
+	return (matrix[0] ?? []).map((col, i) => matrix.map(row => row[i]))
+}
