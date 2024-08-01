@@ -124,10 +124,11 @@
 			
 			infractions.forEach(box => {
 				const center = {x: box.minX + (box.maxX - box.minX) / 2, y: box.minY + (box.maxY - box.minY) / 2} // the box's center
+				const size = (box.maxX - box.minX) * (box.maxY - box.minY) // the box's size, in px^2
 				
 				if (box.minX < node.x! && node.x! < box.maxX && box.minY < node.y! && node.y! < box.maxY) { // if we're still inside the actual box
-					node.vx! += (node.x! - center.x) * strength * alpha
-					node.vy! += (node.y! - center.y) * strength * alpha
+					node.vx! += (node.x! - center.x) * (1/size) * strength * alpha
+					node.vy! += (node.y! - center.y) * (1/size) * strength * alpha
 				} else { // if we're in the buffer zone
 					// apply forces based on how far off it is, so it's more gradual & doesn't jitter
 					if (node.x! < box.minX) node.vx! += (node.x! - center.x) * ((node.x! - (box.minX - buffer)) / buffer) * strength * alpha // if we're to the left
@@ -365,7 +366,7 @@
 		groupedNodes = [] // clear the grouping
 	}
 	
-	export function finishGrouping() {
+	export function makeProject() {
 		grouping = false
 		if (groupedNodes.length == 0) return // if we didn't actually group anything, don't make a group
 		createProjectTasks = groupedNodes.flatMap(node => {
@@ -375,6 +376,10 @@
 		})
 		createProjectDialogOpen = true // get the final information
 		groupedNodes = [] // clear the grouping
+	}
+	
+	export function makeMilestone() {
+		// TODO: implement, will be similar to `makeProject`
 	}
 	
 	// DIALOGS
@@ -436,10 +441,6 @@
 		const oldNode = nodes.findIndex(n => n.id == node.id)
 		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
 		nodes = nodes // tell the forces about the update
-	}
-	
-	function onProjectCreated(event: CustomEvent<Project>) {
-		// TODO
 	}
 	
 	async function makeLink(source: Node, target: Node) {
@@ -582,13 +583,13 @@
 </Card.Root>
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
-	<Dialog.Content>
+	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
 		<EditTask on:created={event => { createTaskDialogOpen = false; onTaskCreated(event) }} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
-	<Dialog.Content>
+	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
 		{#if editTaskId}
 			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:edited={event => { editTaskDialogOpen = false; onTaskEdited(event) }} />
 		{/if}
@@ -597,7 +598,7 @@
 
 <Dialog.Root bind:open={createProjectDialogOpen}>
 	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateProject tasks={createProjectTasks} on:created={event => { createProjectDialogOpen = false; onProjectCreated(event) }} />
+		<CreateProject tasks={createProjectTasks} on:created={() => { createProjectDialogOpen = false }} />
 	</Dialog.Content>
 </Dialog.Root>
 

@@ -6,7 +6,7 @@
 	import * as Form from "$lib/components/ui/form"
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
-	import {db, type Project, type TaskId} from "$lib/db"
+	import {db, type Milestone, type TaskId} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	import {Carta, MarkdownEditor} from "carta-md"
 	import {mode} from "mode-watcher"
@@ -16,9 +16,9 @@
 	
 	let className = ""
 	export {className as class}
-	const dispatch = createEventDispatcher<{created: Project}>()
+	const dispatch = createEventDispatcher<{created: Milestone}>()
 	
-	export let tasks: Array<TaskId> = []
+	export let dependsOn: Array<TaskId> = []
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -30,13 +30,13 @@
 			validators: zod(schema),
 			async onUpdate({form}) { // handle submission
 				if (!form.valid) return
-				const project = {
+				const milestone = {
 					name: form.data.name,
 					description: form.data.description ?? "",
-					tasks,
+					dependsOn,
 				}
-				const id = await db.projects.add(project) // insert (and get the id it created)
-				dispatch("created", {id, ...project}) // send the message, and return the project it created
+				const id = await db.milestones.add(milestone) // insert (and get the id it created)
+				dispatch("created", {id, ...milestone}) // send the message, and return the milestone it created
 			},
 		}), {form: data, enhance} = form
 	
@@ -49,7 +49,7 @@
 <form class={cn(className, "flex flex-col gap-2")} use:enhance>
 	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.name} placeholder="Project Name..." class="text-xl" {...attrs} />
+			<Input type="text" bind:value={$data.name} placeholder="Milestone Name..." class="text-xl" {...attrs} />
 		</Form.Control>
 	</Form.Field>
 	<div class="grow [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-235px)] [&_.carta-renderer]:h-[calc(90vh-235px)]">
