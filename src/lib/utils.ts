@@ -70,11 +70,21 @@ export const flyAndScale = (
 declare global {
 	interface Array<T> {
 		intersects(other: Array<T>): boolean
+		max(): T
+		min(): T
 	}
 }
 
 Array.prototype.intersects = function<T>(other: Array<T>): boolean {
 	return this.some(item => other.includes(item))
+}
+
+Array.prototype.max = function() {
+	return Math.max.apply(null, this)
+}
+
+Array.prototype.min = function() {
+	return Math.min.apply(null, this)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

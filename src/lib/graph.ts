@@ -63,15 +63,11 @@ export class Graph<Node> {
 	ancestors(nodes: Iterable<Node>): Set<Node> {
 		let seen = new Set<Node>()
 		
-		console.log("climb on!")
 		const climb = (children: Iterable<Node>) => { // defined in-scope so the seen variable can be carried around with the recursion
-			console.log("climbing", children)
 			for (const child of children) {
-				console.log("rock", child)
 				const unseenParents = this.parents(child).difference(seen)
 				seen = seen.union(unseenParents).union(climb(unseenParents)) // mark the parents as being seen, then also go and see their parents
 			}
-			console.log("seen", seen)
 			return seen
 		}
 		
