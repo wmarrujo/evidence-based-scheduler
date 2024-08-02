@@ -16,17 +16,47 @@ export class Graph<Node> {
 		}, new Map<Node, Set<Node>>())
 	}
 	
+	////////////////////////////////////////////////////////////////////////////////
+	// TRANSFORMERS
+	////////////////////////////////////////////////////////////////////////////////
+	
 	/** Flips the direction of all the edges. Does this in-place (I think) */
 	flip(): Graph<Node> {
 		this.back = [this.edges, this.edges = this.back][0] // swap the edges & back fields
 		return this
 	}
 	
+	////////////////////////////////////////////////////////////////////////////////
+	// ACCESORS
+	////////////////////////////////////////////////////////////////////////////////
+	
+	/** If node is not specified: All the parents in the graph. The nodes which have edges going out of them.
+	 * If node is specified: All the direct parents of the specified node. That is all the nodes which have edges going to this node.
+	 * Note that the set returned may be empty in either case. */
+	parents(node?: Node): Set<Node> {
+		if (node !== undefined) return this.back.get(node) ?? new Set()
+		else return new Set(this.edges.keys())
+	}
+	
+	/** If node is not specified: All the children in the graph. The nodes which have edges going into them.
+	 * If node is specified: All the direct children of the specified node. That is all the nodes which have edges going to this node.
+	 * Note that the set returned may be empty in either case. */
+	children(node?: Node): Set<Node> {
+		if (node !== undefined) return this.edges.get(node) ?? new Set()
+		else return new Set(this.back.keys())
+	}
+	
+	// TODO: ancestors
+	// TODO: descendants
+	
 	/** The nodes which have no edges going into them. */
 	roots(): Set<Node> {
-		const haveChildren = new Set(this.edges.keys())
-		const haveParents = new Set(this.back.keys())
-		return haveChildren.difference(haveParents) // those that have children, but no parents
+		return this.parents().difference(this.children()) // those that are a parent but not a child
+	}
+	
+	/** The nodes which have no edges going out of them */
+	leaves(): Set<Node> {
+		return this.children().difference(this.parents()) // those that are a child but not a parent
 	}
 	
 	/** The nodes which have no edges going in or out. */
@@ -36,13 +66,17 @@ export class Graph<Node> {
 		return this.nodes.difference(haveChildren.union(haveParents)) // those that have children, but no parents
 	}
 	
+	////////////////////////////////////////////////////////////////////////////////
+	// ANALYSIS
+	////////////////////////////////////////////////////////////////////////////////
+	
 	/** sorts the nodes into strata, where the first has no edges coming in, the second only has edges coming in from
 	 * the first, the third only has edges from the first and second, and so on. */
 	topologicalStrata(): Array<Set<Node>> {
 		const strata: Array<Set<Node>> = []
 		const singletons = this.singletons()
-		const edges = new Map(this.edges)
-		const back = new Map(this.back)
+		const edges = structuredClone(this.edges)
+		const back = structuredClone(this.back)
 		
 		while (0 < edges.size || 0 < singletons.size) { // stop once we're out of starting points
 			const haveChildren = new Set(edges.keys())
@@ -73,7 +107,7 @@ export class Graph<Node> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// CONSTRUCTORS
+// CONVENIENCE CONSTRUCTORS
 ////////////////////////////////////////////////////////////////////////////////
 
 export function idGraphFromArrayOfItemsWithLinks<Item, Id>(items: Iterable<Item>, getId: (item: Item) => Id, getLinks: (item: Item) => Iterable<Id>): Graph<Id> {

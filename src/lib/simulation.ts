@@ -1,4 +1,4 @@
-import type {Milestone, Project, Task, TaskId} from "$lib/db"
+import type {Milestone, Project, Task, TaskId, ResourceId} from "$lib/db"
 import {type Graph, idGraphFromArrayOfItemsWithBackLinks} from "$lib/graph"
 import {transpose} from "$lib/utils"
 import * as random from "d3-random"
@@ -6,6 +6,8 @@ import * as random from "d3-random"
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
 ////////////////////////////////////////////////////////////////////////////////
+
+type Duration = number // number of milliseconds
 
 enum GoalType {
 	MILESTONE,
@@ -50,12 +52,15 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
 	
 	const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
 	
-	return transpose(Array.from({length: simulations}, (_, seed) => {
+	return transpose(Array.from({length: simulations}, (_, seed) => { // for however many simulations we want to run
 		const randomGamma = random.randomGamma.source(random.randomLcg(seed)) // TODO: try gamma, lognormal, weibull
+		// TODO: modify tasksById for this run to set the actual times based on the estimate and the resource's estimating ability
+		const durations = new Map(tasks.map(task => [task.id, task.estimate * 60 * 60 * 1000])) // DEBUG: for now taking their estimate as 100% accurate
+		const doers = new Map(tasks.map(task => [task.id, task.doer])) // DEBUG: for now taking their estimate as 100% accurate
+		
 		return actualGoals
 			.reduce((acc, goal) => {
-				// TODO: modify tasksById for this run to set the actual times based on the estimate and the resource's estimating ability, for now taking their estimate as 100% accurate
-				const {prediction, starts} = simulationRun(goal, acc.starts, tasksById, graph)
+				const {prediction, starts} = simulationRun(goal, acc.starts, start, graph, durations, doers)
 				acc.predictions.push(prediction)
 				return {predictions: acc.predictions, starts: starts}
 			}, {predictions: [] as Array<Date>, starts: new Map<TaskId, Date>()})
@@ -70,10 +75,37 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
  * with the starts per task that it used to get there (these will be locked for any simulation runs for future goals).
  * The starts returned include the `locked` starts that were passed in.
  */
-function simulationRun(goal: Goal, locked: Map<TaskId, Date>, tasksById: Map<TaskId, Task>, graph: Graph<TaskId>): {prediction: Date, starts: Map<TaskId, Date>} {
-	console.log("graph", graph)
+function simulationRun(
+	goal: Goal,
+	locked: Map<TaskId, Date>,
+	start: Date,
+	graph: Graph<TaskId>,
+	durations: Map<TaskId, Duration>,
+	doers: Map<TaskId, ResourceId>,
+): {prediction: Date, starts: Map<TaskId, Date>} {
 	const strata = graph.topologicalStrata()
-	console.log("strata", strata)
+	
+	// LEFT-ALIGN
+	
+	const times = strata.reduce((acc, stratum) => { // go through the tasks topologically, so that for each task we can be sure that we've already left-aligned all its ancestors
+		for (const task of stratum) { // for all the tasks in this stratum
+			const existing = locked.get(task)
+			if (existing) { // if the start is already locked, keep it there (it will always have the same topological ordering, so we're good)
+				acc.set(task, existing)
+			} else {
+				const parents = [...graph.parents(task)]
+				const ends = parents.map(parent => acc.get(parent)!.getTime() + durations.get(parent)!) // get the ends of all the parent dates (their starts + durations, in milliseconds)
+				const max = 0 < ends.length ? new Date(Math.max.apply(null, ends)) : start // the max of all parent ends is our start
+				acc.set(task, max)
+			}
+		}
+		return acc
+	}, new Map<TaskId, Date>())
+	
+	// SHIFT
+	
+	const now = start // start the "now" date at the beginning
+	
 	
 	return {prediction: new Date(), starts: new Map()} // DEBUG: while building
 }
