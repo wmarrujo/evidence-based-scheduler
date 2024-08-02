@@ -47,7 +47,6 @@ function toGoal(goal: Milestone | Project | Task) {
 export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<Task>, start: Date, simulations: number = 1): Array<Array<Date>> {
 	// TODO: get all milestone tasks
 	
-	const tasksById = tasks.reduce((acc, task) => acc.set(task.id, task), new Map<TaskId, Task>())
 	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
 	
 	const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
@@ -60,7 +59,11 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
 		
 		return actualGoals
 			.reduce((acc, goal) => {
-				const {prediction, starts} = simulationRun(goal, acc.starts, start, graph, durations, doers)
+				const relevant = graph.ancestors(goal.direct).union(new Set(goal.direct)) // only the ancestors of the direct requirements of this goal are relevant
+				const subgraph = graph.filter(relevant) // only consider the part of the graph that is for this goal
+				
+				const {prediction, starts} = simulationRun(subgraph, start, acc.starts, durations, doers)
+				
 				acc.predictions.push(prediction)
 				return {predictions: acc.predictions, starts: starts}
 			}, {predictions: [] as Array<Date>, starts: new Map<TaskId, Date>()})
@@ -76,13 +79,14 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
  * The starts returned include the `locked` starts that were passed in.
  */
 function simulationRun(
-	goal: Goal,
-	locked: Map<TaskId, Date>,
-	start: Date,
 	graph: Graph<TaskId>,
+	start: Date,
+	locked: Map<TaskId, Date>,
 	durations: Map<TaskId, Duration>,
 	doers: Map<TaskId, ResourceId>,
 ): {prediction: Date, starts: Map<TaskId, Date>} {
+	// TODO: only consider the part of the graph that is for the goal
+	
 	const strata = graph.topologicalStrata()
 	
 	// LEFT-ALIGN
@@ -106,6 +110,7 @@ function simulationRun(
 	
 	const now = start // start the "now" date at the beginning
 	
+	// TODO: shifting algorithm
 	
 	return {prediction: new Date(), starts: new Map()} // DEBUG: while building
 }

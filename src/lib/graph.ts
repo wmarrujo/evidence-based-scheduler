@@ -20,10 +20,21 @@ export class Graph<Node> {
 	// TRANSFORMERS
 	////////////////////////////////////////////////////////////////////////////////
 	
-	/** Flips the direction of all the edges. Does this in-place (I think) */
+	/** Returns a copy of this graph with the edge directions flipped. */
 	flip(): Graph<Node> {
-		this.back = [this.edges, this.edges = this.back][0] // swap the edges & back fields
-		return this
+		return new Graph(this.nodes, this.back)
+	}
+	
+	/** Filter the nodes in the graph to only those that are in the nodes passed in. (does not add any nodes that
+	 * weren't there before). Makes a new graph */
+	filter(nodes: Iterable<Node>): Graph<Node> {
+		const newNodes = this.nodes.intersection(new Set(nodes))
+		const newEdges = [...this.edges.entries()]
+			.reduce((acc, [parent, children]) => {
+				if (newNodes.has(parent)) acc.set(parent, children.intersection(newNodes)) // if the parent node still exists, keep it and also only keep children that still exist, otherwise remove it (by forgetting it)
+				return acc
+			}, new Map())
+		return new Graph(newNodes, newEdges)
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -46,8 +57,41 @@ export class Graph<Node> {
 		else return new Set(this.back.keys())
 	}
 	
-	// TODO: ancestors
-	// TODO: descendants
+	/** Gets the ancestor nodes of the nodes passed in. Does not include the current node.
+	 * Important! the graph passed in must be a Directed Acyclic Graph, otherwise it will enter an infinite loop.
+	 */
+	ancestors(nodes: Iterable<Node>): Set<Node> {
+		let seen = new Set<Node>()
+		
+		console.log("climb on!")
+		const climb = (children: Iterable<Node>) => { // defined in-scope so the seen variable can be carried around with the recursion
+			console.log("climbing", children)
+			for (const child of children) {
+				console.log("rock", child)
+				const unseenParents = this.parents(child).difference(seen)
+				seen = seen.union(unseenParents).union(climb(unseenParents)) // mark the parents as being seen, then also go and see their parents
+			}
+			console.log("seen", seen)
+			return seen
+		}
+		
+		return climb(nodes)
+	}
+	
+	/** Gets the ancestor nodes of the nodes passed in. Only includes a passed-in node if it is the descendant of another passed-in node. */
+	descentants(nodes: Iterable<Node>): Set<Node> {
+		let seen = new Set<Node>()
+		
+		const dive = (parents: Iterable<Node>) => { // defined in-scope so the seen variable can be carried around with the recursion
+			for (const parent of parents) {
+				const unseenChildren = this.children(parent).difference(seen)
+				seen = seen.union(unseenChildren).union(dive(unseenChildren)) // mark the children as being seen, then also go and see their children
+			}
+			return seen
+		}
+		
+		return dive(nodes)
+	}
 	
 	/** The nodes which have no edges going into them. */
 	roots(): Set<Node> {
