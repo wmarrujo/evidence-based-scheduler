@@ -12,6 +12,7 @@
 		"lint": "eslint ."
 	},
 	"dependencies": {
+		"@observablehq/plot": "^0.6.15",
 		"bits-ui": "^0.21.12",
 		"carta-md": "^4.4.1",
 		"clsx": "^2.1.1",

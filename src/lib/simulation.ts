@@ -1,4 +1,4 @@
-import type {Milestone, Project, Task, TaskId, ResourceId} from "$lib/db"
+import type {Task, TaskId, ResourceId} from "$lib/db"
 import {type Graph, idGraphFromArrayOfItemsWithBackLinks} from "$lib/graph"
 import {transpose} from "$lib/utils"
 import {randomInt} from "d3-random"
@@ -10,44 +10,21 @@ import {randomInt} from "d3-random"
 type Epoch = number // date, as a number of milliseconds since the start of the unix epoch
 type Duration = number // number of milliseconds
 
-enum GoalType {
-	MILESTONE,
-	PROJECT,
-	TASK,
-}
-
-type Goal = {
-	type: GoalType
-	id: number
-	direct: Array<TaskId> // the tasks that are directly required by the goal
-}
-
-function isTask(obj: any): obj is Task { return obj.estimate !== undefined } // eslint-disable-line @typescript-eslint/no-explicit-any
-function isProject(obj: any): obj is Project { return obj.tasks !== undefined } // eslint-disable-line @typescript-eslint/no-explicit-any
-function isMilestone(obj: any): obj is Milestone { return obj.dependsOn !== undefined } // eslint-disable-line @typescript-eslint/no-explicit-any
-
-function toGoal(goal: Milestone | Project | Task) {
-	if (isTask(goal)) return {type: GoalType.TASK, id: goal.id, direct: [goal.id]}
-	else if (isProject(goal)) return {type: GoalType.PROJECT, id: goal.id, direct: goal.tasks}
-	else if (isMilestone(goal)) return {type: GoalType.MILESTONE, id: goal.id, direct: goal.dependsOn}
-	else throw new Error("tried to run a simulation with an unknown type")
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // SIMULATE
 ////////////////////////////////////////////////////////////////////////////////
 
 /** Runs monte-carlo simulations of the goals to find when the likely end dates are.
- * @param goals - all of the goals (milestones, projects, or tasks) to schedule, in order of priority
+ * @param goals - all of the goals, stated as sets of the tasks they depend on to schedule, in order of priority
  * @param tasks - all of the tasks in the system, for reference when scheduling
  * @param start - when to start simulating from
  * @param simulations - how many simulations to run
  * @returns each goals' simulation results, returned in the order of the original `goals` input
  */
-export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<Task>, start: Date, simulations: number = 100): Array<Array<Date>> {
+export function simulate(goals: Array<Iterable<TaskId>>, tasks: Array<Task>, start: Date, simulations: number = 100): Array<Array<Date>> {
 	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
 	
-	const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
+	// const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
 	
 	return transpose(Array.from({length: simulations}, () => { // for however many simulations we want to run
 		// TODO: seed the randomness for repeatable simulations
@@ -57,9 +34,9 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
 		// TODO: try gamma, lognormal, weibull - whatever it is, it can't be able to return exactly 0
 		const doers = new Map(tasks.map(task => [task.id, task.doer]))
 		
-		return actualGoals
+		return goals
 			.reduce((acc, goal) => {
-				const relevant = graph.ancestors(goal.direct).union(new Set(goal.direct)) // only the ancestors of the direct requirements of this goal are relevant
+				const relevant = graph.ancestors(goal).union(new Set(goal)) // only the ancestors of the direct requirements of this goal are relevant
 				const subgraph = graph.filter(relevant) // only consider the part of the graph that is for this goal
 				
 				const {prediction, starts} = simulationRun(subgraph, start, acc.starts, durations, doers)
