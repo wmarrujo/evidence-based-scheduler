@@ -16,7 +16,8 @@
 	
 	function clickedSimulate() {
 		// simulate(selected, $tasks, new Date()) // DEBUG: re-enable when done writing
-		simulate($milestones, $tasks, new Date("2018-01-01"))
+		const results = simulate($milestones, $tasks, new Date("2018-01-01"))
+		console.log(results)
 	}
 </script>
 

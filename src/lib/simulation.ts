@@ -44,10 +44,7 @@ function toGoal(goal: Milestone | Project | Task) {
  * @param simulations - how many simulations to run
  * @returns each goals' simulation results, returned in the order of the original `goals` input
  */
-// export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<Task>, start: Date, simulations: number = 100): Array<Array<Date>> { // DEBUG
-export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<Task>, start: Date, simulations: number = 1): Array<Array<Date>> {
-	// TODO: get all milestone tasks
-	
+export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<Task>, start: Date, simulations: number = 100): Array<Array<Date>> {
 	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
 	
 	const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
@@ -58,7 +55,7 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
 		// TODO: modify tasksById for this run to set the actual times based on the estimate and the resource's estimating ability
 		const durations = new Map(tasks.map(task => [task.id, task.estimate * 60 * 60 * 1000])) // DEBUG: for now taking their estimate as 100% accurate
 		// TODO: try gamma, lognormal, weibull - whatever it is, it can't be able to return exactly 0
-		const doers = new Map(tasks.map(task => [task.id, task.doer])) // DEBUG: for now taking their estimate as 100% accurate
+		const doers = new Map(tasks.map(task => [task.id, task.doer]))
 		
 		return actualGoals
 			.reduce((acc, goal) => {
@@ -66,7 +63,6 @@ export function simulate(goals: Array<Milestone | Project | Task>, tasks: Array<
 				const subgraph = graph.filter(relevant) // only consider the part of the graph that is for this goal
 				
 				const {prediction, starts} = simulationRun(subgraph, start, acc.starts, durations, doers)
-				console.log("DONE", prediction, starts)
 				
 				acc.predictions.push(prediction)
 				return {predictions: acc.predictions, starts: starts}
@@ -109,35 +105,26 @@ function simulationRun(
 		}
 		return acc
 	}, new Map<TaskId, Epoch>())
-	console.log("left-aligned", new Map([...starts.entries()].map(([task, start]) => [task, new Date(start)])))
 	
 	// SHIFT
 	
 	let now = start.getTime() // start the "now" date at the beginning
 	const boundaries = new Map([...starts.entries()].map(([task, start]) => [task, {start, end: start + durations.get(task)!}])) // the ends of the tasks, just for easier referencing
 	
-	const findIntersectorsByResource = () => {
-		return [...boundaries.entries()] // the tasks that the now date intersects with, split by resources so we can find the conflicts
+	do {
+		const intersectors: Map<ResourceId, Set<TaskId>> = [...boundaries.entries()] // the tasks that the now date intersects with, split by resources so we can find the conflicts
 			.filter(([_, period]) => period.start <= now && now < period.end)
 			.reduce((acc, [task, _]) => {
 				const resource = doers.get(task)!
 				acc.set(resource, (acc.get(resource) ?? new Set()).add(task))
 				return acc
 			}, new Map())
-	}
-	
-	do {
-		const intersectors: Map<ResourceId, Set<TaskId>> = findIntersectorsByResource() // find the intersectors now that we've moved the now date
-		console.log("now", now)
-		console.log("boundaries", boundaries)
-		console.log("intersectors", intersectors)
 		
 		// FIND CONFLICTS
-		let nextNow = [...boundaries.values()].filter(({start}) => now < start)[0].start // get the first start that's strictly past the now date (not going to be a candidate)
+		let nextNow = [...boundaries.values()].filter(({start}) => now < start)[0]?.start // get the first start that's strictly past the now date (not going to be a candidate)
 		if (nextNow === undefined) nextNow = [...boundaries.values()].filter(({end}) => now < end)[0].end // if we didn't find a next now candidate, then we're almost done, but might still push some more to be next, so let's just give it the next end instead for now
 		intersectors.forEach((tasks, _) => { // we can deal with 1 conflict per resource on each loop (we can because we have already pushed everything else that depends on these conflicts to a later time, so any that appear at the same time can't depend on each other, unless 0 time would be allowed, which it's not)
 			if (2 <= tasks.size) { // if there are conflicts to address
-				console.log("conflicts", tasks)
 				const lock = [...tasks.intersection(new Set(locked.keys()))][0]
 				const winner = lock ? lock : [...tasks].sort()[randomInt(0, tasks.size)()] // if one of them is already locked, that one wins by default (multiple can't be, since we inherited a valid set of locked ones), otherwise pick a winner at random
 				const losers = new Set(tasks); losers.delete(winner) // all the rest
@@ -146,17 +133,23 @@ function simulationRun(
 				
 				locked.set(winner, new Date(now)) // add the winner to the locked list, so it can't be modified in future loops
 				const winnerEnd = boundaries.get(winner)!.end
-				losers.forEach(loser => boundaries.set(loser, {start: winnerEnd, end: winnerEnd + durations.get(loser)!})) // push off all losers to go after the winner
+				losers.forEach(loser => { // push off all losers to go after the winner, and curse all their descendants too
+					const pushOutLoserDescendants = (descendant: TaskId, newStart: Epoch) => {
+						const farthestStart = Math.max(boundaries.get(descendant)!.start, newStart) // if it's already far away, leave it alone
+						const newEnd = farthestStart + durations.get(descendant)!
+						boundaries.set(descendant, {start: farthestStart, end: newEnd}) // push off all losers to go after the winner
+						graph.children(descendant).forEach(child => pushOutLoserDescendants(child, newEnd))
+					}
+					pushOutLoserDescendants(loser, winnerEnd)
+				})
 				nextNow = Math.min(nextNow, winnerEnd) // if the winner is shorter than the next nearest task or winner's end, make the now jump to this winner's end instead
 			} // if there are no conflicts to address, we don't need to deal with them
 		})
 		now = nextNow
-	} while ([...boundaries.values()].map(period => period.start).max() < now) // stop if the now date has moved past all the starts, that means we've dealt with all conflicts
+	} while (now <= [...boundaries.values()].map(({start}) => start).max()) // stop if the now date has moved past all the starts, that means we've dealt with all conflicts
 	
 	return {
 		prediction: new Date(now), // the now date will be at the end of the last task
 		starts: new Map([...boundaries.entries()].map(([task, {start}]) => [task, new Date(start)])), // we want to lock in what the starts became
 	}
 }
-
-////////////////////////////////////////////////////////////////////////////////
