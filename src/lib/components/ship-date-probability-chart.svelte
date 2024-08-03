@@ -39,6 +39,7 @@
 				fontSize: "1em",
 			},
 			margin: 60,
+			x: {type: "time"},
 			y: {grid: true, label: "Probability (%)"},
 			marks: [
 				Plot.ruleY([0, 100]), // draw horizontal lines at 0 and 100
@@ -47,7 +48,7 @@
 				Plot.ruleX(data, Plot.pointerY({x: "prediction", py: "probability", z: "series", stroke: "red"})),
 				Plot.dot(data, Plot.pointerY({x: "prediction", y: "probability", z: "series", stroke: "red"})),
 				Plot.text(data, Plot.pointerY({px: "prediction", py: "probability", frameAnchor: "top-left", dy: -20,
-					text: (d) => `${Math.round(d.probability)}% probability ${d.type} "${d.name}" will be completed by ${((d.prediction as Date).toLocaleString("en-US", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", hour12: false, minute: "2-digit"}))}`,
+					text: (d) => `${Math.round(d.probability)}% probability that ${d.type} "${d.name}" will be completed by ${((d.prediction as Date).toLocaleString("en-US", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", hour12: false, minute: "2-digit"}))}`,
 				})),
 			],
 			color: {

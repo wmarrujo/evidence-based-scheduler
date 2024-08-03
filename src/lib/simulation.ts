@@ -21,7 +21,7 @@ type Duration = number // number of milliseconds
  * @param simulations - how many simulations to run
  * @returns each goals' simulation results, returned in the order of the original `goals` input
  */
-export function simulate(goals: Array<Iterable<TaskId>>, start: Date, simulations: number = 100, tasks: Array<Task>, velocities: Map<ResourceId, Array<Velocity>>): Array<Array<Date>> {
+export function simulate(goals: Array<Iterable<TaskId>>, start: Date, simulations: number, tasks: Array<Task>, velocities: Map<ResourceId, Array<Velocity>>): Array<Array<Date>> {
 	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
 	
 	const fullVelocities = new Map([...velocities.entries()].map(([resource, vs]) => {
