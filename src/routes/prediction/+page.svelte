@@ -1,7 +1,7 @@
 <script lang="ts">
 	import MenuBar from "$lib/components/menu-bar.svelte"
 	import {db, liveQuery} from "$lib/db"
-	import type {Milestone, Project, Task} from "$lib/db"
+	import type {Milestone, Project, Task, ResourceId, Velocity} from "$lib/db"
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import {ArrowRight, Plus, Upload, Save} from "lucide-svelte"
@@ -13,6 +13,7 @@
 	let milestones = liveQuery(() => db.milestones.toArray())
 	let projects = liveQuery(() => db.projects.toArray())
 	let tasks = liveQuery(() => db.tasks.toArray())
+	let resources = liveQuery(() => db.resources.toArray())
 	
 	let selected: Array<Milestone | Project | Task> = []
 	let start: Date = new Date()
@@ -42,12 +43,13 @@
 		else throw new Error("tried to run a simulation with an unknown type")
 	}
 	
+	$: velocitiesByResource = ($resources ?? []).reduce((acc, resource) => acc.set(resource.id, resource?.velocities ?? []), new Map<ResourceId, Array<Velocity>>())
 	let chartData = new Map<Goal, Array<Date>>()
 	
 	function clickedSimulate() {
 		// const selection = [...selected] // save this in case the simulation takes a while and they change their mind in between
 		const selection = [...$milestones, ...$projects] // DEBUG
-		const results = simulate(selection.map(getRequirements), $tasks, start)
+		const results = simulate(selection.map(getRequirements), start, 100, $tasks, velocitiesByResource)
 		chartData = new Map(selection.map((goal, i) => [getGoal(goal), results[i]]))
 	}
 	

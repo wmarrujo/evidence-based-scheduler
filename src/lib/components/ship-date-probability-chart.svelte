@@ -19,7 +19,7 @@
 	let container: HTMLDivElement
 	
 	$: data = [...milestones.entries()].flatMap(([milestone, predictions], m) => {
-		return predictions.sort().map((prediction, i) => ({
+		return predictions.sort((a: Date, b: Date) => a.getTime() - b.getTime()).map((prediction, i) => ({
 			series: m,
 			prediction,
 			probability: i / (predictions.length - 1) * 100, // the index out of how many runs we had is the probability (after it's sorted)
@@ -33,13 +33,17 @@
 		container?.append(Plot.plot({ // add the new chart
 			width: Math.max(container.clientWidth),
 			height: Math.max(container.clientHeight),
-			style: "overflow: visible",
+			style: {
+				overflow: "visible",
+				fontSize: "1em",
+			},
+			margin: 60,
 			y: {grid: true, label: "Probability (%)"},
 			marks: [
 				Plot.ruleY([0, 100]), // draw horizontal lines at 0 and 100
 				Plot.lineY(data, {x: "prediction", y: "probability", z: "series", stroke: "type"}),
 				Plot.crosshairX(data, {x: "prediction", y: "probability"}),
-				Plot.text(data, Plot.selectMaxY({x: "prediction", y: "probability", text: "name", lineAnchor: "bottom", dy: -10})),
+				Plot.text(data, Plot.selectMaxY({x: "prediction", y: "probability", z: "series", text: "name", lineAnchor: "bottom", dy: -10})),
 			],
 			color: {
 				domain: ["Milestone", "Project", "Task"],

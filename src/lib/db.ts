@@ -5,12 +5,16 @@ import type {Readable} from "svelte/store"
 // TYPES
 ////////////////////////////////////////////////////////////////////////////////
 
+export type Velocity = number
+export type Hours = number
+
 export type ResourceId = number
 export type Resource = {
 	id: ResourceId
 	name: string
 	// TODO: add schedules
 	// TODO: add type, like "external" or "machine" which will have different estimate limit warnings
+	velocities: Array<Velocity> // the last 250 velocities, used for sampling // TODO: allow how many are taken into account to be changed in settings
 }
 
 export type TaskId = number
@@ -19,8 +23,8 @@ export type Task = {
 	name: string
 	description: string
 	doer: ResourceId
-	estimate: number // the current estimate, in hours
-	spent: number // the spent time spent, in hours
+	estimate: Hours // the current estimate, in hours
+	spent: Hours // the spent time spent, in hours
 	done: boolean
 	dependsOn: Array<TaskId>
 	// TODO: add priority

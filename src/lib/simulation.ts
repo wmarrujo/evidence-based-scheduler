@@ -1,7 +1,7 @@
-import type {Task, TaskId, ResourceId} from "$lib/db"
+import type {Task, TaskId, ResourceId, Velocity} from "$lib/db"
 import {type Graph, idGraphFromArrayOfItemsWithBackLinks} from "$lib/graph"
 import {transpose} from "$lib/utils"
-import {randomInt} from "d3-random"
+import {randomInt, randomLogNormal} from "d3-random"
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -21,17 +21,18 @@ type Duration = number // number of milliseconds
  * @param simulations - how many simulations to run
  * @returns each goals' simulation results, returned in the order of the original `goals` input
  */
-export function simulate(goals: Array<Iterable<TaskId>>, tasks: Array<Task>, start: Date, simulations: number = 100): Array<Array<Date>> {
+export function simulate(goals: Array<Iterable<TaskId>>, start: Date, simulations: number = 100, tasks: Array<Task>, velocities: Map<ResourceId, Array<Velocity>>): Array<Array<Date>> {
 	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
 	
-	// const actualGoals: Array<Goal> = goals.map(toGoal) // disambiguate the types
+	const fullVelocities = new Map([...velocities.entries()].map(([resource, vs]) => {
+		return [resource, vs.concat(Array.from({length: 250 - Math.max(0, vs.length)}, () => randomLogNormal(0.5, 0.2)()))] // some resources may not have enough historical data, fill these with randomly generated velocities
+		// TODO: try gamma, (erlang), lognormal, weibull - whatever it is, it can't be able to return exactly 0
+	}))
 	
 	return transpose(Array.from({length: simulations}, () => { // for however many simulations we want to run
 		// TODO: seed the randomness for repeatable simulations
 		
-		// TODO: modify tasksById for this run to set the actual times based on the estimate and the resource's estimating ability
-		const durations = new Map(tasks.map(task => [task.id, task.estimate * 60 * 60 * 1000])) // DEBUG: for now taking their estimate as 100% accurate
-		// TODO: try gamma, lognormal, weibull - whatever it is, it can't be able to return exactly 0
+		const durations = new Map(tasks.map(task => [task.id, task.estimate * fullVelocities.get(task.doer)![randomInt(0, 250)()] * 60 * 60 * 1000]))
 		const doers = new Map(tasks.map(task => [task.id, task.doer]))
 		
 		return goals
