@@ -139,7 +139,7 @@
 							on:dragstart={() => dragStartIndex = index}
 							on:dragenter={() => dragEnterIndex = index}
 						>
-							<span>{goal.type == "Milestone" ? "M" : goal.type == "Project" ? "P" : "T"}: {goal.name}</span>
+							<span>{index + 1}. {goal.type == "Milestone" ? "M" : goal.type == "Project" ? "P" : "T"}: {goal.name}</span>
 							<Button size="icon" variant="ghost" class="ml-auto hover:text-red-500" on:click={() => selected = selected.filter(option => option != goal)}><X /></Button>
 						</li>
 					{/each}

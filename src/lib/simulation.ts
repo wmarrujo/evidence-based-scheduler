@@ -35,17 +35,14 @@ export function simulate(goals: Array<Iterable<TaskId>>, start: Date, simulation
 		const durations = new Map(tasks.map(task => [task.id, task.estimate * fullVelocities.get(task.doer)![randomInt(0, 250)()] * 60 * 60 * 1000]))
 		const doers = new Map(tasks.map(task => [task.id, task.doer]))
 		
-		return goals
+		const starts = goals
 			.reduce((acc, goal) => {
 				const relevant = graph.ancestors(goal).union(new Set(goal)) // only the ancestors of the direct requirements of this goal are relevant
 				const subgraph = graph.filter(relevant) // only consider the part of the graph that is for this goal
-				
-				const {prediction, starts} = simulationRun(subgraph, start, acc.starts, durations, doers)
-				
-				acc.predictions.push(prediction)
-				return {predictions: acc.predictions, starts: starts}
-			}, {predictions: [] as Array<Date>, starts: new Map<TaskId, Date>()})
-			.predictions
+				return simulationRun(subgraph, start, acc, durations, doers)
+			}, new Map<TaskId, Date>())
+		
+		return goals.map(tasks => new Date([...tasks].map(task => starts.get(task)!.getTime() + durations.get(task)!).max())) // the last end of all the tasks we care about for each goal is it's end
 	}))
 }
 
@@ -62,9 +59,7 @@ function simulationRun(
 	locked: Map<TaskId, Date>,
 	durations: Map<TaskId, Duration>,
 	doers: Map<TaskId, ResourceId>,
-): {prediction: Date, starts: Map<TaskId, Date>} {
-	// TODO: only consider the part of the graph that is for the goal
-	
+): Map<TaskId, Date> {
 	const strata = graph.topologicalStrata()
 	
 	// LEFT-ALIGN
@@ -126,8 +121,5 @@ function simulationRun(
 		now = nextNow
 	} while (now <= [...boundaries.values()].map(({start}) => start).max()) // stop if the now date has moved past all the starts, that means we've dealt with all conflicts
 	
-	return {
-		prediction: new Date(now), // the now date will be at the end of the last task
-		starts: new Map([...boundaries.entries()].map(([task, {start}]) => [task, new Date(start)])), // we want to lock in what the starts became
-	}
+	return new Map([...locked.entries()].concat([...boundaries.entries()].map(([task, {start}]) => [task, new Date(start)]))) // we want to lock in what the starts became (and don't forget to return the original locked values)
 }
