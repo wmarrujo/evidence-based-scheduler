@@ -22,8 +22,9 @@
 	<MenuBar>
 		<div class="flex gap-2">
 			{#if grouping}
-				<Button on:click={() => dependencyGraph.cancelGrouping()} class="bg-red-500 hover:bg-red-600"><X /> Cancel Grouping</Button>
-				<Button on:click={() => dependencyGraph.finishGrouping()} class="bg-green-500 hover:bg-green-600"><Plus /> Finish Group</Button>
+				<Button variant="outline" on:click={() => dependencyGraph.cancelGrouping()}><X /> Cancel Grouping</Button>
+				<Button on:click={() => dependencyGraph.makeProject()}><Plus /> New Project</Button>
+				<Button on:click={() => dependencyGraph.makeMilestone()}><Plus /> New Milestone</Button>
 			{:else}
 				<Button on:click={() => dependencyGraph.startGrouping()}><Group /> Group</Button>
 				<Dialog.Root bind:open={createResourceDialogOpen}>

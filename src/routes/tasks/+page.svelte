@@ -5,11 +5,12 @@
 	import Table from "./table.svelte"
 	import TaskCard from "./task-card.svelte"
 	import * as Card from "$lib/components/ui/card"
-	import {Group, Trash2} from "lucide-svelte"
+	import {ListPlus, Trash2} from "lucide-svelte"
 	import {Button} from "$lib/components/ui/button"
 	import {Separator} from "$lib/components/ui/separator"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import CreateProject from "$lib/components/create-project.svelte"
+	import CreateMilestone from "$lib/components/create-milestone.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -24,6 +25,7 @@
 	}
 	
 	let createProjectDialogOpen = false
+	let createMilestoneDialogOpen = false
 </script>
 
 <div class="flex flex-col h-screen">
@@ -39,9 +41,11 @@
 						<Card.Title>Multiple Tasks Selected</Card.Title>
 						<!-- TODO: bulk editing of estimates, spent, done -->
 						<!-- TODO: show if they're all part of a project or milestone together -->
+						<!-- TODO: show averages and sums of various quantities -->
 					</Card.Header>
 					<Card.Content class="flex flex-col justify-start items-center gap-2">
-						<Button on:click={() => createProjectDialogOpen = true}><Group class="mr-2" />New project from selection</Button>
+						<Button on:click={() => createProjectDialogOpen = true}><ListPlus class="mr-2" />New Project from selection</Button>
+						<Button on:click={() => createMilestoneDialogOpen = true}><ListPlus class="mr-2" />New Milestone from selection</Button>
 						<Separator />
 						<Button variant="destructive" on:click={clickedDelete} class="text-md"><Trash2 class="mr-2" />Delete</Button>
 						<!-- TODO: other actions on multiple -->
@@ -55,5 +59,11 @@
 <Dialog.Root bind:open={createProjectDialogOpen}>
 	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
 		<CreateProject tasks={[...selected]} on:created={() => { createProjectDialogOpen = false }} />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={createMilestoneDialogOpen}>
+	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
+		<CreateMilestone dependsOn={[...selected]} on:created={() => { createMilestoneDialogOpen = false }} />
 	</Dialog.Content>
 </Dialog.Root>
