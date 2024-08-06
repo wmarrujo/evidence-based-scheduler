@@ -5,12 +5,13 @@
 	import type {MilestoneId, ProjectId, TaskId, ResourceId, Velocity} from "$lib/db"
 	import {Button, buttonVariants} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
-	import {ArrowRight, Plus, Check, X, Upload, Save} from "lucide-svelte"
+	import {Plus, Check, X, Milestone, FolderClosed, Pin, Upload, Save} from "lucide-svelte"
 	import {simulate} from "$lib/simulation"
 	import ShipDateProbabilityChart from "$lib/components/ship-date-probability-chart.svelte"
 	import * as Popover from "$lib/components/ui/popover"
 	import * as Command from "$lib/components/ui/command"
-	import {derived} from "svelte/store"
+	import {writable, derived} from "svelte/store"
+	import {browser} from "$app/environment"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -27,9 +28,10 @@
 		...$projects.map(project => ({type: "Project", id: project.id, name: project.name})),
 		...$tasks.map(task => ({type: "Task", id: task.id, name: task.name})),
 	] as Array<Goal>
-	let selected: Array<Goal> = []
+	let selected = writable<Array<Goal>>(browser ? JSON.parse(localStorage.getItem("selected-goals") ?? "[]") : [])
+	selected.subscribe(value => { if (browser) localStorage.setItem("selected-goals", JSON.stringify(value)) })
 	let start: Date = new Date()
-	let simulations: number = 100
+	let simulations: number = 101
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -46,12 +48,13 @@
 	}
 	
 	$: velocitiesByResource = $resources.reduce((acc, resource) => acc.set(resource.id, resource?.velocities ?? []), new Map<ResourceId, Array<Velocity>>())
-	let chartData = new Map<Goal, Array<Date>>()
 	
-	function clickedSimulate() {
-		const selection = [...selected] // save this in case the simulation takes a while and they change their mind in between
-		const results = simulate(selection.map(getRequirements), start, simulations, $tasks, velocitiesByResource)
-		chartData = new Map(selection.map((goal, i) => [goal, results[i]]))
+	let chartData = new Map<Goal, Array<Date>>()
+	$: if (0 < $selected.length && 0 < $tasks.length && 0 < $resources.length) { // if we are ready to run a simulation
+		const results = simulate($selected.map(getRequirements), start, simulations, $tasks, velocitiesByResource)
+		chartData = new Map($selected.map((goal, i) => [goal, results[i]]))
+	} else {
+		chartData = new Map<Goal, Array<Date>>()
 	}
 	
 	let goalPopoverOpen = false
@@ -69,11 +72,11 @@
 	
 	function dropped() {
 		if (dragStartIndex == dropIndex) return // if we haven't moved it, do nothing
-		const draggedItem = selected[dragStartIndex!]
-		const newSelected = [...selected]
+		const draggedItem = $selected[dragStartIndex!]
+		const newSelected = [...$selected]
 		newSelected.splice(dragStartIndex!, 1)
 		newSelected.splice(dropIndex!, 0, draggedItem)
-		selected = newSelected
+		$selected = newSelected
 	}
 </script>
 
@@ -81,7 +84,8 @@
 	<MenuBar />
 	<main class="grow flex gap-2 p-2 h-full">
 		<div class="flex flex-col gap-2 min-w-72 h-full">
-			<div class="flex gap-2 justify-between">
+			<div class="flex gap-2 justify-between items-center">
+				<span>Priorities</span>
 				<Popover.Root bind:open={goalPopoverOpen}>
 					<Popover.Trigger
 						role="combobox"
@@ -95,36 +99,38 @@
 						<Command.Root>
 							<Command.Input autofocus placeholder="Search..." class="h-9" />
 							<Command.Empty>No resource found.</Command.Empty>
-							<Command.Group>
+							<Command.Group heading="Milestones">
 								{#each options.filter(option => option.type == "Milestone") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { if (!selected.includes(option)) { selected.push(option); selected = selected } ; goalPopoverOpen = false }}>
-										M: {option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
+									<Command.Item value={option.type + option.id} onSelect={() => { if (!$selected.includes(option)) { $selected.push(option); $selected = $selected } ; goalPopoverOpen = false }}>
+										<Milestone class="w-4 h-4 mr-2" />
+										{option.name}
+										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
 									</Command.Item>
 								{/each}
 							</Command.Group>
 							<Command.Separator />
-							<Command.Group>
+							<Command.Group heading="Projects">
 								{#each options.filter(option => option.type == "Project") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { selected.push(option); selected = selected; goalPopoverOpen = false }}>
-										P: {option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
+									<Command.Item value={option.type + option.id} onSelect={() => { $selected.push(option); selected = selected; goalPopoverOpen = false }}>
+										<FolderClosed class="w-4 h-4 mr-2" />
+										{option.name}
+										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
 									</Command.Item>
 								{/each}
 							</Command.Group>
 							<Command.Separator />
 							<Command.Group>
 								{#each options.filter(option => option.type == "Task") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { selected.push(option); selected = selected; goalPopoverOpen = false }}>
-										T: {option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
+									<Command.Item value={option.type + option.id} onSelect={() => { $selected.push(option); $selected = $selected; goalPopoverOpen = false }}>
+										<Pin class="w-4 h-4 mr-2" />
+										{option.name}
+										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
 									</Command.Item>
 								{/each}
 							</Command.Group>
 						</Command.Root>
 					</Popover.Content>
 				</Popover.Root>
-				<Button on:click={clickedSimulate}>Simulate<ArrowRight /></Button>
 			</div>
 			<div class="grow border rounded-md overflow-y-scroll">
 				<ol
@@ -132,15 +138,27 @@
 					on:drop={dropped}
 					on:dragover|preventDefault={draggedOver}
 				>
-					{#each selected as goal, index (goal.type + goal.id)}
+					{#each $selected as goal, index (goal.type + goal.id)}
 						<li
-							class="h-10 flex items-center pl-2 border-b first:rounded-t-md"
+							class={cn("h-10 flex items-center pl-2 border-b border-background first:rounded-t-md text-primary-foreground",
+								goal.type == "Milestone" && "bg-green-600 dark:bg-green-700",
+								goal.type == "Project" && "bg-blue-600 dark:bg-blue-700",
+								goal.type == "Task" && "bg-gray-800 dark:bg-gray-300",
+							)}
 							draggable="true"
 							on:dragstart={() => dragStartIndex = index}
 							on:dragenter={() => dragEnterIndex = index}
 						>
-							<span>{index + 1}. {goal.type == "Milestone" ? "M" : goal.type == "Project" ? "P" : "T"}: {goal.name}</span>
-							<Button size="icon" variant="ghost" class="ml-auto hover:text-red-500" on:click={() => selected = selected.filter(option => option != goal)}><X /></Button>
+							{#if goal.type == "Milestone"}
+								<Milestone class="w-4 h-4 mr-2" />
+							{:else if goal.type == "Project"}
+								<FolderClosed class="w-4 h-4 mr-2" />
+							{:else}
+								<Pin class="w-4 h-4 mr-2" />
+							{/if}
+							<span>{index + 1}.</span>
+							<span>{goal.name}</span>
+							<Button size="icon" variant="ghost" class="ml-auto hover:text-red-500" on:click={() => $selected = $selected.filter(option => option != goal)}><X /></Button>
 						</li>
 					{/each}
 				</ol>

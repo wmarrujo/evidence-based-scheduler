@@ -39,6 +39,7 @@
 				fontSize: "1em",
 			},
 			margin: 60,
+			marginRight: 20,
 			x: {type: "time"},
 			y: {grid: true, label: "Probability (%)"},
 			marks: [
@@ -53,7 +54,7 @@
 			],
 			color: {
 				domain: ["Milestone", "Project", "Task"],
-				range: ["green", "blue", "black"],
+				range: ["green", "blue", $mode == "light" ? "black" : "white"],
 			},
 		}))
 	}

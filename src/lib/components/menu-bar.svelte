@@ -20,6 +20,7 @@
 			if (!event.target) return
 			let file = (event.target as EventTarget & {files: Array<Blob>}).files[0]
 			await db.delete({disableAutoOpen: false}) // wipe the database, and allow it to be recreated
+			localStorage.setItem("selected-goals", "[]") // remove local storage
 			db.import(file)
 			location.reload() // refresh the page so you get all the new data
 		}
