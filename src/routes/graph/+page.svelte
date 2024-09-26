@@ -13,6 +13,7 @@
 	
 	let tasks = liveQuery(() => db.tasks.toArray())
 	let projects = liveQuery(() => db.projects.toArray())
+	let milestones = liveQuery(() => db.milestones.toArray())
 	
 	let dependencyGraph: DependencyGraph
 	let grouping: boolean = false
@@ -41,6 +42,7 @@
 				bind:grouping={grouping}
 				tasks={$tasks}
 				projects={$projects}
+				milestones={$milestones}
 			/>
 		{/if}
 	</main>
