@@ -29,7 +29,7 @@
 		...$tasks.map(task => ({type: "Task", id: task.id, name: task.name})),
 	] as Array<Goal>
 	let selected = writable<Array<Goal>>(browser ? JSON.parse(localStorage.getItem("selected-goals") ?? "[]") : [])
-	selected.subscribe(value => { if (browser) localStorage.setItem("selected-goals", JSON.stringify(value)) })
+	selected.subscribe(value => { if (browser) localStorage.setItem("selected-goals", JSON.stringify(value)) }) // FIXME: not working
 	let start: Date = new Date()
 	let simulations: number = 101
 	
