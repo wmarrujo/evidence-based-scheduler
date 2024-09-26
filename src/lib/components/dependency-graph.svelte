@@ -147,7 +147,7 @@
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0.001)) // connect nodes
-			.force("repulsion", d3.forceManyBody().strength(-1000)) // keep nodes apart
+			.force("repulsion", d3.forceManyBody().strength(-5)) // keep nodes apart
 			.force("centerX", d3.forceX().strength(0.0001)) // make sure separated nodes don't fly apart forever
 			.force("centerY", d3.forceY().strength(0.001)) // make sure separated nodes don't fly apart forever
 			.force("flow", flow) // flow nodes left to right via their connections
