@@ -144,7 +144,7 @@
 	const dispatch = createEventDispatcher()
 	
 	// @ts-expect-error original isn't typed correctly and I can't get the task id any other way https://github.com/bryanmylee/svelte-headless-table/issues/104
-	$: dispatch("selection", Object.keys($selectedDataIds).map(row => $rows[Number(row)].original.id))
+	$: dispatch("selection", Object.keys($selectedDataIds).map(row => $rows[Number(row)]?.original?.id))
 	
 	type ArrayElementType<A> = A extends readonly (infer E)[] ? E : never;
 	type Row = ArrayElementType<typeof $rows>
