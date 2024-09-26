@@ -70,6 +70,30 @@ export function drawArrow(context: CanvasRenderingContext2D, fromX: number, from
 	context.restore()
 }
 
+export function drawLine(context: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number, options?: {width?: number, color?: string, opacity?: number}) {
+	// read arguments
+	const width = options?.width ?? 1
+	const color = options?.color ?? "black"
+	const opacity = options?.opacity ?? 1
+	
+	// DRAW
+	
+	context.save()
+	
+	// set style
+	context.globalAlpha = opacity
+	context.lineWidth = width
+	context.strokeStyle = color
+	
+	// draw the line
+	context.beginPath()
+	context.moveTo(fromX, fromY)
+	context.lineTo(toX, toY)
+	context.stroke()
+	
+	context.restore()
+}
+
 export function drawRectangle(context: CanvasRenderingContext2D, minX: number, minY: number, maxX: number, maxY: number, options?: {border?: boolean, borderWidth?: number, color?: string, opacity?: number, borderColor?: string, offset?: number}) {
 	// read arguments
 	const offset = options?.offset ?? 0

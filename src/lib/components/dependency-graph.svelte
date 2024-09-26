@@ -1,10 +1,10 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import type {Task, TaskId, Resource, ResourceId, Project, ProjectId} from "$lib/db"
+	import type {Task, TaskId, Resource, ResourceId, Project, ProjectId, Milestone} from "$lib/db"
 	import {db, liveQuery} from "$lib/db"
 	import {mode} from "mode-watcher"
-	import {drawCircle, drawArrow, drawRectangle} from "$lib/canvas"
+	import {drawCircle, drawArrow, drawLine, drawRectangle} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {Button} from "$lib/components/ui/button"
@@ -40,6 +40,8 @@
 	
 	export let projects: Array<Project> = []
 	$: projectsById = projects.reduce((acc, project) => { acc[project.id] = project; return acc }, {} as Record<ProjectId, Project>)
+	
+	export let milestones: Array<Milestone> = []
 	
 	let resources = liveQuery(() => db.resources.toArray())
 	let resourcesById: Record<ResourceId, Resource> = {}
@@ -145,7 +147,7 @@
 	function buildForceSimulation() {
 		return d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(node => (node as Node).id).strength(0.001)) // connect nodes
-			.force("repulsion", d3.forceManyBody().strength(-5)) // keep nodes apart
+			.force("repulsion", d3.forceManyBody().strength(-1000)) // keep nodes apart
 			.force("centerX", d3.forceX().strength(0.0001)) // make sure separated nodes don't fly apart forever
 			.force("centerY", d3.forceY().strength(0.001)) // make sure separated nodes don't fly apart forever
 			.force("flow", flow) // flow nodes left to right via their connections
@@ -178,6 +180,7 @@
 		links.forEach(drawLink)
 		if (selectedNode) drawConnector(selectedNode)
 		nodes.forEach(drawNode)
+		milestones.forEach(milestone => drawMilestone(milestone))
 		
 		context.restore()
 	}
@@ -222,6 +225,17 @@
 		const maxY = Math.max(...nodes.map(node => node.y! + node.r))
 		
 		drawRectangle(context, minX, minY, maxX, maxY, {offset: meter, color, opacity: 0.1})
+	}
+	
+	function drawMilestone(milestone: Milestone) {
+		const buffer = meter * 5
+		// go find the nodes it connects to
+		const direct = nodes.filter(node => node.type == "Task" && milestone.dependsOn.includes(node.id))
+		const x = Math.max(...direct.map(node => node.x!))
+		// draw the line & the connecting lines
+		const top = (canvas.scrollTop - transform.y) / transform.k
+		const bottom = (canvas.scrollTop + canvas.scrollHeight - transform.y) / transform.k
+		drawLine(context, x + buffer, top, x + buffer, bottom, {width: 5, color: "green"})
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
