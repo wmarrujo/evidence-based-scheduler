@@ -39,12 +39,20 @@ export class Schedule {
 	rules: Array<Rule | Schedule>
 	zone?: string // TZ database time zone or UTC offset, inherits it from its container if it doesn't have one
 	
+	// CONSTRUCTORS
+	
 	constructor(id: number, name: string | undefined, rules: Array<Rule | Schedule>, zone: string | undefined) {
 		this.id = id
 		this.name = name
 		this.rules = rules
 		this.zone = zone
 	}
+	
+	static fromEncoded(encoded: EncodedSchedule, reference: Map<number, Rule | Schedule>): Schedule {
+		return new Schedule(encoded.id, encoded.name, encoded.rules.map(r => reference.get(r)!), encoded.zone)
+	}
+	
+	// MATH
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +63,7 @@ export class Rule {
 	id: number
 	name?: string
 	enabling: boolean // if the rule enables time or disables it
-	trigger: Trigger // what individual dates start the effect
+	trigger: Trigger // what individual dates start the effect (must be sorted when stored here)
 	duration: Duration // how long after each trigger date the rule's effect is for (can use both date and time math)
 	zone?: string // TZ database time zone or UTC offset, inherits it from its container if it doesn't have one
 	
@@ -65,10 +73,29 @@ export class Rule {
 		this.id = id
 		this.name = name
 		this.enabling = enabling
-		this.trigger = trigger
+		this.trigger = Array.isArray(trigger) ? trigger.sort() : trigger
 		this.duration = duration
 		this.zone = zone
 	}
+	
+	static fromEncoded(encoded: EncodedRule): Rule {
+		const trigger = typeof encoded.trigger === "string" ? DateTime.fromISO(encoded.trigger) : Array.isArray(encoded.trigger) ? encoded.trigger.map(t => DateTime.fromISO(t)) : Repeat.fromEncoded(encoded.trigger)
+		return new Rule(encoded.id, encoded.name, encoded.enabling, trigger, Duration.fromISO(encoded.duration), encoded.zone)
+	}
+	
+	// MATH
+	
+	/** gets the next time an instance starts (not including the current one if it happens to be on one) */
+	nextStart(after: DateTime): DateTime | null {
+		if (Array.isArray(this.trigger)) {
+			return this.trigger.find(t => after < t) ?? null
+		} else if (this.trigger instanceof DateTime) {
+			return after < this.trigger ? this.trigger : null
+		} else {
+			return (this.trigger as Repeat).next(after)
+		}
+	}
+	// FIXME: debug this function next, many things aren't working - maybe make some unit tests (don't forget about time zones)
 }
 
 export type Trigger = DateTime | Array<DateTime> | Repeat
@@ -92,7 +119,7 @@ export class Repeat {
 		this.with = with_
 	}
 	
-	fromEncoded(encoded: EncodedRepeat): Repeat {
+	static fromEncoded(encoded: EncodedRepeat): Repeat {
 		const with_ = Array.isArray(encoded.with) ? encoded.with.map(w => Duration.fromISO(w).isValid ? Duration.fromISO(w) : w as Instruction)
 			: Duration.fromISO(encoded.with!).isValid ? Duration.fromISO(encoded.with!) : encoded.with as Instruction
 		
@@ -101,16 +128,16 @@ export class Repeat {
 	
 	// MATH
 	
-	snap(date: DateTime): DateTime {
-		const move = stepsSince(snap(date, this.every), this.every, this.reference) % (this.steps ?? 1) // the number of steps since the last time this frequency happened
+	snap(after: DateTime): DateTime {
+		const move = stepsSince(snap(after, this.every), this.every, this.reference) % (this.steps ?? 1) // the number of steps since the last time this frequency happened
 		const [unit, multiplier] = shifters(this.every)
-		return snap(date, this.every).minus({[unit]: multiplier * move}) // move it the way back to the last instance of the stepped frequency
+		return snap(after, this.every).minus({[unit]: multiplier * move}) // move it the way back to the last instance of the stepped frequency
 	}
 	
-	next(date: DateTime): DateTime {
-		const move = stepsSince(snap(date, this.every), this.every, this.reference) % (this.steps ?? 1) // the number of steps since the last time this frequency happened
+	next(after: DateTime): DateTime {
+		const move = stepsSince(snap(after, this.every), this.every, this.reference) % (this.steps ?? 1) // the number of steps since the last time this frequency happened
 		const [unit, multiplier] = shifters(this.every)
-		return snap(date, this.every).plus({[unit]: multiplier * (1 - move)}) // move it the rest of the way to the next stepped frequency
+		return snap(after, this.every).plus({[unit]: multiplier * (1 - move)}) // move it the rest of the way to the next stepped frequency
 	}
 }
 
