@@ -14,7 +14,7 @@ export type Resource = {
 	name: string
 	// TODO: add schedules
 	// TODO: add type, like "external" or "machine" which will have different estimate limit warnings
-	velocities: Array<Velocity> // the last 250 velocities, used for sampling // TODO: allow how many are taken into account to be changed in settings
+	velocities: Array<Velocity> // the last few velocities, used for sampling // TODO: allow how many are taken into account to be changed in settings // TODO: maybe just set it when making the resource?
 }
 
 export type TaskId = number
