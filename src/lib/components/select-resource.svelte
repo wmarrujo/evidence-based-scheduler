@@ -59,7 +59,9 @@
 				{/each}
 			</Command.Group>
 			<Command.Separator />
-			<Command.Item onSelect={() => createResourceDialogOpen = true}><Plus class="mr-2" />New Resource</Command.Item>
+			<Command.Group>
+				<Command.Item onSelect={() => createResourceDialogOpen = true}><Plus class="h-4" />New Resource</Command.Item>
+			</Command.Group>
 		</Command.Root>
 	</Popover.Content>
 </Popover.Root>

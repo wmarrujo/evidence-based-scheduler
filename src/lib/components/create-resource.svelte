@@ -34,20 +34,25 @@
 				dispatch("created", resource)
 			},
 		}), {form: data, enhance} = form
+	
+	function nameChanged(event: InputEvent) {
+		if (!form.isTainted("id")) {
+			let kebab = (event.target! as HTMLInputElement).value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").toLowerCase()
+			data.update(f => { f.id = kebab; return f }, {taint: false})
+		}
+	}
 </script>
 
 <form class={cn(className)} use:enhance>
-	<Form.Field {form} name="id">
+	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
-			<Form.Label>Identifier</Form.Label>
-			<Input type="text" bind:value={$data.id} {...attrs} />
+			<Input type="text" bind:value={$data.name} on:input={nameChanged} placeholder="Resource Name" class="text-2xl h-14"  {...attrs} />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="name">
+	<Form.Field {form} name="id">
 		<Form.Control let:attrs>
-			<Form.Label>Name</Form.Label>
-			<Input type="text" bind:value={$data.name} {...attrs} />
+			<Input type="text" bind:value={$data.id} placeholder="Identifier" {...attrs} />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>

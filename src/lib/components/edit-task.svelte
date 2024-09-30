@@ -28,8 +28,7 @@
 		name: z.string().min(1, {message: "you must provide a name"}),
 		id: z.string().min(1, {message: "you must provide an identifier"}),
 		description: z.string(),
-		// @ts-expect-error the number default is 0, which is a valid task id that we don't want to select by default
-		doer: z.string().default(undefined),
+		doer: z.string(),
 		estimate: z.number().positive().default(0),
 		spent: z.number().nonnegative().default(0),
 		done: z.boolean().default(false),
@@ -91,13 +90,13 @@
 	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
 		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.name} on:input={nameChanged} {...attrs} placeholder="Task Name" class="text-2xl h-14" />
+				<Input type="text" bind:value={$data.name} on:input={nameChanged} placeholder="Task Name" class="text-2xl h-14" {...attrs} />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<Form.Field {form} name="id" class="flex flex-col">
 			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.id} {...attrs} placeholder="Identifier" />
+				<Input type="text" bind:value={$data.id} placeholder="Identifier" {...attrs} />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
@@ -105,7 +104,7 @@
 			<Form.Field {form} name="doer" class="flex flex-col flex-1">
 				<Form.Control let:attrs>
 					<Form.Label>Doer</Form.Label>
-					<SelectResource bind:value={$data.doer} placeholder="Select Doer..." {...attrs} class="grow" />
+					<SelectResource bind:value={$data.doer} placeholder="Select Doer..." class="grow" {...attrs} />
 				</Form.Control>
 			</Form.Field>
 			<Form.Field {form} name="done" class="flex flex-col flex-1">
