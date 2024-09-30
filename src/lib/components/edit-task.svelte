@@ -25,8 +25,8 @@
 	const dispatch = createEventDispatcher<{saved: Task}>()
 	
 	const schema = z.object({
-		id: z.string().min(1, {message: "you must provide an id"}).default(`task-${String(Math.round(Math.random() * 1000000)).padStart(6, "0")}`),
 		name: z.string().min(1, {message: "you must provide a name"}),
+		id: z.string().min(1, {message: "you must provide an identifier"}),
 		description: z.string(),
 		// @ts-expect-error the number default is 0, which is a valid task id that we don't want to select by default
 		doer: z.string().default(undefined),
@@ -55,6 +55,7 @@
 				if (!form.valid) return
 				if (task) { // if we are editing an existing task
 					const updates = {
+						id: form.data.id,
 						name: form.data.name,
 						description: form.data.description ?? "",
 						doer: form.data.doer,
@@ -65,33 +66,39 @@
 					}
 					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
 					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
+					// FIXME: don't forget to update all the other places where the identifier is used if that is the case
 				} else { // if we are making a new task
 					await db.tasks.add({...form.data, requirements: []})
 					dispatch("saved", {...form.data, requirements: []}) // send the message, and return the task it edited
 				}
 			},
 		}), {form: data, enhance} = form
-	
+		
 		const carta = new Carta({
 			sanitizer: false,
 			theme: $mode == "light" ? "github-light" : "github-dark",
 		})
+	
+	function nameChanged(event: InputEvent) {
+		if (!form.isTainted("id")) {
+			let kebab = (event.target! as HTMLInputElement).value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").toLowerCase()
+			data.update(f => { f.id = kebab; return f }, {taint: false})
+		}
+	}
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
 	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
-		<Form.Field {form} name="id" class="flex flex-col">
-			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.id} {...attrs} placeholder="Identifier" class="text-2xl" />
-			</Form.Control>
-			<Form.Description>Short name that is used as the task identifier</Form.Description>
-			<Form.FieldErrors />
-		</Form.Field>
 		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
+				<Input type="text" bind:value={$data.name} on:input={nameChanged} {...attrs} placeholder="Task Name" class="text-2xl h-14" />
 			</Form.Control>
-			<Form.Description>Full name of the task</Form.Description>
+			<Form.FieldErrors />
+		</Form.Field>
+		<Form.Field {form} name="id" class="flex flex-col">
+			<Form.Control let:attrs>
+				<Input type="text" bind:value={$data.id} {...attrs} placeholder="Identifier" />
+			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<div class="flex gap-2">
