@@ -4,16 +4,17 @@
 	import {superForm, defaults} from "sveltekit-superforms"
 	import {zod} from "sveltekit-superforms/adapters"
 	import * as Form from "$lib/components/ui/form"
-	import {Button} from "$lib/components/ui/button"
+	import {Button, buttonVariants} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import SelectResource from "$lib/components/select-resource.svelte"
-	import {db, type Task} from "$lib/db"
+	import {db, type Task, type Tag, tagsById} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	import {Carta, MarkdownEditor} from "carta-md"
 	import Toggle from "$lib/components/toggle.svelte"
 	import {mode} from "mode-watcher"
 	import "$lib/styles/carta.pcss"
-	import {Check, Minus} from "lucide-svelte"
+	import {Check, Minus, Plus, X} from "lucide-svelte"
+	import SelectTags from "$lib/components/select-tag.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -84,6 +85,8 @@
 			data.update(f => { f.id = kebab; return f }, {taint: false})
 		}
 	}
+	
+	$: tags = $data.tags.map(t => $tagsById.get(t)).filter(t => t) as Array<Tag> // fixes not being able to assert that the tags aren't undefined
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
@@ -136,6 +139,17 @@
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
+		</div>
+		<div class="flex grow overflow-y-scroll gap-2 flex-wrap">
+			{#each tags as tag, i (tag)}
+				<Button variant="outline" class="flex" on:click={() => { $data.tags.splice(i, 1); $data.tags = $data.tags }}>
+					<input type="tags" bind:value={$data.tags[i]} hidden />
+					{tag.name}
+				</Button>
+			{/each}
+			<SelectTags unavailable={$data.tags} on:select={event => { $data.tags.push(event.detail.id); $data.tags = $data.tags }}>
+				<Plus class="mr-1" />Add Tag
+			</SelectTags>
 		</div>
 		<div class="flex w-full justify-center">
 			<Button type="submit">{task ? "Update" : "Create"}</Button>

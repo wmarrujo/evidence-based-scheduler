@@ -56,6 +56,8 @@
 						{option.name}
 						<Check class={cn("ml-auto h-4 w-4", option.id !== value && "text-transparent")} />
 					</Command.Item>
+				{:else}
+					<span class="text-muted-foreground text-sm">No resources</span>
 				{/each}
 			</Command.Group>
 			<Command.Separator />
@@ -69,6 +71,6 @@
 
 <Dialog.Root bind:open={createResourceDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateResource on:created={() => createResourceDialogOpen = false} />
+		<CreateResource on:created={event => { resource = event.detail; value = event.detail.id; createResourceDialogOpen = false; open = false }} />
 	</Dialog.Content>
 </Dialog.Root>
