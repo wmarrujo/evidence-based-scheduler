@@ -74,3 +74,14 @@ export const resources = derived(liveQuery(() => db.resources.toArray()), rs => 
 export const tags = derived(liveQuery(() => db.tags.toArray()), ts => ts ?? [], [])
 export const tasks = derived(liveQuery(() => db.tasks.toArray()), ts => ts ?? [], [])
 export const milestones = derived(liveQuery(() => db.milestones.toArray()), ms => ms ?? [], [])
+
+export const resourcesById = derived(resources, rs => rs.reduce((acc, r) => acc.set(r.id, r), new Map<ResourceId, Resource>()), new Map<ResourceId, Resource>())
+export const tagsById = derived(tags, ts => ts.reduce((acc, t) => acc.set(t.id, t), new Map<TagId, Tag>()), new Map<TagId, Tag>())
+export const tasksById = derived(tasks, ts => ts.reduce((acc, t) => acc.set(t.id, t), new Map<TagId, Tag>()), new Map<TaskId, Task>())
+export const milestonesById = derived(milestones, ms => ms.reduce((acc, m) => acc.set(m.id, m), new Map<MilestoneId, Milestone>()), new Map<MilestoneId, Milestone>())
+
+/** All the tags that a tag inherits from (all tags on a tag, and all tags on those, etc.) including itself */
+export const tagExpansions = derived(tagsById, ts => [...ts.keys()].reduce((acc, t) => {
+	const getTags = (tag: TagId): Array<TagId> => [tag, ...ts.get(tag)!.tags.flatMap(getTags)]
+	return acc.set(t, new Set(getTags(t)))
+}, new Map<TagId, Set<TagId>>()), new Map<TagId, Set<TagId>>())

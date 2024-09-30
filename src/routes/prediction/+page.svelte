@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {cn} from "$lib/utils"
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {resources, tags, tasks, milestones} from "$lib/db"
+	import {resources, tags, tasks, milestones, tagExpansions} from "$lib/db"
 	import type {MilestoneId, TagId, TaskId, ResourceId, Velocity} from "$lib/db"
 	import {Button, buttonVariants} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
@@ -12,12 +12,11 @@
 	import * as Command from "$lib/components/ui/command"
 	import {writable} from "svelte/store"
 	import {browser} from "$app/environment"
-	import * as tag from "$lib/tags"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	$: milestoneRequirementsById = $milestones.reduce((acc, milestone) => acc.set(milestone.id, milestone.requirements), new Map<MilestoneId, Array<TaskId>>())
-	$: tasksByTag = $tasks.reduce((acc, task) => task.tags, new Map<TagId, Array<TaskId>>()) // FIXME: make tags work
+	$: tasksByTag = $tasks.reduce((acc, task) => acc.set(task.id, [...new Set(task.tags.flatMap(tag => [...$tagExpansions.get(tag) ?? []]))]), new Map<TagId, Array<TaskId>>())
 	
 	$: options = [
 		...$milestones.map(milestone => ({type: "Milestone", id: milestone.id, name: milestone.name})),

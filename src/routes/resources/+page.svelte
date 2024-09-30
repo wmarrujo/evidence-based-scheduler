@@ -1,11 +1,5 @@
 <script lang="ts">
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {db, liveQuery} from "$lib/db"
-	
-	////////////////////////////////////////////////////////////////////////////////
-	
-	let resources = liveQuery(() => db.resources.toArray())
-	
 </script>
 
 <div class="flex flex-col h-screen">
