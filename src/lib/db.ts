@@ -1,5 +1,5 @@
 import Dexie, {type EntityTable} from "dexie"
-import type {Readable} from "svelte/store"
+import {derived, type Readable} from "svelte/store"
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -8,7 +8,7 @@ import type {Readable} from "svelte/store"
 export type Velocity = number
 export type Hours = number
 
-export type ResourceId = number
+export type ResourceId = string
 export type Resource = {
 	id: ResourceId
 	name: string
@@ -17,7 +17,15 @@ export type Resource = {
 	velocities: Array<Velocity> // the last 250 velocities, used for sampling // TODO: allow how many are taken into account to be changed in settings
 }
 
-export type TaskId = number
+export type TagId = string
+export type Tag = {
+	id: TagId
+	name: string
+	description: string
+	tags: Array<TagId> // the tag can "inherit" other tags
+}
+
+export type TaskId = string
 export type Task = {
 	id: TaskId
 	name: string
@@ -26,24 +34,16 @@ export type Task = {
 	estimate: Hours // the current estimate, in hours
 	spent: Hours // the spent time spent, in hours
 	done: boolean
-	dependsOn: Array<TaskId>
-	// TODO: add priority
+	requirements: Array<TaskId> // the tasks this task depends on
+	tags: Array<TagId>
 }
 
-export type ProjectId = number
-export type Project = {
-	id: ProjectId
-	name: string
-	description: string
-	tasks: Array<TaskId>
-}
-
-export type MilestoneId = number
+export type MilestoneId = string
 export type Milestone = {
 	id: MilestoneId
 	name: string
 	description: string
-	dependsOn: Array<TaskId>
+	requirements: Array<TaskId> // the tasks, that when complete, mean this milestone is complete
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,16 +52,16 @@ export type Milestone = {
 
 export const db = new Dexie("plan") as Dexie & {
 	resources: EntityTable<Resource, "id">,
+	tags: EntityTable<Tag, "id">,
 	tasks: EntityTable<Task, "id">,
-	projects: EntityTable<Project, "id">,
 	milestones: EntityTable<Milestone, "id">,
 }
 
 db.version(1).stores({
-	resources: "++id, name",
-	tasks: "++id, name",
-	projects: "++id, name",
-	milestones: "++id, name",
+	resources: "id, name",
+	tags: "id, name",
+	tasks: "id, name",
+	milestones: "id, name",
 })
 
 // fix of: https://github.com/dexie/Dexie.js/issues/1907
@@ -69,3 +69,8 @@ export function liveQuery<T>(querier: () => T | Promise<T>): Readable<T> {
 	const dexieObservable = Dexie.liveQuery(querier)
 	return {subscribe(run, invalidate) { return dexieObservable.subscribe(run, invalidate).unsubscribe }}
 }
+
+export const resources = derived(liveQuery(() => db.resources.toArray()), rs => rs ?? [], [])
+export const tags = derived(liveQuery(() => db.tags.toArray()), ts => ts ?? [], [])
+export const tasks = derived(liveQuery(() => db.tasks.toArray()), ts => ts ?? [], [])
+export const milestones = derived(liveQuery(() => db.milestones.toArray()), ms => ms ?? [], [])

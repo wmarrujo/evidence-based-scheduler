@@ -9,7 +9,7 @@
 	export {className as class}
 	
 	type Goal = {
-		type: "Milestone" | "Project" | "Task"
+		type: "Milestone" | "Tag" | "Task"
 		name: string
 	}
 	

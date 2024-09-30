@@ -1,15 +1,14 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import type {Task, TaskId, Resource, ResourceId, Project, ProjectId, Milestone} from "$lib/db"
-	import {db, liveQuery} from "$lib/db"
+	import type {Task, TaskId, Resource, ResourceId, Tag, TagId, Milestone} from "$lib/db"
+	import {db, resources, tags} from "$lib/db"
 	import {mode} from "mode-watcher"
-	import {drawCircle, drawArrow, drawLine, drawRectangle} from "$lib/canvas"
+	import {drawCircle, drawArrow, drawLine} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {Button} from "$lib/components/ui/button"
 	import EditTask from "$lib/components/edit-task.svelte"
-	import CreateProject from "$lib/components/create-project.svelte"
 	import {cn} from "$lib/utils"
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
@@ -32,54 +31,36 @@
 		height = canvas.clientHeight * window.devicePixelRatio
 	}
 	
+	const meter = 10 // unit of measure, in pixels
+	
 	////////////////////////////////////////////////////////////////////////////////
 	// DATA
 	////////////////////////////////////////////////////////////////////////////////
 	
+	// these are passed in based on where the component is used
 	export let tasks: Array<Task> = []
-	
-	export let projects: Array<Project> = []
-	$: projectsById = projects.reduce((acc, project) => { acc[project.id] = project; return acc }, {} as Record<ProjectId, Project>)
-	
 	export let milestones: Array<Milestone> = []
 	
-	let resources = liveQuery(() => db.resources.toArray())
 	let resourcesById: Record<ResourceId, Resource> = {}
 	$: if ($resources) resourcesById = $resources.reduce((acc, resource) => { acc[resource.id] = resource; return acc }, {} as Record<ResourceId, Resource>)
 	
+	let tagsById: Record<TagId, Tag> = {}
+	$: if ($tags) tagsById = $tags.reduce((acc, tag) => { acc[tag.id] = tag; return acc }, {} as Record<TagId, Tag>)
+	
+	// NODES & LINK OBJECTS
+	
 	type Node = d3.SimulationNodeDatum & {
-		id: number
-		type: "Task" | "Project"
+		id: string
 		name: string
 		r: number // radius
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
-	const meter = 10 // unit of measure, in pixels
-	
-	function taskToNode(task: Task): Node {
-		return {id: task.id, type: "Task", name: task.name, r: Math.sqrt(task.estimate * meter**2)} // TODO: set the radius based on the size
-	}
-	
-	function getTaskByIdUnsafe(id: TaskId): Task {
-		return tasks.find(task => task.id == id)!
-	}
+	const taskToNode = (task: Task): Node => ({id: task.id, name: task.name, r: Math.sqrt(task.estimate * meter**2)})
+	const getTaskByIdUnsafe = (id: TaskId) => tasks.find(task => task.id == id)!
 	
 	let nodes: Array<Node> = tasks.map(taskToNode)
-	let links: Array<Link> = tasks.flatMap(task => task.dependsOn.map(d => ({source: d, target: task.id})))
-	// TODO: add projects to links
-	
-	$: unExpandedProjectNodes = nodes.filter(node => node.type == "Project") // all the nodes which are projects (so the un-expanded projects)
-	$: unExpandedProjectIds = unExpandedProjectNodes.map(node => node.id)
-	$: expandedProjects = projects.filter(project => !unExpandedProjectIds.includes(project.id))
-	$: expandedProjectNodes = expandedProjects.reduce((acc, project) => {
-		acc[project.id] = nodes.filter(node => { // get the nodes that should go inside this project's box
-			if (node.type == "Task") { return project.tasks.includes(node.id) }
-			else if (node.type == "Project") { return projectsById[project.id].tasks.intersects(projectsById[node.id].tasks) } // if there is any overlap, include this un-expanded project in this project's box
-			else return false
-		})
-		return acc
-	}, {} as Record<ProjectId, Array<Node>>)
+	let links: Array<Link> = tasks.flatMap(task => task.requirements.map(d => ({source: d, target: task.id})))
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -103,45 +84,6 @@
 		})
 	}
 	
-	function group(alpha: number) {
-		const strength = 0.01
-		const buffer = meter * 3 // how much farther away nodes should try to be from a group
-		
-		const projectBoxes = Object.keys(expandedProjectNodes).map(id => {
-			const projectNodes = expandedProjectNodes[Number(id)]
-			const minX = Math.min(...projectNodes.map(node => node.x! - node.r))
-			const minY = Math.min(...projectNodes.map(node => node.y! - node.r))
-			const maxX = Math.max(...projectNodes.map(node => node.x! + node.r))
-			const maxY = Math.max(...projectNodes.map(node => node.y! + node.r))
-			
-			return {id, minX, minY, maxX, maxY}
-		})
-		
-		nodes.forEach(node => {
-			const projects = Object.keys(expandedProjectNodes).filter(id => expandedProjectNodes[Number(id)].includes(node)) // the projects this node is in
-			const infractions = projectBoxes.filter(box => { // the boxes which this node is in that it shouldn't be in
-				return !projects.includes(box.id) // if this node is not included in this project
-					&& (box.minX - buffer < node.x! && node.x! < box.maxX + buffer && box.minY - buffer < node.y! && node.y! < box.maxY + buffer) // and we're inside the box
-			})
-			
-			infractions.forEach(box => {
-				const center = {x: box.minX + (box.maxX - box.minX) / 2, y: box.minY + (box.maxY - box.minY) / 2} // the box's center
-				const size = (box.maxX - box.minX) * (box.maxY - box.minY) // the box's size, in px^2
-				
-				if (box.minX < node.x! && node.x! < box.maxX && box.minY < node.y! && node.y! < box.maxY) { // if we're still inside the actual box
-					node.vx! += (node.x! - center.x) * (1/size) * strength * alpha
-					node.vy! += (node.y! - center.y) * (1/size) * strength * alpha
-				} else { // if we're in the buffer zone
-					// apply forces based on how far off it is, so it's more gradual & doesn't jitter
-					if (node.x! < box.minX) node.vx! += (node.x! - center.x) * ((node.x! - (box.minX - buffer)) / buffer) * strength * alpha // if we're to the left
-					if (node.y! < box.minY) node.vy! += (node.y! - center.y) * ((node.y! - (box.minY - buffer)) / buffer) * strength * alpha // if we're above
-					if (box.maxX < node.x!) node.vx! += (node.x! - center.x) * (((box.maxX + buffer) - node.x!) / buffer) * strength * alpha // if we're to the right
-					if (box.maxY < node.y!) node.vy! += (node.y! - center.y) * (((box.maxY + buffer) - node.y!) / buffer) * strength * alpha // if we're below
-				}
-			})
-		})
-	}
-	
 	// RUNNING
 	
 	function buildForceSimulation() {
@@ -151,7 +93,6 @@
 			.force("centerX", d3.forceX().strength(0.0001)) // make sure separated nodes don't fly apart forever
 			.force("centerY", d3.forceY().strength(0.001)) // make sure separated nodes don't fly apart forever
 			.force("flow", flow) // flow nodes left to right via their connections
-			.force("group", group) // nodes try to get out of group boxes
 			.on("tick", updateSimulation)
 			.alphaDecay(0) // never stop the simulation
 	}
@@ -176,7 +117,6 @@
 		context.scale(transform.k * window.devicePixelRatio, transform.k * window.devicePixelRatio)
 		
 		// draw
-		expandedProjects.forEach(project => { drawGroup(expandedProjectNodes[project.id]) })
 		links.forEach(drawLink)
 		if (selectedNode) drawConnector(selectedNode)
 		nodes.forEach(drawNode)
@@ -189,7 +129,6 @@
 	
 	function drawNode(node: Node) {
 		let color = $mode == "light" ? "black" : "white"
-		if (groupedNodes.includes(node)) color = "purple"
 		const border = hoveredNode == node || selectedNode == node
 		let borderColor
 		if (hoveredNode == node) borderColor = "gold"
@@ -216,21 +155,10 @@
 		drawArrow(context, from.x!, from.y!, mouse.x, mouse.y, {width: 2, startOffset: from.r, color, headColor})
 	}
 	
-	function drawGroup(nodes: Array<Node>) {
-		let color = $mode == "light" ? "black" : "white"
-		
-		const minX = Math.min(...nodes.map(node => node.x! - node.r))
-		const minY = Math.min(...nodes.map(node => node.y! - node.r))
-		const maxX = Math.max(...nodes.map(node => node.x! + node.r))
-		const maxY = Math.max(...nodes.map(node => node.y! + node.r))
-		
-		drawRectangle(context, minX, minY, maxX, maxY, {offset: meter, color, opacity: 0.1})
-	}
-	
 	function drawMilestone(milestone: Milestone) {
 		const buffer = meter * 5
 		// go find the nodes it connects to
-		const direct = nodes.filter(node => node.type == "Task" && milestone.dependsOn.includes(node.id))
+		const direct = nodes.filter(node => milestone.requirements.includes(node.id))
 		const x = Math.max(...direct.map(node => node.x!))
 		// draw the line & the connecting lines
 		const top = (canvas.scrollTop - transform.y) / transform.k
@@ -321,9 +249,7 @@
 		
 		clickedNode = getNode(mouse)
 		
-		if (grouping) { // if we're in grouping mode
-			if (clickedNode) groupedNodes.push(clickedNode) // add any node we clicked on
-		} else if (!selectedNode) { // if no node is selected yet
+		if (!selectedNode) { // if no node is selected yet
 			selectedNode = clickedNode
 			
 			if (!selectedNode && !hoveredNode) { // if we didn't just select a node now, and we aren't hovering over one (which would be a double click on the node)
@@ -342,11 +268,8 @@
 	
 	function onDoubleClick(_event: MouseEvent) {
 		doubleClickedNode = getNode(mouse)
-		if (doubleClickedNode) { // if double clicked on a node
-			if (doubleClickedNode.type == "Task") openEditTaskDialog(doubleClickedNode.id)
-		} else { // if double clicked in empty space
-			openCreateTaskDialog(mouse)
-		}
+		if (doubleClickedNode) openEditTaskDialog(doubleClickedNode.id) // if double clicked on a node
+		else openCreateTaskDialog(mouse) // if double clicked in empty space
 	}
 	
 	let rightClickedCursor: Point = {x: 0, y: 0}
@@ -365,36 +288,6 @@
 	// SELECTIONS
 	
 	let selectedNode: Node | undefined
-	
-	// Grouping
-	
-	export let grouping = false // if we're in grouping mode
-	let groupedNodes: Array<Node> = []
-	
-	export function startGrouping() {
-		grouping = true
-	}
-	
-	export function cancelGrouping() {
-		grouping = false
-		groupedNodes = [] // clear the grouping
-	}
-	
-	export function makeProject() {
-		grouping = false
-		if (groupedNodes.length == 0) return // if we didn't actually group anything, don't make a group
-		createProjectTasks = groupedNodes.flatMap(node => {
-			if (node.type == "Task") { return [node.id] } // the node id is the task id
-			else if (node.type == "Project") { return projects.find(project => project.id == node.id)?.tasks ?? [] }
-			else { return [] }
-		})
-		createProjectDialogOpen = true // get the final information
-		groupedNodes = [] // clear the grouping
-	}
-	
-	export function makeMilestone() {
-		// TODO: implement, will be similar to `makeProject`
-	}
 	
 	// DIALOGS
 	
@@ -430,11 +323,6 @@
 		editTaskDialogOpen = true
 	}
 	
-	// Create Project
-	
-	let createProjectDialogOpen = false
-	let createProjectTasks: Array<TaskId> = []
-	
 	// ACTIONS
 	
 	function onTaskCreated(task: Task) {
@@ -462,15 +350,10 @@
 		if (source == target) return // if it's the same node, don't error, since it's spently probably just a double click
 		
 		// add this information to the database
-		if (source.type == "Task" && target.type == "Task") {
-			if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
-			const task = (await db.tasks.get(target.id))!
-			task.dependsOn.push(source.id)
-			db.tasks.update(target.id, {dependsOn: task.dependsOn})
-		} else {
-			return // don't make the link
-			// TODO: handle other types of links
-		}
+		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
+		const task = (await db.tasks.get(target.id))!
+		task.requirements.push(source.id)
+		db.tasks.update(target.id, {requirements: task.requirements})
 		
 		// add the link to the list of links
 		links.push({source: source.id, target: target.id})
@@ -480,7 +363,7 @@
 	/** Returns true if the arrow from the source to the target would make a loop. */
 	async function makesLoop(source: TaskId, target: TaskId): Promise<boolean> {
 		// if (source == target) return true // no self-loops (and when it's come all the way around, though this is caught 1 level early) // NOTE: disabling for efficiency, since we're checking for this separately already
-		const backLinks = (await db.tasks.get(source))?.dependsOn ?? [] // get the backlinks of this source
+		const backLinks = (await db.tasks.get(source))?.requirements ?? [] // get the backlinks of this source
 		if (backLinks.includes(target)) return true // check 1 level short (it would find it the next loop, but skip that work here) // NOTE: this line is for efficiency
 		return Promise.all(backLinks.map(task => makesLoop(task, target))).then(loops => loops.some(t => t)) // check the backlinks recursively
 	}
@@ -490,14 +373,9 @@
 		const source = link.source as Node
 		
 		// remove from database
-		if (source.type == "Task" && target.type == "Task") {
-			const task = (await db.tasks.get(target.id))!
-			task.dependsOn = task.dependsOn.filter(s => s != source.id)
-			await db.tasks.update(target.id, {dependsOn: task.dependsOn})
-		} else {
-			return // don't remove it
-			// TODO: handle if it's another type of link
-		}
+		const task = (await db.tasks.get(target.id))!
+		task.requirements = task.requirements.filter(s => s != source.id)
+		await db.tasks.update(target.id, {requirements: task.requirements})
 		
 		// remove from list of links
 		links.splice(links.findIndex(l => l == link), 1)
@@ -508,15 +386,9 @@
 		if (!node) return // NOTE: this guard is needed for the typing to be correct in the html
 		
 		// remove from database
-		if (node.type == "Task") {
-			await db.tasks.delete(node.id) // remove the node itself
-			const dependents = await db.tasks.filter(task => task.dependsOn.includes(node.id)).toArray() // find all tasks that reference the node
-			await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {dependsOn: task.dependsOn.filter(t => t != node.id)}}))) // remove all references to the node
-			// TODO: remove the project if it was the last node in the project
-		} else {
-			return // don't remove it
-			// TODO: handle if it's another type of node
-		}
+		await db.tasks.delete(node.id) // remove the node itself
+		const dependents = await db.tasks.filter(task => task.requirements.includes(node.id)).toArray() // find all tasks that reference the node
+		await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {requirements: task.requirements.filter(t => t != node.id)}}))) // remove all references to the node
 		
 		// remove from list of nodes
 		const badLinkIndices = links.reduce((acc, link, i) => {
@@ -584,7 +456,7 @@
 </Card.Root>
 
 <Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickedCursor.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickedCursor.y}px; left: {rightClickedCursor.x}px;">
-	{#if rightClickedNode?.type == "Task"}
+	{#if rightClickedNode}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
 		<!-- TODO: add duplicate -->
@@ -606,12 +478,6 @@
 		{#if editTaskId}
 			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:saved={event => { editTaskDialogOpen = false; onTaskEdited(event.detail) }} />
 		{/if}
-	</Dialog.Content>
-</Dialog.Root>
-
-<Dialog.Root bind:open={createProjectDialogOpen}>
-	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateProject tasks={createProjectTasks} on:created={() => { createProjectDialogOpen = false }} />
 	</Dialog.Content>
 </Dialog.Root>
 

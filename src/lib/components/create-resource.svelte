@@ -16,6 +16,7 @@
 	const dispatch = createEventDispatcher()
 	
 	const schema = z.object({
+		id: z.string().min(1, {message: "you must provide an id"}).default(`resource-${String(Math.round(Math.random() * 1000000)).padStart(6, "0")}`),
 		name: z.string().min(1, {message: "you must provide a name"}),
 	})
 	
@@ -24,15 +25,25 @@
 			validators: zod(schema),
 			async onUpdate({form}) { // handle submission
 				if (!form.valid) return
-				const id = await db.resources.add({
+				const resource = {
+					id: form.data.id,
 					name: form.data.name,
-				})
-				dispatch("created", {id})
+					velocities: [],
+				}
+				await db.resources.add(resource)
+				dispatch("created", resource)
 			},
 		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className)} use:enhance>
+	<Form.Field {form} name="id">
+		<Form.Control let:attrs>
+			<Form.Label>Identifier</Form.Label>
+			<Input type="text" bind:value={$data.id} {...attrs} />
+		</Form.Control>
+		<Form.FieldErrors />
+	</Form.Field>
 	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
 			<Form.Label>Name</Form.Label>

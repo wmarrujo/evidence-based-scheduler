@@ -25,22 +25,26 @@
 	const dispatch = createEventDispatcher<{saved: Task}>()
 	
 	const schema = z.object({
+		id: z.string().min(1, {message: "you must provide an id"}).default(`task-${String(Math.round(Math.random() * 1000000)).padStart(6, "0")}`),
 		name: z.string().min(1, {message: "you must provide a name"}),
 		description: z.string(),
 		// @ts-expect-error the number default is 0, which is a valid task id that we don't want to select by default
-		doer: z.number().default(undefined),
+		doer: z.string().default(undefined),
 		estimate: z.number().positive().default(0),
 		spent: z.number().nonnegative().default(0),
 		done: z.boolean().default(false),
+		tags: z.array(z.string()),
 	})
 	
 	const initialData: z.infer<typeof schema> | undefined = task ? {
+		id: task.id,
 		name: task.name,
 		description: task.description,
 		doer: task.doer,
 		estimate: task.estimate,
 		spent: task.spent,
 		done: task.done,
+		tags: task.tags,
 	} : undefined
 	
 	const form =
@@ -57,12 +61,13 @@
 						estimate: form.data.estimate,
 						spent: form.data.spent,
 						done: form.data.done,
+						tags: form.data.tags,
 					}
 					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
 					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
 				} else { // if we are making a new task
-					const id = await db.tasks.add({...form.data, dependsOn: []})
-					dispatch("saved", {id, ...form.data, dependsOn: []}) // send the message, and return the task it edited
+					await db.tasks.add({...form.data, requirements: []})
+					dispatch("saved", {...form.data, requirements: []}) // send the message, and return the task it edited
 				}
 			},
 		}), {form: data, enhance} = form
@@ -75,10 +80,18 @@
 
 <form class={cn(className, "flex gap-4")} use:enhance>
 	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
+		<Form.Field {form} name="id" class="flex flex-col">
+			<Form.Control let:attrs>
+				<Input type="text" bind:value={$data.id} {...attrs} placeholder="Identifier" class="text-2xl" />
+			</Form.Control>
+			<Form.Description>Short name that is used as the task identifier</Form.Description>
+			<Form.FieldErrors />
+		</Form.Field>
 		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
 				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
 			</Form.Control>
+			<Form.Description>Full name of the task</Form.Description>
 			<Form.FieldErrors />
 		</Form.Field>
 		<div class="flex gap-2">

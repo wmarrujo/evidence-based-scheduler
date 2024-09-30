@@ -2,10 +2,13 @@
 	import {cn} from "$lib/utils"
 	import * as Popover from "$lib/components/ui/popover"
 	import * as Command from "$lib/components/ui/command"
+	import * as Dialog from "$lib/components/ui/dialog"
 	import {buttonVariants} from "$lib/components/ui/button"
 	import {onMount} from "svelte"
-	import {db, liveQuery, type Resource, type ResourceId} from "$lib/db"
+	import {db, resources, type Resource, type ResourceId} from "$lib/db"
 	import {Check, ChevronsUpDown} from "lucide-svelte"
+	import {Plus} from "lucide-svelte"
+	import CreateResource from "$lib/components/create-resource.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -21,12 +24,12 @@
 	function setResource(r: Resource | undefined) { resource = r } // pulled out to avoid reactive infinite loop (unset value if we don't get a valid resource)
 	$: if (mounted && value) db.resources.get(value).then(setResource)
 	
-	let resources = liveQuery(() => db.resources.toArray())
-	
 	let mounted = false
 	onMount(async () => mounted = true)
 	
 	let open = false
+	
+	let createResourceDialogOpen = false
 </script>
 
 <Popover.Root bind:open>
@@ -49,13 +52,21 @@
 			<Command.Empty>No resource found.</Command.Empty>
 			<Command.Group>
 				{#each $resources as option (option.id)}
-					<Command.Item value={option.name} onSelect={() => { resource = option; value = option.id; open = false }}>
+					<Command.Item value={option.id} onSelect={() => { resource = option; value = option.id; open = false }}>
 						{option.name}
 						<Check class={cn("ml-auto h-4 w-4", option.id !== value && "text-transparent")} />
 					</Command.Item>
 				{/each}
 			</Command.Group>
+			<Command.Separator />
+			<Command.Item onSelect={() => createResourceDialogOpen = true}><Plus class="mr-2" />New Resource</Command.Item>
 		</Command.Root>
 	</Popover.Content>
 </Popover.Root>
 <input type="number" hidden {value} {id} {name} />
+
+<Dialog.Root bind:open={createResourceDialogOpen}>
+	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
+		<CreateResource on:created={() => createResourceDialogOpen = false} />
+	</Dialog.Content>
+</Dialog.Root>
