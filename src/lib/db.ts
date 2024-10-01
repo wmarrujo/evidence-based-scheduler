@@ -77,7 +77,7 @@ export const milestones = derived(liveQuery(() => db.milestones.toArray()), ms =
 
 export const resourcesById = derived(resources, rs => rs.reduce((acc, r) => acc.set(r.id, r), new Map<ResourceId, Resource>()), new Map<ResourceId, Resource>())
 export const tagsById = derived(tags, ts => ts.reduce((acc, t) => acc.set(t.id, t), new Map<TagId, Tag>()), new Map<TagId, Tag>())
-export const tasksById = derived(tasks, ts => ts.reduce((acc, t) => acc.set(t.id, t), new Map<TagId, Tag>()), new Map<TaskId, Task>())
+export const tasksById = derived(tasks, ts => ts.reduce((acc, t) => acc.set(t.id, t), new Map<TaskId, Task>()), new Map<TaskId, Task>())
 export const milestonesById = derived(milestones, ms => ms.reduce((acc, m) => acc.set(m.id, m), new Map<MilestoneId, Milestone>()), new Map<MilestoneId, Milestone>())
 
 /** All the tags that a tag inherits from (all tags on a tag, and all tags on those, etc.) including itself */

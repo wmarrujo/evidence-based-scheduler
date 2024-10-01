@@ -2,7 +2,7 @@
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
 	import type {Task, TaskId, Milestone} from "$lib/db"
-	import {db, resourcesById} from "$lib/db"
+	import {db, resourcesById, tasksById} from "$lib/db"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow, drawLine} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
@@ -46,30 +46,34 @@
 	
 	type Node = d3.SimulationNodeDatum & {
 		id: number
-		name: string
 		r: number // radius
 	}
 	type Link = d3.SimulationLinkDatum<Node>
 	
-	const taskToNode = (task: Task): Node => ({id: task.id, name: task.name, r: Math.sqrt(task.estimate * meter**2)})
-	const getTaskByIdUnsafe = (id: TaskId) => tasks.find(task => task.id == id)!
-	
-	let nodes: Array<Node> = tasks.map(taskToNode)
-	let links: Array<Link> = tasks.flatMap(task => task.requirements.map(d => ({source: d, target: task.id})))
+	let nodes: Array<Node> = []
+	let links: Array<Link> = []
 	
 	$: nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>())
 	
+	const taskToNode = (task: Task): Node => ({id: task.id, r: Math.sqrt(task.estimate * meter**2)})
+	
+	let nodeInsertionPoint: Point = {x: 0, y: 0}
 	function tasksUpdated(tasks: Array<Task>) {
-		console.log("update received")
+		links.splice(0, links.length) // empty the list WITHOUT reassigning it (since it needs to be the same object that was registered for the force when defining the simulation, so that when we reinitialize the simulation, it can use the node ids and transform them to node objects automatically)
 		let unseen = new Set(nodes.map(node => node.id))
 		tasks.forEach(task => {
 			unseen.delete(task.id) // mark it as seen so that we can remove any that were deleted
-			const node = nodesById.get(task.id)
-			const newNode = taskToNode(task)
-			if (node) Object.assign(node, {...newNode}) // will modify node in-place
-			else nodes.push(newNode)
+			let node = nodesById.get(task.id)
+			if (node) {
+				node = Object.assign(node, {...taskToNode(task)}) // will modify node in-place
+			} else {
+				node = {...taskToNode(task), ...nodeInsertionPoint} // make new nodes out of the new tasks
+				nodes.push(node)
+				nodeInsertionPoint = {x: (Math.random() * 2 - 1) * meter, y: (Math.random() * 2 - 1) * meter} // make it so that successive inserts aren't all on top of each other
+			}
+			task.requirements.forEach(r => links.push({source: r, target: task.id}))
 		})
-		nodes = nodes.filter(node => !unseen.has(node.id))
+		nodes = nodes.filter(node => !unseen.has(node.id)) // remove any old tasks that didn't show up this time around
 	}
 	$: tasksUpdated(tasks)
 	
@@ -149,8 +153,7 @@
 	}
 	
 	function drawLink(link: Link) {
-		const source = link.source as Node
-		const target = link.target as Node
+		const source = link.source as Node; const target = link.target as Node
 		
 		let color = $mode == "light" ? "black" : "white"
 		let headColor = $mode == "light" ? "black" : "white"
@@ -316,10 +319,9 @@
 	// Create Task
 	
 	let createTaskDialogOpen = false
-	let createTaskInsertionPoint: Point = {x: 0, y: 0}
 	
 	function openCreateTaskDialog(point: Point) {
-		createTaskInsertionPoint = point // record where we started making the task, so we can insert the node there
+		nodeInsertionPoint = point // record where we started making the task, so we can insert the node there
 		createTaskDialogOpen = true // go make a task
 	}
 	
@@ -334,16 +336,9 @@
 		editTaskDialogOpen = true
 	}
 	
-	// ACTIONS
+	function getTaskById(task: TaskId): Task { return $tasksById.get(task)! } // this is just here because the svelte html section can't handle typescript
 	
-	function onTaskCreated(task: Task) {
-		const node = taskToNode(task)
-		node.x = createTaskInsertionPoint.x; node.y = createTaskInsertionPoint.y
-		
-		// add the task as a node
-		nodes.push(node)
-		nodes = nodes // tell the forces about the update
-	}
+	// ACTIONS
 	
 	function onTaskEdited(task: Task) {
 		// FIXME: after editing the estimate of the task, it loses track of the links (it seems the old one stays in ghost form)
@@ -480,14 +475,14 @@
 
 <Dialog.Root bind:open={createTaskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<EditTask on:saved={event => { createTaskDialogOpen = false; onTaskCreated(event.detail) }} />
+		<EditTask on:saved={() => createTaskDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
 		{#if editTaskId}
-			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:saved={event => { onTaskEdited(event.detail); editTaskDialogOpen = false }} />
+			<EditTask task={getTaskById(editTaskId)} on:saved={event => { onTaskEdited(event.detail); editTaskDialogOpen = false }} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>

@@ -37,7 +37,7 @@
 			<Command.Empty>No tag found.</Command.Empty>
 			<Command.Group>
 				{#each $tags.filter(t => !(unavailable ?? []).includes(t.id)) as option (option.id)}
-					<Command.Item value={option.id} onSelect={() => { dispatch("select", option); open = false }}>
+					<Command.Item value={String(option.id)} onSelect={() => { dispatch("select", option); open = false }}>
 						{option.name}
 					</Command.Item>
 				{:else}
