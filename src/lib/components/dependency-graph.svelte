@@ -53,13 +53,13 @@
 	let nodes: Array<Node> = []
 	let links: Array<Link> = []
 	
-	$: nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>())
+	let nodesById = new Map<TaskId, Node>()
 	
 	const taskToNode = (task: Task): Node => ({id: task.id, r: Math.sqrt(task.estimate * meter**2)})
 	
 	let nodeInsertionPoint: Point = {x: 0, y: 0}
 	function tasksUpdated(tasks: Array<Task>) {
-		links.splice(0, links.length) // empty the list WITHOUT reassigning it (since it needs to be the same object that was registered for the force when defining the simulation, so that when we reinitialize the simulation, it can use the node ids and transform them to node objects automatically)
+		links.splice(0, links.length) // empty the list // NOTE: WITHOUT reassigning it (since it needs to be the same object that was registered for the force when defining the simulation, so that when we reinitialize the simulation, it can use the node ids and transform them to node objects automatically)
 		let unseen = new Set(nodes.map(node => node.id))
 		tasks.forEach(task => {
 			unseen.delete(task.id) // mark it as seen so that we can remove any that were deleted
@@ -69,11 +69,12 @@
 			} else {
 				node = {...taskToNode(task), ...nodeInsertionPoint} // make new nodes out of the new tasks
 				nodes.push(node)
-				nodeInsertionPoint = {x: (Math.random() * 2 - 1) * meter, y: (Math.random() * 2 - 1) * meter} // make it so that successive inserts aren't all on top of each other
+				nodeInsertionPoint = {x: (Math.random() * 2 - 1) * meter, y: (Math.random() * 2 - 1) * meter} // make it so that successive inserts aren't all on top of each other // TODO: make an actually good layout method
 			}
 			task.requirements.forEach(r => links.push({source: r, target: task.id}))
 		})
 		nodes = nodes.filter(node => !unseen.has(node.id)) // remove any old tasks that didn't show up this time around
+		nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>()) // update this // NOTE: doesn't work as a standalone reactive value for some reason
 	}
 	$: tasksUpdated(tasks)
 	
@@ -318,58 +319,42 @@
 	
 	// Create Task
 	
-	let createTaskDialogOpen = false
+	let taskDialogOpen = false
 	
 	function openCreateTaskDialog(point: Point) {
 		nodeInsertionPoint = point // record where we started making the task, so we can insert the node there
-		createTaskDialogOpen = true // go make a task
+		editTaskId = undefined // make sure it's not editing anything (this will make the dialog add a task instead)
+		taskDialogOpen = true // go make a task
 	}
 	
 	// Edit Task
 	
-	let editTaskDialogOpen = false
 	let editTaskId: TaskId | undefined
 	
 	function openEditTaskDialog(id?: TaskId) {
 		if (!id) return // this can't happen, but have to guard against it so typescript is happy
-		editTaskId = id
-		editTaskDialogOpen = true
+		editTaskId = id // make sure it's editing the task we selected
+		taskDialogOpen = true
 	}
-	
-	function getTaskById(task: TaskId): Task { return $tasksById.get(task)! } // this is just here because the svelte html section can't handle typescript
 	
 	// ACTIONS
-	
-	function onTaskEdited(task: Task) {
-		// FIXME: after editing the estimate of the task, it loses track of the links (it seems the old one stays in ghost form)
-		const node = taskToNode(task)
-		
-		// add the task as a node
-		const oldNode = nodes.findIndex(n => n.id == node.id)
-		nodes.splice(oldNode, 1, {...nodes[oldNode], ...node}) // replace the node (but keep the position information)
-		nodes = nodes // tell the forces about the update
-	}
 	
 	async function makeLink(source: Node, target: Node) {
 		// guards
 		if (links.findIndex(link => link.source == source && link.target == target) != -1) { toast.error("That dependency already exists"); return}
 		if (source == target) return // if it's the same node, don't error, since it's spently probably just a double click
+		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
 		
 		// add this information to the database
-		if (await makesLoop(source.id, target.id)) { toast.error("That dependency would make a loop"); return}
-		const task = (await db.tasks.get(target.id))!
+		const task = $tasksById.get(target.id)!
 		task.requirements.push(source.id)
 		db.tasks.update(target.id, {requirements: task.requirements})
-		
-		// add the link to the list of links
-		links.push({source: source.id, target: target.id})
-		links = links // tell the forces about the update
 	}
 	
 	/** Returns true if the arrow from the source to the target would make a loop. */
 	async function makesLoop(source: TaskId, target: TaskId): Promise<boolean> {
 		// if (source == target) return true // no self-loops (and when it's come all the way around, though this is caught 1 level early) // NOTE: disabling for efficiency, since we're checking for this separately already
-		const backLinks = (await db.tasks.get(source))?.requirements ?? [] // get the backlinks of this source
+		const backLinks = $tasksById.get(source)?.requirements ?? [] // get the backlinks of this source
 		if (backLinks.includes(target)) return true // check 1 level short (it would find it the next loop, but skip that work here) // NOTE: this line is for efficiency
 		return Promise.all(backLinks.map(task => makesLoop(task, target))).then(loops => loops.some(t => t)) // check the backlinks recursively
 	}
@@ -379,32 +364,18 @@
 		const source = link.source as Node
 		
 		// remove from database
-		const task = (await db.tasks.get(target.id))!
+		const task = $tasksById.get(target.id)!
 		task.requirements = task.requirements.filter(s => s != source.id)
 		await db.tasks.update(target.id, {requirements: task.requirements})
-		
-		// remove from list of links
-		links.splice(links.findIndex(l => l == link), 1)
-		links = links // tell the forces about the update
 	}
 	
 	async function removeNode(node: Node | undefined) {
 		if (!node) return // NOTE: this guard is needed for the typing to be correct in the html
 		
 		// remove from database
-		await db.tasks.delete(node.id) // remove the node itself
-		const dependents = await db.tasks.filter(task => task.requirements.includes(node.id)).toArray() // find all tasks that reference the node
+		const dependents = await db.tasks.filter(task => task.requirements.includes(node.id)).toArray() // find ALL tasks that reference the node (not just the tasks passed in to the component, so use db.tasks directly)
 		await db.tasks.bulkUpdate(dependents.map(task => ({key: task.id, changes: {requirements: task.requirements.filter(t => t != node.id)}}))) // remove all references to the node
-		
-		// remove from list of nodes
-		const badLinkIndices = links.reduce((acc, link, i) => {
-			if ((link.source as Node).id == node.id || (link.target as Node).id == node.id) { acc.push(i); return acc}
-			else { return acc }
-		}, [] as Array<number>).reverse()
-		
-		nodes.splice(nodes.findIndex(n => n.id == node.id), 1)
-		badLinkIndices.forEach(i => links.splice(i, 1))
-		nodes = nodes // links = links // tell the forces about the update
+		await db.tasks.delete(node.id) // remove the node itself // NOTE: do this after removing the dependencies to make sure it removes the links first
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -473,17 +444,9 @@
 	{/if}
 </Card.Root>
 
-<Dialog.Root bind:open={createTaskDialogOpen}>
+<Dialog.Root bind:open={taskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<EditTask on:saved={() => createTaskDialogOpen = false} />
-	</Dialog.Content>
-</Dialog.Root>
-
-<Dialog.Root bind:open={editTaskDialogOpen}>
-	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		{#if editTaskId}
-			<EditTask task={getTaskById(editTaskId)} on:saved={event => { onTaskEdited(event.detail); editTaskDialogOpen = false }} />
-		{/if}
+		<EditTask task={editTaskId ? $tasksById.get(editTaskId) : undefined} on:saved={() => taskDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>
 
