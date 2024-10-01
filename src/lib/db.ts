@@ -1,5 +1,7 @@
 import Dexie, {type EntityTable} from "dexie"
 import {derived, type Readable} from "svelte/store"
+import * as yaml from "yaml"
+import download from "downloadjs"
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -85,3 +87,51 @@ export const tagExpansions = derived(tagsById, ts => [...ts.keys()].reduce((acc,
 	const getTags = (tag: TagId): Array<TagId> => [tag, ...ts.get(tag)!.tags.flatMap(getTags)]
 	return acc.set(t, new Set(getTags(t)))
 }, new Map<TagId, Set<TagId>>()), new Map<TagId, Set<TagId>>())
+
+////////////////////////////////////////////////////////////////////////////////
+// SAVING & LOADING
+////////////////////////////////////////////////////////////////////////////////
+
+export async function save() {
+	const document = yaml.parseDocument(localStorage.getItem("yaml") ?? "")
+	
+	const resources = (await db.resources.toArray()).sort((a, b) => b.id - a.id)
+	const tags = (await db.tags.toArray()).sort((a, b) => b.id - a.id)
+	const tasks = (await db.tasks.toArray()).sort((a, b) => b.id - a.id)
+	const milestones = (await db.milestones.toArray()).sort((a, b) => b.id - a.id)
+	
+	// fill & update with current values // NOTE: do it this way so that it doesn't change what it doesn't have to change, in particular, it will keep comments where they are, and won't change the order if entries already exist
+	resources.forEach(resource => Object.keys(resource).forEach(key => { if (key != "id") document.setIn(["resources", String(resource.id), key], (resource as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
+	tags.forEach(tag => Object.keys(tag).forEach(key => { if (key != "id") document.setIn(["tags", String(tag.id), key], (tag as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
+	tasks.forEach(task => Object.keys(task).forEach(key => { if (key != "id") document.setIn(["tasks", String(task.id), key], (task as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
+	milestones.forEach(milestone => Object.keys(milestone).forEach(key => { if (key != "id") document.setIn(["milestones", String(milestone.id), key], (milestone as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
+	
+	// remove any unused values
+	const data = document.toJS();
+	(new Set(Object.keys(data.resources ?? {}))).difference(new Set(resources.map(r => String(r.id)))).forEach(resource => document.deleteIn(["resources", resource]));
+	(new Set(Object.keys(data.tags ?? {}))).difference(new Set(tags.map(t => String(t.id)))).forEach(tag => document.deleteIn(["tags", tag]));
+	(new Set(Object.keys(data.tasks ?? {}))).difference(new Set(tasks.map(t => String(t.id)))).forEach(task => document.deleteIn(["tasks", task]));
+	(new Set(Object.keys(data.milestones ?? {}))).difference(new Set(milestones.map(m => String(m.id)))).forEach(milestone => document.deleteIn(["milestones", milestone]))
+	
+	const s = document.toString({
+		collectionStyle: "block", // do this to make sure git diffs are just one line when adding and removing (will make the file longer though)
+		blockQuote: "literal", // do this so markdown is preserved correctly (don't strip out interior line breaks) // FIXME: this option doesn't seem to be doing anything
+	})
+	download(s, "plan.yaml", "application/yaml") // TODO: maybe save the filename somewhere so it can be downloaded the same as it came
+}
+
+export async function load(file: Blob) {
+	const contents = await file.text()
+	const document = yaml.parseDocument(contents)
+	localStorage.setItem("yaml", contents)
+	
+	const data = document.toJS()
+	
+	await db.delete({disableAutoOpen: false}) // wipe the database, and allow it to be recreated
+	localStorage.setItem("selected-goals", "[]") // remove local storage
+	
+	db.resources.bulkAdd(Object.keys(data.resources).map(id => ({id: Number(id), ...data.resources[id]})))
+	db.tags.bulkAdd(Object.keys(data.tags).map(id => ({id: Number(id), ...data.tags[id]})))
+	db.tasks.bulkAdd(Object.keys(data.tasks).map(id => ({id: Number(id), ...data.tasks[id]})))
+	db.milestones.bulkAdd(Object.keys(data.milestones).map(id => ({id: Number(id), ...data.milestones[id]})))
+}
