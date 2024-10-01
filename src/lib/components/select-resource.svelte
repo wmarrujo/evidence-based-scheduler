@@ -52,7 +52,7 @@
 			<Command.Empty>No resource found.</Command.Empty>
 			<Command.Group>
 				{#each $resources as option (option.id)}
-					<Command.Item value={option.id} onSelect={() => { resource = option; value = option.id; open = false }}>
+					<Command.Item value={String(option.id)} onSelect={() => { resource = option; value = option.id; open = false }}>
 						{option.name}
 						<Check class={cn("ml-auto h-4 w-4", option.id !== value && "text-transparent")} />
 					</Command.Item>

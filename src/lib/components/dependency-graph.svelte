@@ -1,8 +1,8 @@
 <script lang="ts">
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
-	import type {Task, TaskId, Resource, ResourceId, Tag, TagId, Milestone} from "$lib/db"
-	import {db, resources, tags} from "$lib/db"
+	import type {Task, TaskId, Milestone} from "$lib/db"
+	import {db, resourcesById} from "$lib/db"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow, drawLine} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
@@ -13,6 +13,7 @@
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
 	import {SquareUserRound, AlarmClock, Timer, Plus, Trash2, Pencil} from "lucide-svelte"
+	import {browser} from "$app/environment"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SETUP
@@ -41,16 +42,10 @@
 	export let tasks: Array<Task> = []
 	export let milestones: Array<Milestone> = []
 	
-	let resourcesById: Record<ResourceId, Resource> = {}
-	$: if ($resources) resourcesById = $resources.reduce((acc, resource) => { acc[resource.id] = resource; return acc }, {} as Record<ResourceId, Resource>)
-	
-	let tagsById: Record<TagId, Tag> = {}
-	$: if ($tags) tagsById = $tags.reduce((acc, tag) => { acc[tag.id] = tag; return acc }, {} as Record<TagId, Tag>)
-	
 	// NODES & LINK OBJECTS
 	
 	type Node = d3.SimulationNodeDatum & {
-		id: string
+		id: number
 		name: string
 		r: number // radius
 	}
@@ -61,6 +56,22 @@
 	
 	let nodes: Array<Node> = tasks.map(taskToNode)
 	let links: Array<Link> = tasks.flatMap(task => task.requirements.map(d => ({source: d, target: task.id})))
+	
+	$: nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>())
+	
+	function tasksUpdated(tasks: Array<Task>) {
+		console.log("update received")
+		let unseen = new Set(nodes.map(node => node.id))
+		tasks.forEach(task => {
+			unseen.delete(task.id) // mark it as seen so that we can remove any that were deleted
+			const node = nodesById.get(task.id)
+			const newNode = taskToNode(task)
+			if (node) Object.assign(node, {...newNode}) // will modify node in-place
+			else nodes.push(newNode)
+		})
+		nodes = nodes.filter(node => !unseen.has(node.id))
+	}
+	$: tasksUpdated(tasks)
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -438,13 +449,13 @@
 
 <svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 
-<Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
+<Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", browser && cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
 	{#if informationCardTask}
 		<Card.Header class="p-2">
 			<Card.Title>{informationCardTask.name}</Card.Title>
 		</Card.Header>
 		<Card.Content class="p-2 grid grid-cols-[min-content_auto_min-content_auto] gap-1">
-			<SquareUserRound /><span class="col-span-3">{informationCardTask.doer ? resourcesById[informationCardTask.doer].name : "Unassigned"}</span>
+			<SquareUserRound /><span class="col-span-3">{informationCardTask.doer ? $resourcesById.get(informationCardTask.doer)?.name : "Unassigned"}</span>
 			<AlarmClock /><span>{informationCardTask.estimate}h</span>
 			<Timer /><span>{informationCardTask.spent}h</span>
 		</Card.Content>
@@ -455,7 +466,7 @@
 	{/if}
 </Card.Root>
 
-<Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", rightClickedCursor.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickedCursor.y}px; left: {rightClickedCursor.x}px;">
+<Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", browser && rightClickedCursor.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickedCursor.y}px; left: {rightClickedCursor.x}px;">
 	{#if rightClickedNode}
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
 		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
@@ -476,7 +487,7 @@
 <Dialog.Root bind:open={editTaskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
 		{#if editTaskId}
-			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:saved={event => { editTaskDialogOpen = false; onTaskEdited(event.detail) }} />
+			<EditTask task={getTaskByIdUnsafe(editTaskId)} on:saved={event => { onTaskEdited(event.detail); editTaskDialogOpen = false }} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>

@@ -2,8 +2,6 @@
 	import {Ellipsis} from "lucide-svelte"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import {Button} from "$lib/components/ui/button"
-	
-	export let task: string
 </script>
 
 <!-- TODO: turn this into a right-click contextmenu action list -->

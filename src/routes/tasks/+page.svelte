@@ -55,6 +55,6 @@
 
 <Dialog.Root bind:open={createMilestoneDialogOpen}>
 	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateMilestone requirements={[...selected]} on:created={() => { createMilestoneDialogOpen = false }} />
+		<CreateMilestone requirements={[...selected]} on:created={() => createMilestoneDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>

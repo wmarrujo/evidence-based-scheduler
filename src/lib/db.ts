@@ -8,7 +8,7 @@ import {derived, type Readable} from "svelte/store"
 export type Velocity = number
 export type Hours = number
 
-export type ResourceId = string
+export type ResourceId = number
 export type Resource = {
 	id: ResourceId
 	name: string
@@ -17,7 +17,7 @@ export type Resource = {
 	velocities: Array<Velocity> // the last 250 velocities, used for sampling // TODO: allow how many are taken into account to be changed in settings
 }
 
-export type TagId = string
+export type TagId = number
 export type Tag = {
 	id: TagId
 	name: string
@@ -25,7 +25,7 @@ export type Tag = {
 	tags: Array<TagId> // the tag can "inherit" other tags
 }
 
-export type TaskId = string
+export type TaskId = number
 export type Task = {
 	id: TaskId
 	name: string
@@ -38,7 +38,7 @@ export type Task = {
 	tags: Array<TagId>
 }
 
-export type MilestoneId = string
+export type MilestoneId = number
 export type Milestone = {
 	id: MilestoneId
 	name: string
@@ -58,10 +58,10 @@ export const db = new Dexie("plan") as Dexie & {
 }
 
 db.version(1).stores({
-	resources: "id, name",
-	tags: "id, name",
-	tasks: "id, name",
-	milestones: "id, name",
+	resources: "id++, name",
+	tags: "id++, name",
+	tasks: "id++, name",
+	milestones: "id++, name",
 })
 
 // fix of: https://github.com/dexie/Dexie.js/issues/1907

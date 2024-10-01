@@ -17,7 +17,6 @@
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
-		id: z.string().min(1, {message: "you must provide an id"}),
 	})
 	
 	const form = superForm(defaults(zod(schema)), {
@@ -26,33 +25,19 @@
 			async onUpdate({form}) { // handle submission
 				if (!form.valid) return
 				const resource = {
-					id: form.data.id,
 					name: form.data.name,
 					velocities: [],
 				}
-				await db.resources.add(resource)
-				dispatch("created", resource)
+				const id = await db.resources.add(resource)
+				dispatch("created", {id, ...resource})
 			},
 		}), {form: data, enhance} = form
-	
-	function nameChanged(event: InputEvent) {
-		if (!form.isTainted("id")) {
-			let kebab = (event.target! as HTMLInputElement).value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").toLowerCase()
-			data.update(f => { f.id = kebab; return f }, {taint: false})
-		}
-	}
 </script>
 
 <form class={cn(className)} use:enhance>
 	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.name} on:input={nameChanged} placeholder="Resource Name" class="text-2xl h-14"  {...attrs} />
-		</Form.Control>
-		<Form.FieldErrors />
-	</Form.Field>
-	<Form.Field {form} name="id">
-		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.id} placeholder="Identifier" {...attrs} />
+			<Input type="text" bind:value={$data.name} placeholder="Resource Name" class="text-2xl h-14"  {...attrs} />
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
