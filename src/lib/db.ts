@@ -60,10 +60,10 @@ export const db = new Dexie("plan") as Dexie & {
 }
 
 db.version(1).stores({
-	resources: "id++, name",
-	tags: "id++, name",
-	tasks: "id++, name",
-	milestones: "id++, name",
+	resources: "++id, name",
+	tags: "++id, name",
+	tasks: "++id, name",
+	milestones: "++id, name",
 })
 
 // fix of: https://github.com/dexie/Dexie.js/issues/1907

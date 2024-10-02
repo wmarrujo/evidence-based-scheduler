@@ -63,7 +63,6 @@
 					}
 					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
 					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
-					// FIXME: don't forget to update all the other places where the identifier is used if that is the case
 				} else { // if we are making a new task
 					const id = await db.tasks.add({...form.data, requirements: []})
 					dispatch("saved", {id, ...form.data, requirements: []}) // send the message, and return the task it edited
@@ -91,7 +90,7 @@
 			<Form.Field {form} name="doer" class="flex flex-col flex-1">
 				<Form.Control let:attrs>
 					<Form.Label>Doer</Form.Label>
-					<SelectResource bind:value={$data.doer} placeholder="Select Doer..." class="grow" {...attrs} />
+					<SelectResource bind:value={$data.doer} placeholder="Select Doer" class="grow" {...attrs} />
 				</Form.Control>
 			</Form.Field>
 			<Form.Field {form} name="done" class="flex flex-col flex-1">

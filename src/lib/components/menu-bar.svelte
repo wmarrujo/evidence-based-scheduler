@@ -38,7 +38,7 @@
 		<Button href="{base}/graph" variant="link" class={cn("px-2", $page.route.id?.startsWith("/graph") && "underline")}>Graph</Button>
 		<Button href="{base}/prediction" variant="link" class={cn("px-2", $page.route.id?.startsWith("/prediction") && "underline")}>Prediction</Button>
 		<Separator vertical />
-		<Button on:click={() => save()} variant="outline" size="icon"><Save /></Button>
+		<Button on:click={save} variant="outline" size="icon"><Save /></Button>
 		<Button on:click={showLoadDialog} variant="outline" size="icon"><FileUp /></Button>
 	</nav>
 	<Separator vertical />
