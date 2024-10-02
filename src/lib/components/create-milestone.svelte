@@ -18,7 +18,7 @@
 	export {className as class}
 	const dispatch = createEventDispatcher<{created: Milestone}>()
 	
-	export let dependsOn: Array<TaskId> = []
+	export let requirements: Array<TaskId> = []
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -33,7 +33,7 @@
 				const milestone = {
 					name: form.data.name,
 					description: form.data.description ?? "",
-					dependsOn,
+					requirements,
 				}
 				const id = await db.milestones.add(milestone) // insert (and get the id it created)
 				dispatch("created", {id, ...milestone}) // send the message, and return the milestone it created

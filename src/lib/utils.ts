@@ -92,3 +92,18 @@ Array.prototype.min = function() {
 export function transpose<T>(matrix: Array<Array<T>>): Array<Array<T>> {
 	return (matrix[0] ?? []).map((col, i) => matrix.map(row => row[i]))
 }
+
+export function JSONSafeParse(item: string | null | undefined): any | undefined { // eslint-disable-line @typescript-eslint/no-explicit-any
+	if (item) {
+		try { return JSON.parse(item) }
+		catch { return undefined }
+	} else {
+		return undefined
+	}
+}
+
+export function JSONSafeParseToArray(item: string | null | undefined): Array<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+	const parsed = JSONSafeParse(item)
+	if (Array.isArray(parsed)) return parsed
+	else return []
+}

@@ -1,49 +1,53 @@
 <script lang="ts">
-	import {cn} from "$lib/utils"
+	import {cn, JSONSafeParseToArray} from "$lib/utils"
 	import MenuBar from "$lib/components/menu-bar.svelte"
-	import {db, liveQuery} from "$lib/db"
-	import type {MilestoneId, ProjectId, TaskId, ResourceId, Velocity} from "$lib/db"
+	import {resources, tags, tasks, milestones, tagExpansions, milestonesById, tagsById, tasksById, populatedMilestonesById, populatedTagsById, populatedTasksById} from "$lib/db"
+	import type {MilestoneId, TagId, TaskId, ResourceId, Velocity} from "$lib/db"
 	import {Button, buttonVariants} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
-	import {Plus, Check, X, Milestone, FolderClosed, Pin, Upload, Save} from "lucide-svelte"
+	import {Plus, Check, X, Milestone, Tag, Pin, Upload, Save} from "lucide-svelte"
 	import {simulate} from "$lib/simulation"
 	import ShipDateProbabilityChart from "$lib/components/ship-date-probability-chart.svelte"
 	import * as Popover from "$lib/components/ui/popover"
 	import * as Command from "$lib/components/ui/command"
-	import {writable, derived} from "svelte/store"
+	import {writable} from "svelte/store"
 	import {browser} from "$app/environment"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let milestones = derived(liveQuery(() => db.milestones.toArray()), ms => ms ?? [], [])
-	let projects = derived(liveQuery(() => db.projects.toArray()), ps => ps ?? [], [])
-	let tasks = derived(liveQuery(() => db.tasks.toArray()), ts => ts ?? [], [])
-	let resources = derived(liveQuery(() => db.resources.toArray()), rs => rs ?? [], [])
-	
-	$: milestoneDependsOnById = $milestones.reduce((acc, milestone) => acc.set(milestone.id, milestone.dependsOn), new Map<MilestoneId, Array<TaskId>>())
-	$: projectTasksById = $projects.reduce((acc, project) => acc.set(project.id, project.tasks), new Map<MilestoneId, Array<TaskId>>())
+	$: milestoneRequirementsById = $milestones.reduce((acc, milestone) => acc.set(milestone.id, milestone.requirements), new Map<MilestoneId, Array<TaskId>>())
+	$: tasksByTag = $tasks.reduce((acc, task) => {
+		const tags = task.tags.flatMap(tag => [...$tagExpansions.get(tag) ?? []])
+		return tags.reduce((acc, tag) => acc.set(tag, [task.id, ...(acc.get(tag) ?? [])]), acc)
+	}, new Map<TagId, Array<TaskId>>())
 	
 	$: options = [
 		...$milestones.map(milestone => ({type: "Milestone", id: milestone.id, name: milestone.name})),
-		...$projects.map(project => ({type: "Project", id: project.id, name: project.name})),
+		...$tags.map(tag => ({type: "Tag", id: tag.id, name: tag.name})),
 		...$tasks.map(task => ({type: "Task", id: task.id, name: task.name})),
 	] as Array<Goal>
-	let selected = writable<Array<Goal>>(browser ? JSON.parse(localStorage.getItem("selected-goals") ?? "[]") : [])
-	selected.subscribe(value => { if (browser) localStorage.setItem("selected-goals", JSON.stringify(value)) })
+	
+	let selected = writable<Array<Goal>>([]) // start out empty on page load (will be filled later, when certain conditions are met)
+	selected.subscribe(value => { if (browser && $populatedMilestonesById && $populatedTagsById && $populatedTasksById) localStorage.setItem("selected-goals", JSON.stringify(value)) }) // NOTE: only write when we know we've got the full set
+	$: if (browser && $populatedMilestonesById && $populatedTagsById && $populatedTasksById) { // once we're in the browser and have all the references loaded
+		$selected = (JSONSafeParseToArray(localStorage.getItem("selected-goals")) as Array<Goal>) // then we can set selected to whatever was in our cache
+			.filter(goal => ({"Milestone": $milestonesById, "Tag": $tagsById, "Task": $tasksById}[goal?.type]?.has(goal?.id))) // filtering out everything that shouldn't be there anymore
+	}
+	
 	let start: Date = new Date()
 	let simulations: number = 101
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	type Goal = {
-		type: "Milestone" | "Project" | "Task"
-		id: MilestoneId | ProjectId | TaskId
+		type: "Milestone" | "Tag" | "Task"
+		id: MilestoneId | TagId | TaskId
 		name: string
 	}
 	
 	function getRequirements(goal: Goal): Array<TaskId> {
-		if (goal.type == "Milestone") return milestoneDependsOnById.get(goal.id)!
-		else if (goal.type == "Project") return projectTasksById.get(goal.id)!
+		if (goal.type == "Milestone") return milestoneRequirementsById.get(goal.id) ?? []
+		else if (goal.type == "Tag") return tasksByTag.get(goal.id) ?? []
 		else return [goal.id]
 	}
 	
@@ -101,7 +105,7 @@
 							<Command.Empty>No resource found.</Command.Empty>
 							<Command.Group heading="Milestones">
 								{#each options.filter(option => option.type == "Milestone") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { if (!$selected.includes(option)) { $selected.push(option); $selected = $selected } ; goalPopoverOpen = false }}>
+									<Command.Item value={option.type + option.id} onSelect={() => { if (!$selected.includes(option)) { $selected.push(option); $selected = $selected }; goalPopoverOpen = false }}>
 										<Milestone class="w-4 h-4 mr-2" />
 										{option.name}
 										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
@@ -109,19 +113,19 @@
 								{/each}
 							</Command.Group>
 							<Command.Separator />
-							<Command.Group heading="Projects">
-								{#each options.filter(option => option.type == "Project") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { $selected.push(option); selected = selected; goalPopoverOpen = false }}>
-										<FolderClosed class="w-4 h-4 mr-2" />
+							<Command.Group heading="Tags">
+								{#each options.filter(option => option.type == "Tag") as option (option.id)}
+									<Command.Item value={option.type + option.id} onSelect={() => { if (!$selected.includes(option)) { $selected.push(option); $selected = $selected }; goalPopoverOpen = false }}>
+										<Tag class="w-4 h-4 mr-2" />
 										{option.name}
 										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
 									</Command.Item>
 								{/each}
 							</Command.Group>
 							<Command.Separator />
-							<Command.Group>
+							<Command.Group heading="Tasks">
 								{#each options.filter(option => option.type == "Task") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { $selected.push(option); $selected = $selected; goalPopoverOpen = false }}>
+									<Command.Item value={option.type + option.id} onSelect={() => { if (!$selected.includes(option)) { $selected.push(option); $selected = $selected }; goalPopoverOpen = false }}>
 										<Pin class="w-4 h-4 mr-2" />
 										{option.name}
 										<Check class={cn("ml-auto h-4 w-4", !$selected.includes(option) && "text-transparent")} />
@@ -142,7 +146,7 @@
 						<li
 							class={cn("h-10 flex items-center pl-2 border-b border-background first:rounded-t-md text-primary-foreground",
 								goal.type == "Milestone" && "bg-green-600 dark:bg-green-700",
-								goal.type == "Project" && "bg-blue-600 dark:bg-blue-700",
+								goal.type == "Tag" && "bg-blue-600 dark:bg-blue-700",
 								goal.type == "Task" && "bg-gray-800 dark:bg-gray-300",
 							)}
 							draggable="true"
@@ -151,8 +155,8 @@
 						>
 							{#if goal.type == "Milestone"}
 								<Milestone class="w-4 h-4 mr-2" />
-							{:else if goal.type == "Project"}
-								<FolderClosed class="w-4 h-4 mr-2" />
+							{:else if goal.type == "Tag"}
+								<Tag class="w-4 h-4 mr-2" />
 							{:else}
 								<Pin class="w-4 h-4 mr-2" />
 							{/if}

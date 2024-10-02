@@ -7,13 +7,14 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import SelectResource from "$lib/components/select-resource.svelte"
-	import {db, type Task} from "$lib/db"
+	import {db, type Task, type Tag, tagsById} from "$lib/db"
 	import {createEventDispatcher} from "svelte"
 	import {Carta, MarkdownEditor} from "carta-md"
 	import Toggle from "$lib/components/toggle.svelte"
 	import {mode} from "mode-watcher"
 	import "$lib/styles/carta.pcss"
-	import {Check, Minus} from "lucide-svelte"
+	import {Check, Minus, Plus} from "lucide-svelte"
+	import SelectTags from "$lib/components/select-tag.svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -27,11 +28,11 @@
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
 		description: z.string(),
-		// @ts-expect-error the number default is 0, which is a valid task id that we don't want to select by default
-		doer: z.number().default(undefined),
+		doer: z.number(),
 		estimate: z.number().positive().default(0),
 		spent: z.number().nonnegative().default(0),
 		done: z.boolean().default(false),
+		tags: z.array(z.number()),
 	})
 	
 	const initialData: z.infer<typeof schema> | undefined = task ? {
@@ -41,6 +42,7 @@
 		estimate: task.estimate,
 		spent: task.spent,
 		done: task.done,
+		tags: task.tags,
 	} : undefined
 	
 	const form =
@@ -57,27 +59,30 @@
 						estimate: form.data.estimate,
 						spent: form.data.spent,
 						done: form.data.done,
+						tags: form.data.tags,
 					}
 					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
 					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
 				} else { // if we are making a new task
-					const id = await db.tasks.add({...form.data, dependsOn: []})
-					dispatch("saved", {id, ...form.data, dependsOn: []}) // send the message, and return the task it edited
+					const id = await db.tasks.add({...form.data, requirements: []})
+					dispatch("saved", {id, ...form.data, requirements: []}) // send the message, and return the task it edited
 				}
 			},
 		}), {form: data, enhance} = form
-	
+		
 		const carta = new Carta({
 			sanitizer: false,
 			theme: $mode == "light" ? "github-light" : "github-dark",
 		})
+	
+	$: tags = $data.tags.map(t => $tagsById.get(t)).filter(t => t) as Array<Tag> // fixes not being able to assert that the tags aren't undefined
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
 	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
 		<Form.Field {form} name="name" class="flex flex-col">
 			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.name} {...attrs} placeholder="Name..." class="text-2xl" />
+				<Input type="text" bind:value={$data.name} placeholder="Task Name" class="text-2xl h-14" {...attrs} />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
@@ -85,7 +90,7 @@
 			<Form.Field {form} name="doer" class="flex flex-col flex-1">
 				<Form.Control let:attrs>
 					<Form.Label>Doer</Form.Label>
-					<SelectResource bind:value={$data.doer} placeholder="Select Doer..." {...attrs} class="grow" />
+					<SelectResource bind:value={$data.doer} placeholder="Select Doer" class="grow" {...attrs} />
 				</Form.Control>
 			</Form.Field>
 			<Form.Field {form} name="done" class="flex flex-col flex-1">
@@ -117,6 +122,17 @@
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
+		</div>
+		<div class="flex grow overflow-y-scroll gap-2 flex-wrap">
+			{#each tags as tag, i (tag)}
+				<Button on:click={() => { $data.tags.splice(i, 1); $data.tags = $data.tags }} class="flex h-8 pl-2 pr-2">
+					<input type="tags" bind:value={$data.tags[i]} hidden />
+					{tag.name}
+				</Button>
+			{/each}
+			<SelectTags unavailable={$data.tags} on:select={event => { $data.tags.push(event.detail.id); $data.tags = $data.tags }} class="h-8 px-2">
+				<Plus class="h-4 w-4 mr-1" />Add Tag
+			</SelectTags>
 		</div>
 		<div class="flex w-full justify-center">
 			<Button type="submit">{task ? "Update" : "Create"}</Button>

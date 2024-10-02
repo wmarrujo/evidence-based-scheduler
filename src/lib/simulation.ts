@@ -22,7 +22,7 @@ type Duration = number // number of milliseconds
  * @returns each goals' simulation results, returned in the order of the original `goals` input
  */
 export function simulate(goals: Array<Iterable<TaskId>>, start: Date, simulations: number, tasks: Array<Task>, velocities: Map<ResourceId, Array<Velocity>>): Array<Array<Date>> {
-	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.dependsOn)
+	const graph = idGraphFromArrayOfItemsWithBackLinks(tasks, task => task.id, task => task.requirements)
 	
 	const fullVelocities = new Map([...velocities.entries()].map(([resource, vs]) => {
 		return [resource, vs.concat(Array.from({length: 250 - Math.max(0, vs.length)}, () => randomLogNormal(0.5, 0.2)()))] // some resources may not have enough historical data, fill these with randomly generated velocities
@@ -95,7 +95,7 @@ function simulationRun(
 		
 		// FIND CONFLICTS
 		let nextNow = [...boundaries.values()].filter(({start}) => now < start)[0]?.start // get the first start that's strictly past the now date (not going to be a candidate)
-		if (nextNow === undefined) nextNow = [...boundaries.values()].filter(({end}) => now < end)[0].end // if we didn't find a next now candidate, then we're almost done, but might still push some more to be next, so let's just give it the next end instead for now
+		if (nextNow === undefined) nextNow = [...boundaries.values()].filter(({end}) => now < end)[0]?.end // if we didn't find a next now candidate, then we're almost done, but might still push some more to be next, so let's just give it the next end instead for now
 		intersectors.forEach((tasks, _) => { // we can deal with 1 conflict per resource on each loop (we can because we have already pushed everything else that depends on these conflicts to a later time, so any that appear at the same time can't depend on each other, unless 0 time would be allowed, which it's not)
 			if (2 <= tasks.size) { // if there are conflicts to address
 				const lock = [...tasks.intersection(new Set(locked.keys()))][0]

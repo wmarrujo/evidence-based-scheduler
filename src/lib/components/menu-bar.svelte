@@ -3,8 +3,7 @@
 	import {base} from "$app/paths"
 	import {Button} from "$lib/components/ui/button"
 	import {Save, FileUp} from "lucide-svelte"
-	import {db} from "$lib/db"
-	import download from "downloadjs"
+	import {save, load} from "$lib/db"
 	import {onMount} from "svelte"
 	import {Separator} from "$lib/components/ui/separator"
 	import {page} from "$app/stores"
@@ -12,24 +11,17 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	async function load() {
+	async function showLoadDialog() {
 		if (!window.confirm("Loading a database will remove any unsaved data")) return // confirm with the user that this will delete the existing database
-		var input = document.createElement("input")
+		var input = document.createElement("input") // make a hidden input element
 		input.type = "file"
 		input.onchange = async (event: Event) => {
 			if (!event.target) return
 			let file = (event.target as EventTarget & {files: Array<Blob>}).files[0]
-			await db.delete({disableAutoOpen: false}) // wipe the database, and allow it to be recreated
-			localStorage.setItem("selected-goals", "[]") // remove local storage
-			db.import(file)
-			location.reload() // refresh the page so you get all the new data
+			load(file) // load the data into the database
+			location.reload() // refresh the page so you get all the new data (just in case)
 		}
-		input.click()
-	}
-	
-	async function save() {
-		const blob = await db.export({prettyJson: true})
-		download(blob, "plan.json", "application/json")
+		input.click() // programmatically "click" the hidden input element
 	}
 	
 	onMount(async () => {
@@ -46,8 +38,8 @@
 		<Button href="{base}/graph" variant="link" class={cn("px-2", $page.route.id?.startsWith("/graph") && "underline")}>Graph</Button>
 		<Button href="{base}/prediction" variant="link" class={cn("px-2", $page.route.id?.startsWith("/prediction") && "underline")}>Prediction</Button>
 		<Separator vertical />
-		<Button on:click={save} variant="outline"><Save class="mr-2" />Save</Button>
-		<Button on:click={load} variant="outline"><FileUp class="mr-2" />Load</Button>
+		<Button on:click={save} variant="outline" size="icon"><Save /></Button>
+		<Button on:click={showLoadDialog} variant="outline" size="icon"><FileUp /></Button>
 	</nav>
 	<Separator vertical />
 	<Stopwatch />
