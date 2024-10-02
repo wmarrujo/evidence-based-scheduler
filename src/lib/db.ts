@@ -103,19 +103,51 @@ export const tagExpansions = derived(tagsById, ts => [...ts.keys()].reduce((acc,
 // SAVING & LOADING
 ////////////////////////////////////////////////////////////////////////////////
 
+const defaultResourceFiller = {
+	velocities: [],
+}
+const defaultTagFiller = {
+	description: "",
+	tags: [],
+}
+const defaultTaskFiller = {
+	description: "",
+	spent: 0,
+	done: false,
+	requirements: [],
+	tags: [],
+}
+const defaultMilestoneFiller = {
+	description: "",
+	requirements: [],
+}
+
 export async function save() {
 	const document = yaml.parseDocument(localStorage.getItem("yaml") ?? "")
 	
-	const resources = (await db.resources.toArray()).sort((a, b) => b.id - a.id)
-	const tags = (await db.tags.toArray()).sort((a, b) => b.id - a.id)
-	const tasks = (await db.tasks.toArray()).sort((a, b) => b.id - a.id)
-	const milestones = (await db.milestones.toArray()).sort((a, b) => b.id - a.id)
+	const resources = (await db.resources.toArray()).sort((a, b) => a.id - b.id)
+	const tags = (await db.tags.toArray()).sort((a, b) => a.id - b.id)
+	const tasks = (await db.tasks.toArray()).sort((a, b) => a.id - b.id)
+	const milestones = (await db.milestones.toArray()).sort((a, b) => a.id - b.id)
 	
-	// fill & update with current values // NOTE: do it this way so that it doesn't change what it doesn't have to change, in particular, it will keep comments where they are, and won't change the order if entries already exist
-	resources.forEach(resource => Object.keys(resource).forEach(key => { if (key != "id") document.setIn(["resources", String(resource.id), key], (resource as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
-	tags.forEach(tag => Object.keys(tag).forEach(key => { if (key != "id") document.setIn(["tags", String(tag.id), key], (tag as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
-	tasks.forEach(task => Object.keys(task).forEach(key => { if (key != "id") document.setIn(["tasks", String(task.id), key], (task as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
-	milestones.forEach(milestone => Object.keys(milestone).forEach(key => { if (key != "id") document.setIn(["milestones", String(milestone.id), key], (milestone as any)[key]) })) // eslint-disable-line @typescript-eslint/no-explicit-any
+	// fill & update with current values
+	// NOTE: do it this way so that it doesn't change what it doesn't have to change, in particular, it will keep comments where they are, and won't change the order if entries already exist
+	
+	/* eslint-disable @typescript-eslint/no-explicit-any */
+	function fill<T extends Resource | Tag | Task | Milestone>(section: string, item: T, default_: object) {
+		Object.keys(item).filter(key => key != "id").forEach(key => { // for all keys except for the id (since that one is used as the item's overall key)
+			const value = (item as any)[key]
+			const d = (default_ as any)[key]
+			if (value == d || (Array.isArray(value) && value.length == 0)) document.deleteIn([section, String(item.id), key]) // if it's the default, remove it if it exists (will get filled with the default when read)
+			else document.setIn([section, String(item.id), key], value) // if it's not the default, write or overwrite the value
+		})
+	}
+	/* eslint-enable @typescript-eslint/no-explicit-any */
+	
+	resources.forEach(resource => fill("resources", resource, defaultResourceFiller))
+	tags.forEach(tag => fill("tags", tag, defaultTagFiller))
+	tasks.forEach(task => fill("tasks", task, defaultTaskFiller))
+	milestones.forEach(milestone => fill("milestones", milestone, defaultMilestoneFiller))
 	
 	// remove any unused values
 	const data = document.toJS();
@@ -141,8 +173,8 @@ export async function load(file: Blob) {
 	await db.delete({disableAutoOpen: false}) // wipe the database, and allow it to be recreated
 	localStorage.setItem("selected-goals", "[]") // remove local storage
 	
-	db.resources.bulkAdd(Object.keys(data.resources).map(id => ({id: Number(id), ...data.resources[id]})))
-	db.tags.bulkAdd(Object.keys(data.tags).map(id => ({id: Number(id), ...data.tags[id]})))
-	db.tasks.bulkAdd(Object.keys(data.tasks).map(id => ({id: Number(id), ...data.tasks[id]})))
-	db.milestones.bulkAdd(Object.keys(data.milestones).map(id => ({id: Number(id), ...data.milestones[id]})))
+	db.resources.bulkAdd(Object.keys(data.resources ?? {}).map(id => ({id: Number(id), ...defaultResourceFiller, ...data.resources[id]})))
+	db.tags.bulkAdd(Object.keys(data.tags ?? {}).map(id => ({id: Number(id), ...defaultTagFiller, ...data.tags[id]})))
+	db.tasks.bulkAdd(Object.keys(data.tasks ?? {}).map(id => ({id: Number(id), ...defaultTaskFiller, ...data.tasks[id]})))
+	db.milestones.bulkAdd(Object.keys(data.milestones ?? {}).map(id => ({id: Number(id), ...defaultMilestoneFiller, ...data.milestones[id]})))
 }

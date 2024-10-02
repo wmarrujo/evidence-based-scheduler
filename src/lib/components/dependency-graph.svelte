@@ -25,13 +25,6 @@
 	let width: number
 	let height: number
 	
-	function setCanvasDimensions() {
-		canvas.width = canvas.clientWidth * window.devicePixelRatio
-		canvas.height = canvas.clientHeight * window.devicePixelRatio
-		width = canvas.clientWidth * window.devicePixelRatio
-		height = canvas.clientHeight * window.devicePixelRatio
-	}
-	
 	const meter = 10 // unit of measure, in pixels
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +143,12 @@
 		if (hoveredNode == node) borderColor = "gold"
 		if (selectedNode == node) borderColor = "lightblue"
 		
-		drawCircle(context, node.x!, node.y!, node.r, {border, borderWidth: 3, color, borderColor})
+		if (meter <= node.r) { // if it's big enough
+			drawCircle(context, node.x!, node.y!, node.r, {border, borderWidth: 3, color, borderColor})
+		} else { // if it's too small
+			drawCircle(context, node.x!, node.y!, node.r, {color}) // draw the node as small as it is
+			drawCircle(context, node.x!, node.y!, meter, {border, borderWidth: 3, color: "transparent", borderColor}) // draw the border not too small, should coincide with the clickable area
+		}
 	}
 	
 	function drawLink(link: Link) {
@@ -192,7 +190,7 @@
 	let mouse: Point = {x: 0, y: 0} // the mouse coordinates, in the canvas' coordinate space
 	
 	function getNode(point: Point): Node | undefined {
-		return nodes.find(node => Math.sqrt((point.x - node.x!)**2 + (point.y - node.y!)**2) < node.r)
+		return nodes.find(node => Math.sqrt((point.x - node.x!)**2 + (point.y - node.y!)**2) < Math.max(node.r, meter))
 	}
 	
 	function getLink(point: Point, fuzziness: number): Link | undefined {
@@ -383,7 +381,8 @@
 	////////////////////////////////////////////////////////////////////////////////
 	
 	onMount(() => {
-		setCanvasDimensions()
+		canvas.width = canvas.clientWidth * window.devicePixelRatio; canvas.height = canvas.clientHeight * window.devicePixelRatio
+		width = canvas.clientWidth * window.devicePixelRatio; height = canvas.clientHeight * window.devicePixelRatio
 		context = canvas.getContext("2d")!
 		
 		transform = transform.translate((width / 2) / window.devicePixelRatio, (height / 2) / window.devicePixelRatio)
@@ -406,14 +405,13 @@
 	}
 </style>
 
+<svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 <canvas
 	bind:this={canvas}
-	on:contextmenu={event => { event.preventDefault(); onRightClick(event) }}
+	on:contextmenu|preventDefault={onRightClick}
 	on:mousemove={event => { let [x, y] = transform.invert(d3.pointer(event)); mouse.x = x; mouse.y = y }}
 	class={cn("w-full h-full", hoveredLink && !hoveredNode && "deleteCursor")}
 />
-
-<svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 
 <Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", browser && cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
 	{#if informationCardTask}
