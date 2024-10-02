@@ -18,10 +18,10 @@
 		<!-- TODO: dependency of (show diagram) -->
 		<DropdownMenu.Item>Dependency Of</DropdownMenu.Item>
 		<DropdownMenu.Separator />
-		<!-- TODO: make new project -->
-		<DropdownMenu.Item>New Project with Selection</DropdownMenu.Item>
-		<!-- TODO: add to project -->
-		<DropdownMenu.Item>Add to Project</DropdownMenu.Item>
+		<!-- TODO: make new tag -->
+		<DropdownMenu.Item>New Tag with Selection</DropdownMenu.Item>
+		<!-- TODO: add to tag -->
+		<DropdownMenu.Item>Add to Tag</DropdownMenu.Item>
 		<DropdownMenu.Separator />
 		<!-- TODO: make new milestone -->
 		<DropdownMenu.Item>New Milestone with Selection</DropdownMenu.Item>

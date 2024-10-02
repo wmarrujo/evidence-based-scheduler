@@ -117,7 +117,7 @@
 		}),
 		// TODO: requirements: Array<TaskId>
 		// TODO: dependants
-		// TODO: projects
+		// TODO: tags
 		// TODO: milestones
 	])
 	

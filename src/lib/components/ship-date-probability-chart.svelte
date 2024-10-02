@@ -53,7 +53,7 @@
 				})),
 			],
 			color: {
-				domain: ["Milestone", "Project", "Task"],
+				domain: ["Milestone", "Tag", "Task"],
 				range: ["green", "blue", $mode == "light" ? "black" : "white"],
 			},
 		}))

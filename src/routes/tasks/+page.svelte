@@ -38,7 +38,7 @@
 					<Card.Header class="text-center">
 						<Card.Title>Multiple Tasks Selected</Card.Title>
 						<!-- TODO: bulk editing of estimates, spent, done -->
-						<!-- TODO: show if they're all part of a project or milestone together -->
+						<!-- TODO: show if they're all part of a tag or milestone together -->
 						<!-- TODO: show averages and sums of various quantities -->
 					</Card.Header>
 					<Card.Content class="flex flex-col justify-start items-center gap-2">
