@@ -1,15 +1,16 @@
 <script lang="ts">
+	import {cn} from "$lib/utils"
 	import * as d3 from "d3"
 	import {onMount} from "svelte"
+	import {type Readable} from "svelte/store"
 	import type {Task, TaskId, Milestone} from "$lib/db"
-	import {db, resourcesById, tasksById} from "$lib/db"
+	import {db, resourcesById, tasksById, tasks as allTasks, milestones as allMilestones} from "$lib/db"
 	import {mode} from "mode-watcher"
 	import {drawCircle, drawArrow, drawLine} from "$lib/canvas"
 	import * as Card from "$lib/components/ui/card"
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {Button} from "$lib/components/ui/button"
 	import EditTask from "$lib/components/edit-task.svelte"
-	import {cn} from "$lib/utils"
 	import {Toaster} from "$lib/components/ui/sonner"
 	import {toast} from "svelte-sonner"
 	import {SquareUserRound, AlarmClock, Timer, Plus, Trash2, Pencil} from "lucide-svelte"
@@ -32,12 +33,15 @@
 	////////////////////////////////////////////////////////////////////////////////
 	
 	let {
-		tasks = [],
-		milestones = [],
+		tasks = allTasks,
+		milestones = allMilestones,
 	}: {
-		tasks?: Array<Task>
-		milestones?: Array<Milestone>
+		tasks?: Readable<Array<Task>>
+		milestones?: Readable<Array<Milestone>>
 	} = $props()
+	
+	// $effect(() => console.log(tasks))
+	$effect(() => tasksUpdated($tasks))
 	
 	// NODES & LINK OBJECTS
 	
@@ -72,8 +76,8 @@
 		})
 		nodes = nodes.filter(node => !unseen.has(node.id)) // remove any old tasks that didn't show up this time around
 		nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>()) // update this // NOTE: doesn't work as a standalone reactive value for some reason
+		if (simulation) reInitializeSimulation()
 	}
-	$effect(() => tasksUpdated(tasks))
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -121,7 +125,7 @@
 		simulation.restart()
 	}
 	
-	$effect(() => { if (simulation && (nodes || links)) reInitializeSimulation() }) // when nodes or links are updated, re-initialize the simulation
+	// $effect(() => { if (simulation && (nodes || links)) reInitializeSimulation() }) // when nodes or links are updated, re-initialize the simulation
 	
 	function updateSimulation() {
 		context.save()
@@ -133,7 +137,7 @@
 		links.forEach(drawLink)
 		if (selectedNode) drawConnector(selectedNode)
 		nodes.forEach(drawNode)
-		milestones.forEach(milestone => drawMilestone(milestone))
+		$milestones.forEach(milestone => drawMilestone(milestone))
 		
 		context.restore()
 	}
@@ -144,8 +148,8 @@
 		let color = $mode == "light" ? "black" : "white"
 		const border = hoveredNode == node || selectedNode == node
 		let borderColor
-		if (hoveredNode == node) borderColor = "gold"
-		if (selectedNode == node) borderColor = "lightblue"
+		if (hoveredNode == node) borderColor = "gold" // FIXME: hover colors not working
+		if (selectedNode == node) borderColor = "lightblue" // FIXME: select colors not working
 		
 		if (meter <= node.r) { // if it's big enough
 			drawCircle(context, node.x!, node.y!, node.r, {border, borderWidth: 3, color, borderColor})
@@ -160,7 +164,7 @@
 		
 		let color = $mode == "light" ? "black" : "white"
 		let headColor = $mode == "light" ? "black" : "white"
-		if (!hoveredNode && hoveredLink == link) { color = "red"; headColor = "red" }
+		if (!hoveredNode && hoveredLink == link) { color = "red"; headColor = "red" } // FIXME: hover colors not working
 		
 		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: target.r, color, headColor})
 	}
@@ -221,7 +225,7 @@
 	
 	type DragEvent = d3.D3DragEvent<HTMLCanvasElement, Node, Node>
 	
-	function getDragSubject(_event: DragEvent) {
+	function getDragSubject(/*event: DragEvent*/) {
 		const node = getNode(mouse)
 		if (node) { node.x = transform.applyX(node.x!); node.y = transform.applyY(node.y!) }
 		return node
@@ -245,7 +249,7 @@
 	let hoveredNode: Node | undefined = $state()
 	let hoveredLink: Link | undefined = $state()
 	
-	function onMouseMove(_event: MouseEvent) {
+	function onMouseMove(/*event: MouseEvent*/) {
 		hoveredNode = getNode(mouse)
 		hoveredLink = getLink(mouse, 5)
 		
@@ -260,7 +264,7 @@
 	
 	let clickedNode: Node | undefined
 	
-	async function onClick(_event: MouseEvent) {
+	async function onClick(/*event: MouseEvent*/) {
 		contextMenuOpen = false
 		rightClickedNode = undefined
 		
@@ -283,7 +287,7 @@
 	
 	let doubleClickedNode: Node | undefined
 	
-	function onDoubleClick(_event: MouseEvent) {
+	function onDoubleClick(/*event: MouseEvent*/) {
 		doubleClickedNode = getNode(mouse)
 		if (doubleClickedNode) openEditTaskDialog(doubleClickedNode.id) // if double clicked on a node
 		else openCreateTaskDialog(mouse) // if double clicked in empty space
@@ -293,7 +297,7 @@
 	let rightClickedPoint: Point = $state({x: 0, y: 0})
 	let rightClickedNode: Node | undefined = $state()
 	
-	function onRightClick(_event: MouseEvent) {
+	function onRightClick(/*event: MouseEvent*/) {
 		informationCardOpen = false // close the information box, so we don't see both at the same time
 		selectedNode = undefined // stop drawing another arrow
 		rightClickedCursor = cursor // store the position of the cursor when this was clicked, so we can make the UI element not move with the mouse
@@ -313,7 +317,7 @@
 	let informationCard: ReturnType<typeof Card.Root>
 	let informationCardOpen = $state(false)
 	let informationCardNode = $derived(hoveredNode)
-	let informationCardTask = $derived(tasks.find(task => task.id == informationCardNode?.id))
+	let informationCardTask = $derived($tasks.find(task => task.id == informationCardNode?.id))
 	
 	// Context Menu
 	
@@ -412,7 +416,7 @@
 <svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 <canvas
 	bind:this={canvas}
-	oncontextmenu={event => { event.preventDefault(); onRightClick(event) }}
+	oncontextmenu={event => { event.preventDefault(); onRightClick() }}
 	onmousemove={event => { let [x, y] = transform.invert(d3.pointer(event)); mouse.x = x; mouse.y = y }}
 	class={cn("w-full h-full", hoveredLink && !hoveredNode && "deleteCursor")}
 ></canvas>

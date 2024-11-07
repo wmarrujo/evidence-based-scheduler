@@ -11,7 +11,7 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let {children}: {children: Snippet} = $props()
+	let {children}: {children?: Snippet} = $props()
 	
 	async function showLoadDialog() {
 		if (!window.confirm("Loading a database will remove any unsaved data")) return // confirm with the user that this will delete the existing database
