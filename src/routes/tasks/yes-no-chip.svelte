@@ -4,10 +4,13 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	
-	export let status: boolean
+	let {
+		class: className = "",
+		status,
+	}: {
+		class?: string
+		status?: boolean
+	} = $props()
 </script>
 
 <div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs text-white",

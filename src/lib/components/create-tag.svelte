@@ -7,14 +7,17 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import {Textarea} from "$lib/components/ui/textarea"
-	import {db} from "$lib/db"
-	import {createEventDispatcher} from "svelte"
+	import {db, type Tag} from "$lib/db"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	const dispatch = createEventDispatcher()
+	let {
+		class: className = "",
+		oncreated = () => {},
+	}: {
+		class?: string
+		oncreated?: (tag: Tag) => void
+	} = $props()
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -33,21 +36,25 @@
 					tags: form.data.tags,
 				}
 				const id = await db.tags.add(tag)
-				dispatch("created", {id, ...tag})
+				oncreated({id, ...tag})
 			},
 		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className)} use:enhance>
 	<Form.Field {form} name="name">
-		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.name} placeholder="Tag Name" class="text-2xl h-14"  {...attrs} />
+		<Form.Control>
+			{#snippet children({props})}
+				<Input type="text" bind:value={$data.name} placeholder="Tag Name" class="text-2xl h-14"  {...props} />
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
 	<Form.Field {form} name="description">
-		<Form.Control let:attrs>
-			<Textarea bind:value={$data.description} placeholder="Description" {...attrs} />
+		<Form.Control>
+			{#snippet children({props})}
+				<Textarea bind:value={$data.description} placeholder="Description" {...props} />
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>

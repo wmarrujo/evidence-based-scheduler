@@ -1,7 +1,9 @@
 <script lang="ts">
 	import {Carta, Markdown} from "carta-md"
 	
-	export let text = ""
+	////////////////////////////////////////////////////////////////////////////////
+	
+	let {text = ""} = $props()
 	
 	const carta = new Carta()
 </script>

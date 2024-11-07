@@ -5,21 +5,24 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
+	let {
+		class: className = "",
+		milestones = new Map(),
+	}: {
+		class?: string
+		milestones?: Map<Goal, Array<Date>>
+	} = $props()
 	
 	type Goal = {
 		type: "Milestone" | "Tag" | "Task"
 		name: string
 	}
 	
-	export let milestones: Map<Goal, Array<Date>> = new Map()
-	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	let container: HTMLDivElement
 	
-	$: data = [...milestones.entries()].flatMap(([milestone, predictions], m) => {
+	let data = $derived([...milestones.entries()].flatMap(([milestone, predictions], m) => {
 		return predictions.sort((a: Date, b: Date) => a.getTime() - b.getTime()).map((prediction, i) => ({
 			series: m,
 			prediction,
@@ -27,9 +30,9 @@
 			type: milestone.type,
 			name: milestone.name,
 		}))
-	})
+	}))
 	
-	$: {
+	$effect(() => {
 		container?.firstChild?.remove() // remove an old chart, if any
 		container?.append(Plot.plot({ // add the new chart
 			width: Math.max(container.clientWidth),
@@ -57,7 +60,7 @@
 				range: ["green", "blue", $mode == "light" ? "black" : "white"],
 			},
 		}))
-	}
+	})
 </script>
 
 <div bind:this={container} class={cn("w-full h-full", className)} role="img">

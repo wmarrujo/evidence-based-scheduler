@@ -7,13 +7,16 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import {db, type Resource} from "$lib/db"
-	import {createEventDispatcher} from "svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	const dispatch = createEventDispatcher<{created: Resource}>()
+	let {
+		class: className = "",
+		oncreated = () => {},
+	}: {
+		class?: string
+		oncreated?: (resource: Resource) => void
+	} = $props()
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -29,15 +32,17 @@
 					velocities: [],
 				}
 				const id = await db.resources.add(resource)
-				dispatch("created", {id, ...resource})
+				oncreated({id, ...resource})
 			},
 		}), {form: data, enhance} = form
 </script>
 
 <form class={cn(className)} use:enhance>
 	<Form.Field {form} name="name">
-		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.name} placeholder="Resource Name" class="text-2xl h-14"  {...attrs} />
+		<Form.Control>
+			{#snippet children({props})}
+				<Input type="text" bind:value={$data.name} placeholder="Resource Name" class="text-2xl h-14"  {...props} />
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>

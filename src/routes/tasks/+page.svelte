@@ -13,23 +13,23 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let selected: Array<TaskId> = []
-	let selectedTasks: Array<Task> = []
+	let selected: Array<TaskId> = $state([])
+	let selectedTasks: Array<Task> = $state([])
 	
 	function setTasks(tasks: Array<Task>) { selectedTasks = tasks } // made into its own function because svelte reactivity would cause a loop
-	$: db.tasks.bulkGet(selected).then(tasks => setTasks((tasks.filter(t => t) as Array<Task>)))
+	$effect(() => { db.tasks.bulkGet(selected).then(tasks => setTasks((tasks.filter(t => t) as Array<Task>))) })
 	
 	function clickedDelete() {
 		db.tasks.bulkDelete([...selected]) // TODO: doesn't update table when it deletes
 	}
 	
-	let createMilestoneDialogOpen = false
+	let createMilestoneDialogOpen = $state(false)
 </script>
 
 <div class="flex flex-col h-screen">
 	<MenuBar />
 	<main class="grow grid grid-cols-2 gap-2 p-2 min-h-0">
-		<Table on:selection={event => selected = event.detail} class="h-full min-h-0" />
+		<Table onselection={selection => selected = selection} class="h-full min-h-0" />
 		<div class="min-h-0">
 			{#if selected.length <= 1}
 				<TaskCard task={selectedTasks[0]} />
@@ -42,9 +42,9 @@
 						<!-- TODO: show averages and sums of various quantities -->
 					</Card.Header>
 					<Card.Content class="flex flex-col justify-start items-center gap-2">
-						<Button on:click={() => createMilestoneDialogOpen = true}><ListPlus class="mr-2" />New Milestone from selection</Button>
+						<Button onclick={() => createMilestoneDialogOpen = true}><ListPlus class="mr-2" />New Milestone from selection</Button>
 						<Separator />
-						<Button variant="destructive" on:click={clickedDelete} class="text-md"><Trash2 class="mr-2" />Delete</Button>
+						<Button variant="destructive" onclick={clickedDelete} class="text-md"><Trash2 class="mr-2" />Delete</Button>
 						<!-- TODO: other actions on multiple -->
 					</Card.Content>
 				</Card.Root>
@@ -55,6 +55,6 @@
 
 <Dialog.Root bind:open={createMilestoneDialogOpen}>
 	<Dialog.Content class="min-w-[50%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateMilestone requirements={[...selected]} on:created={() => createMilestoneDialogOpen = false} />
+		<CreateMilestone requirements={[...selected]} oncreated={() => createMilestoneDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>

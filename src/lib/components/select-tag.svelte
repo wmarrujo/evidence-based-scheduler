@@ -7,29 +7,33 @@
 	import {tags, type Tag, type TagId} from "$lib/db"
 	import {Plus} from "lucide-svelte"
 	import CreateTag from "$lib/components/create-tag.svelte"
-	import {createEventDispatcher} from "svelte"
+	import {type Snippet} from "svelte"
 	
 	////////////////////////////////////////////////////////////////////////////////
-		
-	let className = ""
-	export {className as class}
 	
-	export let unavailable: Array<TagId> | undefined
+	let {
+		children,
+		class: className = "",
+		unavailable,
+		onselect = () => {},
+	}: {
+		children?: Snippet
+		class?: string
+		unavailable?: Array<TagId>
+		onselect?: (tag: Tag) => void
+	} = $props()
 	
-	const dispatch = createEventDispatcher<{select: Tag}>()
-	
-	let open = false
-	let createTagDialogOpen = false
+	let open = $state(false)
+	let createTagDialogOpen = $state(false)
 </script>
 
 <Popover.Root bind:open>
 	<Popover.Trigger
 		role="combobox"
 		aria-expanded={open}
-		{...$$restProps}
 		class={cn(buttonVariants({variant: "outline"}), "justify-between pl-3 text-left font-normal", className)}
 	>
-		<slot />
+		{@render children?.()}
 	</Popover.Trigger>
 	<Popover.Content class="p-0 px-2 pt-2">
 		<Command.Root>
@@ -37,7 +41,7 @@
 			<Command.Empty>No tag found.</Command.Empty>
 			<Command.Group>
 				{#each $tags.filter(t => !(unavailable ?? []).includes(t.id)) as option (option.id)}
-					<Command.Item value={String(option.id)} onSelect={() => { dispatch("select", option); open = false }}>
+					<Command.Item value={String(option.id)} onSelect={() => { onselect(option); open = false }}>
 						{option.name}
 					</Command.Item>
 				{:else}
@@ -54,6 +58,6 @@
 
 <Dialog.Root bind:open={createTagDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateTag on:created={event => { dispatch("select", event.detail); createTagDialogOpen = false; open = false }} />
+		<CreateTag oncreated={tag => { onselect(tag); createTagDialogOpen = false; open = false }} />
 	</Dialog.Content>
 </Dialog.Root>

@@ -12,31 +12,36 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	// pull these out separately (they are passed in from the "{...attrs}" call) these get passed to the spent input element, so forms know what to pull from
-	export let id: string | undefined = undefined // the form id
-	export let name: string | undefined = undefined // the form name
-	let className = ""
-	export {className as class}
-	export let placeholder: string = "Select Resource..."
+	let {
+		id,
+		name,
+		class: className = "",
+		placeholder = "Select Resource...",
+		value = $bindable(), // the id, to export to a form as if this was a single input element
+	}: {
+		id?: string
+		name?: string
+		class?: string
+		placeholder?: string
+		value?: ResourceId | undefined
+	} = $props()
 	
-	export let value: ResourceId | undefined = undefined // the id, to export to a form as if this was a single input element
-	let resource: Resource | undefined = undefined // the actual resource
+	let resource: Resource | undefined = $state(undefined) // the actual resource
 	function setResource(r: Resource | undefined) { resource = r } // pulled out to avoid reactive infinite loop (unset value if we don't get a valid resource)
-	$: if (mounted && value) db.resources.get(value).then(setResource)
+	$effect(() => { if (mounted && value) db.resources.get(value).then(setResource) })
 	
 	let mounted = false
 	onMount(async () => mounted = true)
 	
-	let open = false
+	let open = $state(false)
 	
-	let createResourceDialogOpen = false
+	let createResourceDialogOpen = $state(false)
 </script>
 
 <Popover.Root bind:open>
 	<Popover.Trigger
 		role="combobox"
 		aria-expanded={open}
-		{...$$restProps}
 		class={cn(buttonVariants({variant: "outline"}), "justify-between pl-3 text-left font-normal", !resource && "text-muted-foreground", className)}
 	>
 		{#if resource}
@@ -71,6 +76,6 @@
 
 <Dialog.Root bind:open={createResourceDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<CreateResource on:created={event => { resource = event.detail; value = event.detail.id; createResourceDialogOpen = false; open = false }} />
+		<CreateResource oncreated={r => { resource = r; value = r.id; createResourceDialogOpen = false; open = false }} />
 	</Dialog.Content>
 </Dialog.Root>

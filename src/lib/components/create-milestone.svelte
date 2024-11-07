@@ -7,18 +7,21 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import {db, type Milestone, type TaskId} from "$lib/db"
-	import {createEventDispatcher} from "svelte"
 	import {Carta, MarkdownEditor} from "carta-md"
 	import {mode} from "mode-watcher"
 	import "$lib/styles/carta.pcss"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	const dispatch = createEventDispatcher<{created: Milestone}>()
-	
-	export let requirements: Array<TaskId> = []
+	let {
+		class: className = "",
+		requirements = [],
+		oncreated = () => {},
+	}: {
+		class?: string
+		requirements?: Array<TaskId>
+		oncreated?: (milestone: Milestone) => void
+	} = $props()
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -36,7 +39,7 @@
 					requirements,
 				}
 				const id = await db.milestones.add(milestone) // insert (and get the id it created)
-				dispatch("created", {id, ...milestone}) // send the message, and return the milestone it created
+				oncreated({id, ...milestone}) // send the message, and return the milestone it created
 			},
 		}), {form: data, enhance} = form
 	
@@ -48,8 +51,10 @@
 
 <form class={cn(className, "flex flex-col gap-2")} use:enhance>
 	<Form.Field {form} name="name">
-		<Form.Control let:attrs>
-			<Input type="text" bind:value={$data.name} placeholder="Milestone Name..." class="text-xl" {...attrs} />
+		<Form.Control>
+			{#snippet children({props})}
+				<Input type="text" bind:value={$data.name} placeholder="Milestone Name..." class="text-xl" {...props} />
+			{/snippet}
 		</Form.Control>
 	</Form.Field>
 	<div class="grow [&_.carta-renderer]:prose [&_.carta-renderer]:dark:prose-invert [&_.carta-input]:h-[calc(90vh-235px)] [&_.carta-renderer]:h-[calc(90vh-235px)]">

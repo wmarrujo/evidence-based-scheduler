@@ -4,28 +4,26 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	
-	enum Status {
-		Planned = 0,
-		Started = 1,
-		Done = 2,
-	}
-	
-	export let status: Status
+	let {
+		class: className = "",
+		status,
+	}: {
+		class?: string
+		status?: "planned" | "started" | "done"
+	} = $props()
 </script>
 
-<div class={cn(className, "flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs text-white",
-	status == Status.Planned && "bg-gray-300 dark:bg-gray-600 text-foreground",
-	status == Status.Started && "bg-blue-400 dark:bg-blue-600",
-	status == Status.Done && "bg-green-500 dark:bg-green-700")
+<div class={cn("flex rounded-sm h-[26px] pl-0.5 pr-[6px] items-center text-xs text-white",
+	status == "planned" && "bg-gray-300 dark:bg-gray-600 text-foreground",
+	status == "started" && "bg-blue-400 dark:bg-blue-600",
+	status == "done" && "bg-green-500 dark:bg-green-700",
+	className)
 }>
-	{#if status == Status.Planned}
+	{#if status == "planned"}
 		<Minus class="h-4" />PLANNED
-	{:else if status == Status.Started}
+	{:else if status == "started"}
 		<ArrowRight class="h-4" />STARTED
-	{:else if status == Status.Done}
+	{:else if status == "done"}
 		<Check class="h-4" />DONE
 	{/if}
 </div>

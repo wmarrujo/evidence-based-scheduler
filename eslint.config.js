@@ -47,9 +47,6 @@ export default [
 			"indent": ["error", "tab", {"CallExpression": {"arguments": 1}}],
 			"object-curly-spacing": ["error", "never"],
 			"semi": ["error", "never"],
-			"@typescript-eslint/no-unused-vars": [
-				"warn", {"argsIgnorePattern": "^_", "varsIgnorePattern": "^\\$\\$(Props|Events|Slots|Generic)$"},
-			],
 			"svelte/require-each-key": "warn",
 			"svelte/infinite-reactive-loop": "error",
 			"svelte/block-lang": ["error", {"script": "ts", "style": "pcss"}],

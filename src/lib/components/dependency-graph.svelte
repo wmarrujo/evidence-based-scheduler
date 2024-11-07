@@ -31,9 +31,13 @@
 	// DATA
 	////////////////////////////////////////////////////////////////////////////////
 	
-	// these are passed in based on where the component is used
-	export let tasks: Array<Task> = []
-	export let milestones: Array<Milestone> = []
+	let {
+		tasks = [],
+		milestones = [],
+	}: {
+		tasks?: Array<Task>
+		milestones?: Array<Milestone>
+	} = $props()
 	
 	// NODES & LINK OBJECTS
 	
@@ -69,7 +73,7 @@
 		nodes = nodes.filter(node => !unseen.has(node.id)) // remove any old tasks that didn't show up this time around
 		nodesById = nodes.reduce((acc, node) => acc.set(node.id, node), new Map<TaskId, Node>()) // update this // NOTE: doesn't work as a standalone reactive value for some reason
 	}
-	$: tasksUpdated(tasks)
+	$effect(() => tasksUpdated(tasks))
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// SIMULATION
@@ -88,8 +92,8 @@
 			
 			const flippedness = Math.max(0, (source.x! - target.x!) + offset) // how many pixels the source is right of the target (how many it is in the flipped orientation)
 			
-			source.vx! -= flippedness * stiffness * alpha
-			target.vx! += flippedness * stiffness * alpha
+			source.vx = source.vx! - flippedness * stiffness * alpha
+			target.vx = target.vx! + flippedness * stiffness * alpha
 		})
 	}
 	
@@ -117,7 +121,7 @@
 		simulation.restart()
 	}
 	
-	$: if (simulation && (nodes || links)) reInitializeSimulation() // when nodes or links are updated, re-initialize the simulation
+	$effect(() => { if (simulation && (nodes || links)) reInitializeSimulation() }) // when nodes or links are updated, re-initialize the simulation
 	
 	function updateSimulation() {
 		context.save()
@@ -238,8 +242,8 @@
 	
 	// HOVER
 	
-	let hoveredNode: Node | undefined
-	let hoveredLink: Link | undefined
+	let hoveredNode: Node | undefined = $state()
+	let hoveredLink: Link | undefined = $state()
 	
 	function onMouseMove(_event: MouseEvent) {
 		hoveredNode = getNode(mouse)
@@ -285,9 +289,9 @@
 		else openCreateTaskDialog(mouse) // if double clicked in empty space
 	}
 	
-	let rightClickedCursor: Point = {x: 0, y: 0}
-	let rightClickedPoint: Point = {x: 0, y: 0}
-	let rightClickedNode: Node | undefined
+	let rightClickedCursor: Point = $state({x: 0, y: 0})
+	let rightClickedPoint: Point = $state({x: 0, y: 0})
+	let rightClickedNode: Node | undefined = $state()
 	
 	function onRightClick(_event: MouseEvent) {
 		informationCardOpen = false // close the information box, so we don't see both at the same time
@@ -306,18 +310,18 @@
 	
 	// Information Card
 	
-	let informationCard: Card.Root
-	let informationCardOpen = false
-	$: informationCardNode = hoveredNode
-	$: informationCardTask = tasks.find(task => task.id == informationCardNode?.id)
+	let informationCard: ReturnType<typeof Card.Root>
+	let informationCardOpen = $state(false)
+	let informationCardNode = $derived(hoveredNode)
+	let informationCardTask = $derived(tasks.find(task => task.id == informationCardNode?.id))
 	
 	// Context Menu
 	
-	let contextMenuOpen = false
+	let contextMenuOpen = $state(false)
 	
 	// Create Task
 	
-	let taskDialogOpen = false
+	let taskDialogOpen = $state(false)
 	
 	function openCreateTaskDialog(point: Point) {
 		nodeInsertionPoint = point // record where we started making the task, so we can insert the node there
@@ -327,7 +331,7 @@
 	
 	// Edit Task
 	
-	let editTaskId: TaskId | undefined
+	let editTaskId: TaskId | undefined = $state()
 	
 	function openEditTaskDialog(id?: TaskId) {
 		if (!id) return // this can't happen, but have to guard against it so typescript is happy
@@ -408,10 +412,10 @@
 <svelte:window on:mousemove={event => { cursor.x = event.pageX; cursor.y = event.pageY }} />
 <canvas
 	bind:this={canvas}
-	on:contextmenu|preventDefault={onRightClick}
-	on:mousemove={event => { let [x, y] = transform.invert(d3.pointer(event)); mouse.x = x; mouse.y = y }}
+	oncontextmenu={event => { event.preventDefault(); onRightClick(event) }}
+	onmousemove={event => { let [x, y] = transform.invert(d3.pointer(event)); mouse.x = x; mouse.y = y }}
 	class={cn("w-full h-full", hoveredLink && !hoveredNode && "deleteCursor")}
-/>
+></canvas>
 
 <Card.Root bind:this={informationCard} class={cn("absolute -translate-x-1/2 max-w-96", !informationCardOpen && "hidden", browser && cursor.y < window.innerHeight / 2 ? "translate-y-[2rem]" : "-translate-y-[calc(100%+2rem)]")} style="top: {cursor.y}px; left: {cursor.x}px;">
 	{#if informationCardTask}
@@ -432,19 +436,19 @@
 
 <Card.Root class={cn("absolute max-w-96 flex flex-col p-1", !contextMenuOpen && "hidden", browser && rightClickedCursor.y < window.innerHeight / 2 ? "" : "-translate-y-[calc(100%)]")} style="top: {rightClickedCursor.y}px; left: {rightClickedCursor.x}px;">
 	{#if rightClickedNode}
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" onclick={() => { contextMenuOpen = false; openEditTaskDialog(rightClickedNode?.id) }}><Pencil class="w-4 h-4 mr-2" />Edit</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" onclick={() => { contextMenuOpen = false; removeNode(rightClickedNode) }}><Trash2 class="w-4 h-4 mr-2" />Delete</Button>
 		<!-- TODO: add duplicate -->
 		<!-- TODO: add duplicate with links -->
 		<!-- TODO: add transfer to another person -->
 	{:else}
-		<Button variant="ghost" class="h-8 px-2 w-full justify-start" on:click={() => { contextMenuOpen = false; openCreateTaskDialog(rightClickedPoint) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
+		<Button variant="ghost" class="h-8 px-2 w-full justify-start" onclick={() => { contextMenuOpen = false; openCreateTaskDialog(rightClickedPoint) }}><Plus class="w-4 h-4 mr-2" />New Task</Button>
 	{/if}
 </Card.Root>
 
 <Dialog.Root bind:open={taskDialogOpen}>
 	<Dialog.Content class="min-w-[90%] max-h-[90vh] h-[90vh] pt-12">
-		<EditTask task={editTaskId ? $tasksById.get(editTaskId) : undefined} on:saved={() => taskDialogOpen = false} />
+		<EditTask task={editTaskId ? $tasksById.get(editTaskId) : undefined} onsaved={() => taskDialogOpen = false} />
 	</Dialog.Content>
 </Dialog.Root>
 

@@ -7,8 +7,7 @@
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
 	import SelectResource from "$lib/components/select-resource.svelte"
-	import {db, type Task, type Tag, tagsById} from "$lib/db"
-	import {createEventDispatcher} from "svelte"
+	import {db, type Task, tagsById} from "$lib/db"
 	import {Carta, MarkdownEditor} from "carta-md"
 	import Toggle from "$lib/components/toggle.svelte"
 	import {mode} from "mode-watcher"
@@ -18,12 +17,15 @@
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
-	let className = ""
-	export {className as class}
-	
-	export let task: Task | undefined = undefined
-	
-	const dispatch = createEventDispatcher<{saved: Task}>()
+	let {
+		class: className = "",
+		task,
+		onsaved = () => {},
+	}: {
+		class?: string
+		task?: Task
+		onsaved?: (task: Task) => void
+	} = $props()
 	
 	const schema = z.object({
 		name: z.string().min(1, {message: "you must provide a name"}),
@@ -62,10 +64,10 @@
 						tags: form.data.tags,
 					}
 					await db.tasks.update(task!.id, updates) // update the task with the updates from the form
-					dispatch("saved", {...task!, ...updates}) // send the message, and return the task it edited
+					onsaved({...task!, ...updates}) // send the message, and return the task it edited
 				} else { // if we are making a new task
 					const id = await db.tasks.add({...form.data, requirements: []})
-					dispatch("saved", {id, ...form.data, requirements: []}) // send the message, and return the task it edited
+					onsaved({id, ...form.data, requirements: []}) // send the message, and return the task it edited
 				}
 			},
 		}), {form: data, enhance} = form
@@ -74,63 +76,75 @@
 			sanitizer: false,
 			theme: $mode == "light" ? "github-light" : "github-dark",
 		})
-	
-	$: tags = $data.tags.map(t => $tagsById.get(t)).filter(t => t) as Array<Tag> // fixes not being able to assert that the tags aren't undefined
 </script>
 
 <form class={cn(className, "flex gap-4")} use:enhance>
 	<div class="flex flex-col flex-1 gap-4 overflow-y-scroll">
 		<Form.Field {form} name="name" class="flex flex-col">
-			<Form.Control let:attrs>
-				<Input type="text" bind:value={$data.name} placeholder="Task Name" class="text-2xl h-14" {...attrs} />
+			<Form.Control>
+				{#snippet children({props})}
+					<Input type="text" bind:value={$data.name} placeholder="Task Name" class="text-2xl h-14" {...props} />
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<div class="flex gap-2">
 			<Form.Field {form} name="doer" class="flex flex-col flex-1">
-				<Form.Control let:attrs>
-					<Form.Label>Doer</Form.Label>
-					<SelectResource bind:value={$data.doer} placeholder="Select Doer" class="grow" {...attrs} />
+				<Form.Control>
+					{#snippet children({props})}
+						<Form.Label>Doer</Form.Label>
+						<SelectResource bind:value={$data.doer} placeholder="Select Doer" class="grow" {...props} />
+					{/snippet}
 				</Form.Control>
 			</Form.Field>
 			<Form.Field {form} name="done" class="flex flex-col flex-1">
-				<Form.Control let:attrs>
-					<Form.Label class="mt-0">Done</Form.Label>
-					<Toggle bind:value={$data.done} {...attrs}>
-						<div slot="true" class={cn("w-full h-full rounded-md flex items-center justify-center", $data.done && "bg-green-500 text-white")}>
-							<Check class="mr-2" /> Done
-						</div>
-						<div slot="false" class="w-full h-full rounded-md flex items-center justify-center">
-							<Minus class="mr-2" /> Not Done
-						</div>
-					</Toggle>
+				<Form.Control>
+					{#snippet children({props})}
+						<Form.Label class="mt-0">Done</Form.Label>
+						<Toggle bind:value={$data.done} {...props}>
+							{#snippet yes()}
+								<div class={cn("w-full h-full rounded-md flex items-center justify-center", $data.done && "bg-green-500 text-white")}>
+									<Check class="mr-2" /> Done
+								</div>
+							{/snippet}
+							{#snippet no()}
+								<div class="w-full h-full rounded-md flex items-center justify-center">
+									<Minus class="mr-2" /> Not Done
+								</div>
+							{/snippet}
+						</Toggle>
+					{/snippet}
 				</Form.Control>
 			</Form.Field>
 		</div>
 		<div class="flex gap-2">
 			<Form.Field {form} name="estimate" class="flex flex-col flex-1">
-				<Form.Control let:attrs>
-					<Form.Label>Estimate</Form.Label>
-					<Input type="number" bind:value={$data.estimate} min={0} step="any" {...attrs} class="w-full" />
+				<Form.Control>
+					{#snippet children({props})}
+						<Form.Label>Estimate</Form.Label>
+						<Input type="number" bind:value={$data.estimate} min={0} step="any" class="w-full" {...props} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field {form} name="spent" class="flex flex-col flex-1" >
-				<Form.Control let:attrs>
-					<Form.Label>Spent</Form.Label>
-					<Input type="number" bind:value={$data.spent} min={0} step="any" {...attrs} class="w-full" />
+				<Form.Control>
+					{#snippet children({props})}
+						<Form.Label>Spent</Form.Label>
+						<Input type="number" bind:value={$data.spent} min={0} step="any" class="w-full" {...props} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 		</div>
 		<div class="flex grow overflow-y-scroll gap-2 flex-wrap">
-			{#each tags as tag, i (tag)}
-				<Button on:click={() => { $data.tags.splice(i, 1); $data.tags = $data.tags }} class="flex h-8 pl-2 pr-2">
+			{#each $data.tags.map(t => $tagsById.get(t)!).filter(t => t) as tag, i (tag)}
+				<Button onclick={() => { $data.tags.splice(i, 1); $data.tags = $data.tags }} class="flex h-8 pl-2 pr-2">
 					<input type="tags" bind:value={$data.tags[i]} hidden />
 					{tag.name}
 				</Button>
 			{/each}
-			<SelectTags unavailable={$data.tags} on:select={event => { $data.tags.push(event.detail.id); $data.tags = $data.tags }} class="h-8 px-2">
+			<SelectTags unavailable={$data.tags} onselect={selected => { $data.tags.push(selected.id); $data.tags = $data.tags }} class="h-8 px-2">
 				<Plus class="h-4 w-4 mr-1" />Add Tag
 			</SelectTags>
 		</div>
