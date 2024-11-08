@@ -84,7 +84,7 @@
 	}
 	
 	let showStart = $state(false)
-	let showHours = $state(true) // FIXME: when schedules are implemented, switch this default to be false (by date)
+	let showHours = $state(true) // TODO: when schedules are implemented, switch this default to be false (by date)
 </script>
 
 <div class="flex flex-col h-screen">
