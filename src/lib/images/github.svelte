@@ -1,5 +1,4 @@
 <script lang="ts">
-	import {mode} from "mode-watcher"
 	import {cn} from "$lib/utils"
 	
 	let className = ""

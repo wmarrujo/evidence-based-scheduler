@@ -146,10 +146,10 @@
 	
 	function drawNode(node: Node) {
 		let color = $mode == "light" ? "black" : "white"
-		const border = hoveredNode == node || selectedNode == node
+		const border = hoveredNode?.index == node?.index || selectedNode?.index == node?.index
 		let borderColor
-		if (hoveredNode == node) borderColor = "gold" // FIXME: hover colors not working
-		if (selectedNode == node) borderColor = "lightblue" // FIXME: select colors not working
+		if (hoveredNode?.index == node?.index) borderColor = "gold" // FIXME: hover colors not working
+		if (selectedNode?.index == node?.index) borderColor = "lightblue" // FIXME: select colors not working
 		
 		if (meter <= node.r) { // if it's big enough
 			drawCircle(context, node.x!, node.y!, node.r, {border, borderWidth: 3, color, borderColor})
@@ -164,7 +164,7 @@
 		
 		let color = $mode == "light" ? "black" : "white"
 		let headColor = $mode == "light" ? "black" : "white"
-		if (!hoveredNode && hoveredLink == link) { color = "red"; headColor = "red" } // FIXME: hover colors not working
+		if (!hoveredNode && hoveredLink?.index == link?.index) { color = "red"; headColor = "red" } // FIXME: hover colors not working
 		
 		drawArrow(context, source.x!, source.y!, target.x!, target.y!, {width: 2, startOffset: source.r, endOffset: target.r, color, headColor})
 	}
