@@ -40,7 +40,6 @@
 		milestones?: Readable<Array<Milestone>>
 	} = $props()
 	
-	// $effect(() => console.log(tasks))
 	$effect(() => tasksUpdated($tasks))
 	
 	// NODES & LINK OBJECTS

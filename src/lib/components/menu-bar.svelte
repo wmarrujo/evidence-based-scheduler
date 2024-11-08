@@ -35,7 +35,8 @@
 	<nav class="flex gap-2 items-center">
 		<Button href="{base}/#about" variant="link" class="px-2">About</Button>
 		<Separator orientation="vertical" />
-		<Button href="{base}/resources" variant="link" class={cn("px-2", $page.route.id?.startsWith("/resources") && "underline")}>Resources</Button>
+		<!-- TODO: enable when it's ready -->
+		<!-- <Button href="{base}/resources" variant="link" class={cn("px-2", $page.route.id?.startsWith("/resources") && "underline")}>Resources</Button> -->
 		<Button href="{base}/tasks" variant="link" class={cn("px-2", $page.route.id?.startsWith("/tasks") && "underline")}>Tasks</Button>
 		<Button href="{base}/graph" variant="link" class={cn("px-2", $page.route.id?.startsWith("/graph") && "underline")}>Graph</Button>
 		<Button href="{base}/prediction" variant="link" class={cn("px-2", $page.route.id?.startsWith("/prediction") && "underline")}>Prediction</Button>
@@ -46,7 +47,7 @@
 	<Separator orientation="vertical" />
 	<Stopwatch />
 	<!-- TODO: current timer preview & controls -->
-	<div class="flex gap-2 grow justify-end">
+	<div class="flex gap-2 grow justify-end items-center">
 		{@render children?.()}
 	</div>
 </div>

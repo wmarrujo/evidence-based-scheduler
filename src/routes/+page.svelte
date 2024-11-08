@@ -12,11 +12,12 @@
 			<h2 class="text-xl pt-4">Project Management | Task Scheduling</h2>
 		</div>
 		<div class="flex justify-center">
-			<div class="my-24 grid grid-cols-4 gap-6">
-				<div class="flex flex-col grow gap-2">
+			<div class="my-24 grid grid-cols-3 gap-6">
+				<!-- TODO: enable when it's ready -->
+				<!-- <div class="flex flex-col grow gap-2">
 					<Button href="{base}/resources">Resources</Button>
 					<p>People, External Teams, Schedules, Machines</p>
-				</div>
+				</div> -->
 				<div class="flex flex-col grow gap-2">
 					<Button href="{base}/tasks">Tasks</Button>
 					<p>Record your time & What should you do next</p>

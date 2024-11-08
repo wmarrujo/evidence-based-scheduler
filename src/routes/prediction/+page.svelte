@@ -11,6 +11,7 @@
 	import * as Popover from "$lib/components/ui/popover"
 	import * as Command from "$lib/components/ui/command"
 	import {browser} from "$app/environment"
+	import {Switch} from "$lib/components/ui/switch"
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
@@ -54,6 +55,7 @@
 	
 	let chartData = $state(new Map<Goal, Array<Date>>())
 	$effect(() => { if (0 < selected.length && 0 < $tasks.length && 0 < $resources.length) { // if we are ready to run a simulation
+		// TODO: add an option to run the simulation taking into account the schedule or not
 		const results = simulate(selected.map(getRequirements), start, simulations, $tasks, velocitiesByResource)
 		chartData = new Map(selected.map((goal, i) => [goal, results[i]]))
 	} else {
@@ -81,10 +83,23 @@
 		newSelected.splice(dropIndex!, 0, draggedItem)
 		selected = newSelected
 	}
+	
+	let showStart = $state(false)
+	let showHours = $state(true) // FIXME: when schedules are implemented, switch this default to be false (by date)
 </script>
 
 <div class="flex flex-col h-screen">
-	<MenuBar />
+	<MenuBar>
+		<div class="border rounded-lg p-2 flex items-center gap-2">
+			Show Start
+			<Switch bind:checked={showStart} />
+		</div>
+		<div class="border rounded-lg p-2 flex items-center gap-2">
+			Dates
+			<Switch bind:checked={showHours} />
+			Hours
+		</div>
+	</MenuBar>
 	<main class="grow flex gap-2 p-2 h-full">
 		<div class="flex flex-col gap-2 min-w-72 h-full">
 			<div class="flex gap-2 justify-between items-center">
@@ -175,7 +190,7 @@
 			</div>
 			-->
 			<div class="grow">
-				<ShipDateProbabilityChart milestones={chartData} />
+				<ShipDateProbabilityChart milestones={chartData} {start} {showHours} {showStart} />
 			</div>
 		</div>
 	</main>
