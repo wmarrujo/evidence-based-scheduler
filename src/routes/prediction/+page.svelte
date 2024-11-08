@@ -4,8 +4,7 @@
 	import {resources, tags, tasks, milestones, tagExpansions, milestonesById, tagsById, tasksById, populatedMilestonesById, populatedTagsById, populatedTasksById} from "$lib/db"
 	import type {MilestoneId, TagId, TaskId, ResourceId, Velocity} from "$lib/db"
 	import {Button, buttonVariants} from "$lib/components/ui/button"
-	import {Input} from "$lib/components/ui/input"
-	import {Plus, Check, X, Milestone, Tag, Pin, Upload, Save} from "lucide-svelte"
+	import {Plus, Check, X, Milestone, Tag, Pin} from "lucide-svelte"
 	import {simulate} from "$lib/simulation"
 	import ShipDateProbabilityChart from "$lib/components/ship-date-probability-chart.svelte"
 	import * as Popover from "$lib/components/ui/popover"
@@ -90,6 +89,7 @@
 
 <div class="flex flex-col h-screen">
 	<MenuBar>
+		<!-- TODO: make a way to save the priorities we have set -->
 		<div class="border rounded-lg p-2 flex items-center gap-2">
 			Show Start
 			<Switch bind:checked={showStart} />
@@ -182,13 +182,6 @@
 			</div>
 		</div>
 		<div class="flex flex-col gap-2 grow h-full">
-			<!--
-			<div class="flex gap-2">
-				<Input type="date" />
-				<Button><Upload />Load Snapshot</Button>
-				<Button><Save />Save Snapshot</Button>
-			</div>
-			-->
 			<div class="grow">
 				<ShipDateProbabilityChart milestones={chartData} {start} {showHours} {showStart} />
 			</div>

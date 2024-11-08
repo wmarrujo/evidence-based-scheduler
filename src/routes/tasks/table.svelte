@@ -66,7 +66,7 @@
 		// TODO: milestones
 	]
 	
-	let pagination = $state<PaginationState>({pageIndex: 0, pageSize: 30})
+	let pagination = $state<PaginationState>({pageIndex: 0, pageSize: 100})
 	let selection = $state<RowSelectionState>({})
 	let visibility = $state<VisibilityState>({})
 	let filters = $state<ColumnFiltersState>([])
@@ -128,13 +128,14 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
-	<div class="rounded-md border grow min-h-0">
+	<div class="rounded-md border grow overflow-scroll">
 		<Table.Root class="border-separate border-spacing-0">
 			<Table.Header class="border-0">
 				{#each table.getHeaderGroups() as headerRow (headerRow.id)}
 					<Table.Row class="border-0">
 						{#each headerRow.headers as cell (cell.id)}
-							<Table.Head class={cn("sticky top-0 bg-background border-b first:rounded-tl-md last:rounded-tr-md")}>
+							<!-- TODO: find a way to make the header sticky -->
+							<Table.Head class="bg-background border-b first:rounded-tl-md last:rounded-tr-md">
 								{#if !cell.isPlaceholder}
 									<FlexRender content={cell.column.columnDef.header} context={cell.getContext()}/>
 									<!-- {#if cell.id == "checkbox"}
