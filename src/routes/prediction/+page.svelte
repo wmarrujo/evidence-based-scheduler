@@ -4,7 +4,7 @@
 	import {resources, tags, tasks, milestones, tagExpansions, milestonesById, tagsById, tasksById, populatedMilestonesById, populatedTagsById, populatedTasksById} from "$lib/db"
 	import type {MilestoneId, TagId, TaskId, ResourceId, Velocity} from "$lib/db"
 	import {Button, buttonVariants} from "$lib/components/ui/button"
-	import {Plus, Check, X, Milestone, Tag, Pin} from "lucide-svelte"
+	import {Plus, X, Milestone, Tag, Pin} from "lucide-svelte"
 	import {simulate} from "$lib/simulation"
 	import ShipDateProbabilityChart from "$lib/components/ship-date-probability-chart.svelte"
 	import * as Popover from "$lib/components/ui/popover"
@@ -20,11 +20,11 @@
 		return tags.reduce((acc, tag) => acc.set(tag, [task.id, ...(acc.get(tag) ?? [])]), acc)
 	}, new Map<TagId, Array<TaskId>>()))
 	
-	let options = $derived([
-		...$milestones.map(milestone => ({type: "Milestone", id: milestone.id, name: milestone.name})),
-		...$tags.map(tag => ({type: "Tag", id: tag.id, name: tag.name})),
-		...$tasks.map(task => ({type: "Task", id: task.id, name: task.name})),
-	] as Array<Goal>)
+	let options = $derived({
+		milestones: $milestones.map(milestone => ({type: "Milestone", id: milestone.id, name: milestone.name} as Goal)),
+		tags: $tags.map(tag => ({type: "Tag", id: tag.id, name: tag.name} as Goal)),
+		tasks: $tasks.map(task => ({type: "Task", id: task.id, name: task.name} as Goal)),
+	})
 	
 	let selected: Array<Goal> = $state([]) // start out empty on page load (will be filled later, when certain conditions are met)
 	$effect(() => { if (browser && $populatedMilestonesById && $populatedTagsById && $populatedTasksById) localStorage.setItem("selected-goals", JSON.stringify(selected)) }) // NOTE: only write when we know we've got the full set
@@ -112,39 +112,38 @@
 					>
 						<Plus />Add
 					</Popover.Trigger>
-					<Popover.Content class="p-0 px-2 pt-2">
+					<Popover.Content class="p-0 px-2 pt-2 max-h-96">
 						<Command.Root>
-							<Command.Input autofocus placeholder="Search..." class="h-9" />
-							<Command.Empty>No resource found.</Command.Empty>
-							<Command.Group heading="Milestones">
-								{#each options.filter(option => option.type == "Milestone") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { if (!selected.includes(option)) { selected.push(option); selected = selected }; goalPopoverOpen = false }}>
-										<Milestone class="w-4 h-4 mr-2" />
-										{option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
-									</Command.Item>
-								{/each}
-							</Command.Group>
-							<Command.Separator />
-							<Command.Group heading="Tags">
-								{#each options.filter(option => option.type == "Tag") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { if (!selected.includes(option)) { selected.push(option); selected = selected }; goalPopoverOpen = false }}>
-										<Tag class="w-4 h-4 mr-2" />
-										{option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
-									</Command.Item>
-								{/each}
-							</Command.Group>
-							<Command.Separator />
-							<Command.Group heading="Tasks">
-								{#each options.filter(option => option.type == "Task") as option (option.id)}
-									<Command.Item value={option.type + option.id} onSelect={() => { if (!selected.includes(option)) { selected.push(option); selected = selected }; goalPopoverOpen = false }}>
-										<Pin class="w-4 h-4 mr-2" />
-										{option.name}
-										<Check class={cn("ml-auto h-4 w-4", !selected.includes(option) && "text-transparent")} />
-									</Command.Item>
-								{/each}
-							</Command.Group>
+							<Command.Input placeholder="Search..." autofocus class="h-9" />
+							<Command.List>
+								<Command.Empty>No resource found.</Command.Empty>
+								<Command.Group heading="Milestones">
+									{#each options.milestones as option (option.id)}
+										<Command.Item value={option.name} onSelect={() => { selected.push(option); goalPopoverOpen = false }} disabled={selected.map(goal => goal.id).includes(option.id)}>
+											<Milestone class="w-4 h-4 mr-2" />
+											{option.name}
+										</Command.Item>
+									{/each}
+								</Command.Group>
+								<Command.Separator />
+								<Command.Group heading="Tags">
+									{#each options.tags as option (option.id)}
+										<Command.Item value={option.name} onSelect={() => { selected.push(option); goalPopoverOpen = false }} disabled={selected.map(goal => goal.id).includes(option.id)}>
+											<Tag class="w-4 h-4 mr-2" />
+											{option.name}
+										</Command.Item>
+									{/each}
+								</Command.Group>
+								<Command.Separator />
+								<Command.Group heading="Tasks">
+									{#each options.tasks as option (option.id)}
+										<Command.Item value={option.name} onSelect={() => { selected.push(option); goalPopoverOpen = false }} disabled={selected.map(goal => goal.id).includes(option.id)}>
+											<Pin class="w-4 h-4 mr-2" />
+											{option.name}
+										</Command.Item>
+									{/each}
+								</Command.Group>
+							</Command.List>
 						</Command.Root>
 					</Popover.Content>
 				</Popover.Root>
