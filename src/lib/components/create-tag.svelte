@@ -2,7 +2,7 @@
 	import {cn} from "$lib/utils"
 	import {z} from "zod"
 	import {superForm, defaults} from "sveltekit-superforms"
-	import {zod} from "sveltekit-superforms/adapters"
+	import {zod4} from "sveltekit-superforms/adapters"
 	import * as Form from "$lib/components/ui/form"
 	import {Button} from "$lib/components/ui/button"
 	import {Input} from "$lib/components/ui/input"
@@ -25,9 +25,9 @@
 		tags: z.array(z.number()),
 	})
 	
-	const form = superForm(defaults(zod(schema)), {
+	const form = superForm(defaults(zod4(schema)), {
 			SPA: true,
-			validators: zod(schema),
+			validators: zod4(schema),
 			async onUpdate({form}) { // handle submission
 				if (!form.valid) return
 				const tag = {
